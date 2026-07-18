@@ -1,0 +1,28 @@
+# Operating systems
+.DS_Store
+Thumbs.db
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+.cache/
+tmp/
+
+# Build and coverage artifacts
+build/
+dist/
+coverage/
+htmlcov/
