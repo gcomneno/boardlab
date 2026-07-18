@@ -40,6 +40,28 @@ GameState  Evaluator
 6. Monte Carlo Tree Search;
 7. giochi ed esperimenti più complessi.
 
+## Toolchain
+
+- Python 3.12 o successivo;
+- `uv` per ambiente, dipendenze e lock file;
+- Ruff per formattazione e analisi statica;
+- mypy in modalità strict per i contratti di tipo;
+- pytest per i test automatici.
+
+## Struttura del codice
+
+```text
+src/boardlab/
+    engine/       contratti e coordinamento generico
+    games/        implementazioni dei giochi
+    cli/          interfaccia a riga di comando
+
+tests/            test automatici
+benchmarks/       esperimenti riproducibili
+examples/         esempi di utilizzo
+docs/             architettura, algoritmi e tutorial
+```
+
 ## Stato
 
 Il progetto è nella fase iniziale di definizione del dominio.
