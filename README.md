@@ -62,6 +62,13 @@ examples/         esempi di utilizzo
 docs/             architettura, algoritmi e tutorial
 ```
 
+## Documentazione
+
+- [Panoramica architetturale](docs/architecture/overview.md)
+- [ADR 0001 — Python come linguaggio iniziale](docs/architecture/adr/0001-python-toolchain.md)
+- [Guida allo sviluppo](docs/development.md)
+- [Roadmap](docs/roadmap.md)
+
 ## Stato
 
 Il progetto è nella fase iniziale di definizione del dominio.
