@@ -62,6 +62,14 @@ examples/         esempi di utilizzo
 docs/             architettura, algoritmi e tutorial
 ```
 
+## Percorso didattico
+
+Il percorso di studio strutturato è disponibile in
+[Sessioni di studio](sessions/README.it.md).
+
+La preparazione del materiale e lo studio attivo vengono tracciati
+separatamente in [Progresso didattico](docs/progress.it.md).
+
 ## Documentazione
 
 - [Panoramica architetturale](docs/architecture/overview.md)

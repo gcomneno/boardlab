@@ -33,13 +33,25 @@ uv sync --group dev
 Eseguire dalla radice del repository:
 
 ```bash
-uv run ruff format --check .
-uv run ruff check .
-uv run mypy
-uv run pytest
+scripts/check-repository.sh
 ```
 
-Tutti i comandi devono terminare con successo prima di creare un commit.
+Questo è l'entrypoint canonico della validazione locale ed esegue sia i
+controlli della toolchain Python sia i controlli repository-wide relativi alla
+documentazione e alla pubblicabilità.
+
+La validazione comprende almeno:
+
+- Ruff format;
+- Ruff lint;
+- mypy strict;
+- pytest;
+- validazione della documentazione bilingue;
+- controllo dei contenuti pubblicabili;
+- controllo della sintassi degli script shell;
+- controllo del whitespace Git.
+
+Tutti i controlli devono terminare con successo prima di creare un commit.
 
 ## Formattazione automatica
 
@@ -83,14 +95,21 @@ sviluppo.
 
 ## Controllo prima del commit
 
+Eseguire prima la validazione completa:
+
+```bash
+scripts/check-repository.sh
+```
+
+Poi controllare esplicitamente lo stato Git:
+
 ```bash
 git diff --check
 git status -sb
-uv run ruff format --check .
-uv run ruff check .
-uv run mypy
-uv run pytest
 ```
 
 `git diff` non mostra i file non tracciati. Usare sempre anche `git status`
 prima di considerare completo il contenuto di un commit.
+
+Prima del commit finale della preparazione didattica è inoltre necessario
+eseguire uno staging audit separato sui soli file intenzionali.

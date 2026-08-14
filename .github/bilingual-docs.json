@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "canonical_language": "en",
+  "translation_language": "it",
+  "translation_suffix": ".it.md",
+  "canonical_documents": [
+    "docs/REPO-HYGIENE.md",
+    "docs/progress.md",
+    "sessions/README.md",
+    "sessions/session-01-modeling-a-board-game/README.md",
+    "sessions/session-01-modeling-a-board-game/answer-keys/quiz-01-state-legality-transitions.md",
+    "sessions/session-01-modeling-a-board-game/answer-keys/quiz-02-termination-strategy-coordination.md",
+    "sessions/session-01-modeling-a-board-game/coverage-review.md",
+    "sessions/session-01-modeling-a-board-game/quiz-plan.md",
+    "sessions/session-01-modeling-a-board-game/quizzes/quiz-01-state-legality-transitions.md",
+    "sessions/session-01-modeling-a-board-game/quizzes/quiz-02-termination-strategy-coordination.md",
+    "sessions/session-01-modeling-a-board-game/source-coverage-map.md",
+    "sessions/session-01-modeling-a-board-game/study-map.md",
+    "sessions/session-01-modeling-a-board-game/units/unit-01-game-state.md",
+    "sessions/session-01-modeling-a-board-game/units/unit-02-legal-moves.md",
+    "sessions/session-01-modeling-a-board-game/units/unit-03-state-transitions.md",
+    "sessions/session-01-modeling-a-board-game/units/unit-04-terminal-states-and-outcome.md",
+    "sessions/session-01-modeling-a-board-game/units/unit-05-player-and-strategy.md",
+    "sessions/session-01-modeling-a-board-game/units/unit-06-match-coordination.md",
+    "sources/README.md"
+  ],
+  "legacy_unpaired_documents": [
+    "README.md",
+    "benchmarks/README.md",
+    "docs/architecture/adr/0001-python-toolchain.md",
+    "docs/architecture/overview.md",
+    "docs/development.md",
+    "docs/roadmap.md",
+    "examples/README.md",
+    "src/boardlab/cli/README.md",
+    "src/boardlab/engine/README.md",
+    "src/boardlab/games/README.md",
+    "tests/README.md"
+  ],
+  "excluded_documents": [],
+  "ignored_directories": [
+    ".git",
+    ".venv",
+    "node_modules",
+    "vendor"
+  ]
+}

@@ -34,3 +34,12 @@ build/
 dist/
 coverage/
 htmlcov/
+
+# Private or copyrighted study material
+*.pdf
+*.epub
+*.mobi
+*.azw3
+private/
+notes-private/
+sources/private/
