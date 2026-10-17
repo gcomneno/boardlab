@@ -1,58 +1,9 @@
 """Exercise the generic contract using the Session 01 Three Stones example."""
 
-from dataclasses import dataclass
-from enum import Enum
-
 import pytest
 
 from boardlab.engine.game import Game, Outcome
-
-
-class Player(Enum):
-    NORTH = "north"
-    SOUTH = "south"
-
-
-@dataclass(frozen=True)
-class State:
-    cells: tuple[Player | None, Player | None, Player | None]
-    next_player: Player
-
-
-class ThreeStones:
-    """Test fixture: fill three cells; the majority owner wins."""
-
-    def initial_state(self) -> State:
-        return State((None, None, None), Player.NORTH)
-
-    def current_player(self, state: State) -> Player:
-        if self.is_terminal(state):
-            raise ValueError("Terminal state has no active player")
-        return state.next_player
-
-    def legal_moves(self, state: State) -> tuple[int, ...]:
-        return tuple(index for index, owner in enumerate(state.cells) if owner is None)
-
-    def apply_move(self, state: State, move: int) -> State:
-        if move not in self.legal_moves(state):
-            raise ValueError("Illegal move")
-        cells = tuple(
-            state.next_player if index == move else owner for index, owner in enumerate(state.cells)
-        )
-        next_player = Player.SOUTH if state.next_player is Player.NORTH else Player.NORTH
-        return State((cells[0], cells[1], cells[2]), next_player)
-
-    def is_terminal(self, state: State) -> bool:
-        return all(owner is not None for owner in state.cells)
-
-    def outcome(self, state: State, player: Player) -> Outcome:
-        if not self.is_terminal(state):
-            raise ValueError("Outcome requires a terminal state")
-        owned = state.cells.count(player)
-        other = len(state.cells) - owned
-        if owned == other:
-            return Outcome.DRAW
-        return Outcome.WIN if owned > other else Outcome.LOSS
+from boardlab.games.three_stones import Player, State, ThreeStones
 
 
 def game_fixture() -> Game[State, int, Player]:
@@ -115,3 +66,52 @@ def test_terminal_result_uses_player_perspective() -> None:
 
     with pytest.raises(ValueError, match="Illegal move"):
         game.apply_move(state, 0)
+
+
+@pytest.mark.parametrize(
+    ("state", "message"),
+    [
+        (State((Player.SOUTH, None, None), Player.NORTH), "Invalid game state"),
+        (State((Player.NORTH, None, None), Player.NORTH), "Invalid game state"),
+        (
+            State((Player.NORTH, Player.NORTH, None), Player.SOUTH),
+            "Invalid game state",
+        ),
+        (
+            State((Player.NORTH, Player.SOUTH, None), Player.SOUTH),
+            "Invalid game state",
+        ),
+    ],
+)
+def test_invalid_states_are_rejected(state: State, message: str) -> None:
+    game = game_fixture()
+
+    with pytest.raises(ValueError, match=message):
+        game.legal_moves(state)
+
+    with pytest.raises(ValueError, match=message):
+        game.is_terminal(state)
+
+
+@pytest.mark.parametrize("move", [True, 1.0, "1", None])
+def test_non_integer_moves_are_rejected(move: object) -> None:
+    game = ThreeStones()
+    state = game.initial_state()
+
+    with pytest.raises(ValueError, match="Illegal move"):
+        game.apply_move(state, move)  # type: ignore[arg-type]
+
+    assert state == game.initial_state()
+
+
+def test_successor_is_independent_of_original_state() -> None:
+    game = game_fixture()
+    original = game.initial_state()
+
+    first = game.apply_move(original, 0)
+    second = game.apply_move(original, 2)
+
+    assert original == game.initial_state()
+    assert first != second
+    assert first.cells is not original.cells
+    assert second.cells is not original.cells
