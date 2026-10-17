@@ -41,7 +41,7 @@ type Move = Place | Pass
 
 
 class Reversi:
-    """Reversi 6x6 model; gameplay rules follow in later milestones."""
+    """Immutable Reversi 6x6 game with captures, passes, and disc-count outcomes."""
 
     SIZE = 6
     CELL_COUNT = SIZE * SIZE
