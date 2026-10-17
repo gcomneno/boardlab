@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from boardlab.engine.game import Outcome
+
 
 class Player(Enum):
     """Reversi participants."""
@@ -112,6 +114,24 @@ class Reversi:
         return tuple(
             Place(cell) for cell in range(cls.CELL_COUNT) if cls._captures(state, cell, player)
         )
+
+    def outcome(self, state: State, player: Player) -> Outcome:
+        """Return the terminal disc-count result for a participant."""
+        self._validate(state)
+
+        if not isinstance(player, Player):
+            raise ValueError("Invalid player")
+
+        if not self.is_terminal(state):
+            raise ValueError("Outcome requires a terminal state")
+
+        owned = state.cells.count(player)
+        other = state.cells.count(self._opponent(player))
+
+        if owned == other:
+            return Outcome.DRAW
+
+        return Outcome.WIN if owned > other else Outcome.LOSS
 
     def is_terminal(self, state: State) -> bool:
         self._validate(state)
