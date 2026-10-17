@@ -1,6 +1,7 @@
 """Generic coordination of a manually played game."""
 
 from boardlab.engine.game import Game
+from boardlab.engine.strategy import Strategy
 
 
 class Match[StateT, MoveT, PlayerT]:
@@ -23,3 +24,14 @@ class Match[StateT, MoveT, PlayerT]:
         successor = self._game.apply_move(self._state, move)
         self._state = successor
         return successor
+
+    def play_strategy(
+        self,
+        strategy: Strategy[StateT, MoveT, PlayerT],
+    ) -> StateT:
+        """Select and apply a move, committing only a valid successor."""
+        if self._game.is_terminal(self._state):
+            raise ValueError("Cannot play from a terminal state")
+
+        move = strategy.choose_move(self._game, self._state)
+        return self.play(move)

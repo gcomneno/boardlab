@@ -71,3 +71,92 @@ def test_independent_matches_do_not_share_progress() -> None:
 
     assert first.state == State((Player.NORTH, None, None), Player.SOUTH)
     assert second.state == State((None, None, None), Player.NORTH)
+
+
+def test_play_strategy_advances_match() -> None:
+    from boardlab.engine.game import Game
+    from boardlab.games.three_stones import Player, State
+
+    class FirstLegalMove:
+        def choose_move(
+            self,
+            game: Game[State, int, Player],
+            state: State,
+        ) -> int:
+            return game.legal_moves(state)[0]
+
+    game = ThreeStones()
+    match = Match(game)
+    original = match.state
+
+    successor = match.play_strategy(FirstLegalMove())
+
+    assert successor == game.apply_move(original, 0)
+    assert match.state is successor
+
+
+def test_play_strategy_rejects_illegal_move_without_advancing() -> None:
+    from boardlab.engine.game import Game
+    from boardlab.games.three_stones import Player, State
+
+    class IllegalStrategy:
+        def choose_move(
+            self,
+            game: Game[State, int, Player],
+            state: State,
+        ) -> int:
+            return 99
+
+    match = Match(ThreeStones())
+    original = match.state
+
+    with pytest.raises(ValueError):
+        match.play_strategy(IllegalStrategy())
+
+    assert match.state is original
+
+
+def test_play_strategy_preserves_state_on_strategy_failure() -> None:
+    from boardlab.engine.game import Game
+    from boardlab.games.three_stones import Player, State
+
+    class FailingStrategy:
+        def choose_move(
+            self,
+            game: Game[State, int, Player],
+            state: State,
+        ) -> int:
+            raise RuntimeError("Strategy failure")
+
+    match = Match(ThreeStones())
+    original = match.state
+
+    with pytest.raises(RuntimeError, match="Strategy failure"):
+        match.play_strategy(FailingStrategy())
+
+    assert match.state is original
+
+
+def test_play_strategy_rejects_terminal_state_before_selection() -> None:
+    from boardlab.engine.game import Game
+    from boardlab.games.three_stones import Player, State
+
+    class NeverCalledStrategy:
+        def choose_move(
+            self,
+            game: Game[State, int, Player],
+            state: State,
+        ) -> int:
+            raise AssertionError("Strategy must not be called")
+
+    match = Match(ThreeStones())
+
+    for move in (0, 1, 2):
+        match.play(move)
+
+    terminal = match.state
+
+    with pytest.raises(ValueError, match="terminal"):
+        match.play_strategy(NeverCalledStrategy())
+
+    assert match.state is terminal
