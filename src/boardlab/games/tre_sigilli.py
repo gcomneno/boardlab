@@ -161,6 +161,11 @@ class TreSigilli:
         self._validate(successor)
         return successor
 
+    def territory_scores(self, state: State) -> tuple[int, int]:
+        """Return validated territorial scores for NORTH and SOUTH."""
+        self._validate(state)
+        return self._territory_scores(state)
+
     @staticmethod
     def _territory_scores(state: State) -> tuple[int, int]:
         """Score cells with strictly greater orthogonal influence."""

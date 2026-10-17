@@ -10,7 +10,10 @@ def evaluate_territory(
     player: Player,
 ) -> float:
     """Return territorial advantage from the requested player's perspective."""
-    north, south = TreSigilli._territory_scores(state)
+    if not isinstance(game, TreSigilli):
+        raise TypeError("Territorial evaluator requires TreSigilli")
+
+    north, south = game.territory_scores(state)
     difference = north - south
 
     return float(difference if player is Player.NORTH else -difference)

@@ -106,6 +106,7 @@ def test_scores_match_independent_oracle(
     state = board(6, north, south)
 
     assert game._territory_scores(state) == reference_scores(state)
+    assert game.territory_scores(state) == reference_scores(state)
 
 
 def test_reachable_block_is_scored_not_forfeited() -> None:
@@ -162,10 +163,27 @@ def test_outcome_rejects_invalid_state() -> None:
         game.outcome(invalid, Player.NORTH)
 
 
+def test_public_territory_scores_accepts_intermediate_state() -> None:
+    game = TreSigilli()
+    state = placements(0, 2)
+
+    assert not game.is_terminal(state)
+    assert game.territory_scores(state) == reference_scores(state)
+
+
+def test_public_territory_scores_rejects_invalid_state() -> None:
+    game = TreSigilli()
+    invalid = State((None,) * 16, 18)
+
+    with pytest.raises(ValueError, match="Invalid game state"):
+        game.territory_scores(invalid)
+
+
 def test_scoring_does_not_mutate_state() -> None:
     game = TreSigilli()
     state = board(18, (0, 2, 4), (5, 6, 8))
     before = state
 
     assert game._territory_scores(state) == reference_scores(state)
+    assert game.territory_scores(state) == reference_scores(state)
     assert state == before
