@@ -1,0 +1,1 @@
+"""Interchangeable game-independent strategies."""
