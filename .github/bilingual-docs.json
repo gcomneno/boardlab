@@ -4,6 +4,7 @@
     "translation_language": "it",
     "translation_suffix": ".it.md",
     "canonical_documents": [
+        "benchmarks/mcts-tre-sigilli.md",
         "docs/REPO-HYGIENE.md",
         "docs/games/tre-sigilli.md",
         "docs/learning-product-map.md",
