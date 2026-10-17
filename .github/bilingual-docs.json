@@ -6,6 +6,7 @@
     "canonical_documents": [
         "benchmarks/mcts-tre-sigilli.md",
         "docs/REPO-HYGIENE.md",
+        "docs/games/reversi.md",
         "docs/games/tre-sigilli.md",
         "docs/learning-product-map.md",
         "docs/progress.md",
