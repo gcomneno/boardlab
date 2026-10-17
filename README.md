@@ -62,6 +62,10 @@ examples/         esempi di utilizzo
 docs/             architettura, algoritmi e tutorial
 ```
 
+## Learning / Build / Ship
+
+La [mappa di apprendimento e prodotto](docs/learning-product-map.it.md) collega studio, implementazione e possibile pubblicazione mobile.
+
 ## Percorso didattico
 
 Il percorso di studio strutturato è disponibile in

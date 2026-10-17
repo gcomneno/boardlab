@@ -5,6 +5,7 @@
   "translation_suffix": ".it.md",
   "canonical_documents": [
     "docs/REPO-HYGIENE.md",
+    "docs/learning-product-map.md",
     "docs/progress.md",
     "sessions/README.md",
     "sessions/session-01-modeling-a-board-game/README.md",
