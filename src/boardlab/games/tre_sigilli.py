@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from boardlab.engine.game import Outcome
+
 
 class Player(Enum):
     """Participants in Tre Sigilli."""
@@ -158,3 +160,50 @@ class TreSigilli:
         successor = State(tuple(cells), state.turn + 1)
         self._validate(successor)
         return successor
+
+    @staticmethod
+    def _territory_scores(state: State) -> tuple[int, int]:
+        """Score cells with strictly greater orthogonal influence."""
+        north_score = 0
+        south_score = 0
+
+        for cell in range(16):
+            row, col = divmod(cell, 4)
+            influenced_by = [cell]
+
+            if row > 0:
+                influenced_by.append(cell - 4)
+            if row < 3:
+                influenced_by.append(cell + 4)
+            if col > 0:
+                influenced_by.append(cell - 1)
+            if col < 3:
+                influenced_by.append(cell + 1)
+
+            north = sum(state.cells[index] is Player.NORTH for index in influenced_by)
+            south = sum(state.cells[index] is Player.SOUTH for index in influenced_by)
+
+            if north > south:
+                north_score += 1
+            elif south > north:
+                south_score += 1
+
+        return north_score, south_score
+
+    def outcome(self, state: State, player: Player) -> Outcome:
+        """Return the terminal territorial result for a participant."""
+        self._validate(state)
+
+        if not isinstance(player, Player):
+            raise ValueError("Invalid player")
+
+        if not self.is_terminal(state):
+            raise ValueError("Outcome requires a terminal state")
+
+        north, south = self._territory_scores(state)
+
+        if north == south:
+            return Outcome.DRAW
+
+        winner = Player.NORTH if north > south else Player.SOUTH
+        return Outcome.WIN if player is winner else Outcome.LOSS
