@@ -31,3 +31,28 @@ jobs:
 
       - name: Validate repository
         run: scripts/check-repository.sh
+
+  kotlin-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install verified Kotlin compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=2.4.21
+          SHA256=7cc140e76daf416a0424a5557f99afd7ca89ebd463ea1101261e3e01c33e75cd
+          curl --fail --location --retry 3 \
+            "https://github.com/JetBrains/kotlin/releases/download/v${VERSION}/kotlin-compiler-${VERSION}.zip" \
+            --output kotlin-compiler.zip
+          echo "${SHA256}  kotlin-compiler.zip" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/kotlin"
+          unzip -q kotlin-compiler.zip -d "$RUNNER_TEMP/kotlin"
+          echo "$RUNNER_TEMP/kotlin/kotlinc/bin" >> "$GITHUB_PATH"
+          rm kotlin-compiler.zip
+      - name: Verify Kotlin domain parity
+        run: KOTLINC=kotlinc python3 scripts/check-kotlin-parity.py
