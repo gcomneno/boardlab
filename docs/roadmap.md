@@ -23,3 +23,9 @@ Studio di selezione, espansione, simulazione e backpropagation.
 ## Fase 5 — Scalabilità
 
 Introduzione di un gioco con spazio degli stati e meccaniche più articolate.
+
+## Estensione completata — Benchmark Reversi 6×6
+
+Implementazione di un protocollo riproducibile per confrontare Minimax, Alpha-Beta e MCTS su Reversi 6×6, con harness, test e risultati documentati.
+
+Completata tramite PR #7. Questa estensione non coincide con la proposta di distribuzione mobile descritta nella mappa LEARN/BUILD/SHIP.
