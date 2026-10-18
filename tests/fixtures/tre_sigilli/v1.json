@@ -1,0 +1,1439 @@
+{
+  "schema_version": 1,
+  "game": "tre_sigilli",
+  "cases": [
+    {
+      "id": "initial",
+      "state": {
+        "turn": 0,
+        "cells": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "active_player": "north",
+      "terminal": false,
+      "legal_moves": [
+        {
+          "type": "place",
+          "cell": 0
+        },
+        {
+          "type": "place",
+          "cell": 1
+        },
+        {
+          "type": "place",
+          "cell": 2
+        },
+        {
+          "type": "place",
+          "cell": 3
+        },
+        {
+          "type": "place",
+          "cell": 4
+        },
+        {
+          "type": "place",
+          "cell": 5
+        },
+        {
+          "type": "place",
+          "cell": 6
+        },
+        {
+          "type": "place",
+          "cell": 7
+        },
+        {
+          "type": "place",
+          "cell": 8
+        },
+        {
+          "type": "place",
+          "cell": 9
+        },
+        {
+          "type": "place",
+          "cell": 10
+        },
+        {
+          "type": "place",
+          "cell": 11
+        },
+        {
+          "type": "place",
+          "cell": 12
+        },
+        {
+          "type": "place",
+          "cell": 13
+        },
+        {
+          "type": "place",
+          "cell": 14
+        },
+        {
+          "type": "place",
+          "cell": 15
+        }
+      ],
+      "territory_scores": {
+        "north": 0,
+        "south": 0
+      },
+      "outcomes": null,
+      "ai_depth_2_move": {
+        "type": "place",
+        "cell": 5
+      },
+      "transitions": [
+        {
+          "move": {
+            "type": "place",
+            "cell": 0
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 1
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 2
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 3
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 4
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 5
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 6
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 7
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 8
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 9
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 10
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 11
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 12
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 13
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 14
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              null
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 15
+          },
+          "next_state": {
+            "turn": 1,
+            "cells": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north"
+            ]
+          }
+        }
+      ],
+      "invalid_moves": [
+        {
+          "move": {
+            "type": "place",
+            "cell": 16
+          },
+          "error": "illegal_move"
+        }
+      ]
+    },
+    {
+      "id": "placement",
+      "state": {
+        "turn": 3,
+        "cells": [
+          "north",
+          null,
+          "north",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "south"
+        ]
+      },
+      "active_player": "south",
+      "terminal": false,
+      "legal_moves": [
+        {
+          "type": "place",
+          "cell": 1
+        },
+        {
+          "type": "place",
+          "cell": 3
+        },
+        {
+          "type": "place",
+          "cell": 4
+        },
+        {
+          "type": "place",
+          "cell": 5
+        },
+        {
+          "type": "place",
+          "cell": 6
+        },
+        {
+          "type": "place",
+          "cell": 7
+        },
+        {
+          "type": "place",
+          "cell": 8
+        },
+        {
+          "type": "place",
+          "cell": 9
+        },
+        {
+          "type": "place",
+          "cell": 10
+        },
+        {
+          "type": "place",
+          "cell": 11
+        },
+        {
+          "type": "place",
+          "cell": 12
+        },
+        {
+          "type": "place",
+          "cell": 13
+        },
+        {
+          "type": "place",
+          "cell": 14
+        }
+      ],
+      "territory_scores": {
+        "north": 6,
+        "south": 3
+      },
+      "outcomes": null,
+      "ai_depth_2_move": {
+        "type": "place",
+        "cell": 9
+      },
+      "transitions": [
+        {
+          "move": {
+            "type": "place",
+            "cell": 1
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              "south",
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 3
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              "south",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 4
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              "south",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 5
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              "south",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 6
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 7
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 8
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 9
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 10
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 11
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 12
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 13
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "place",
+            "cell": 14
+          },
+          "next_state": {
+            "turn": 4,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              "south"
+            ]
+          }
+        }
+      ],
+      "invalid_moves": [
+        {
+          "move": {
+            "type": "place",
+            "cell": 16
+          },
+          "error": "illegal_move"
+        }
+      ]
+    },
+    {
+      "id": "maneuver",
+      "state": {
+        "turn": 6,
+        "cells": [
+          "north",
+          null,
+          "north",
+          null,
+          null,
+          "north",
+          null,
+          null,
+          null,
+          null,
+          "south",
+          null,
+          null,
+          "south",
+          null,
+          "south"
+        ]
+      },
+      "active_player": "north",
+      "terminal": false,
+      "legal_moves": [
+        {
+          "type": "slide",
+          "origin": 0,
+          "destination": 1
+        },
+        {
+          "type": "slide",
+          "origin": 0,
+          "destination": 4
+        },
+        {
+          "type": "slide",
+          "origin": 2,
+          "destination": 1
+        },
+        {
+          "type": "slide",
+          "origin": 2,
+          "destination": 3
+        },
+        {
+          "type": "slide",
+          "origin": 2,
+          "destination": 6
+        },
+        {
+          "type": "slide",
+          "origin": 5,
+          "destination": 1
+        },
+        {
+          "type": "slide",
+          "origin": 5,
+          "destination": 4
+        },
+        {
+          "type": "slide",
+          "origin": 5,
+          "destination": 6
+        },
+        {
+          "type": "slide",
+          "origin": 5,
+          "destination": 9
+        }
+      ],
+      "territory_scores": {
+        "north": 7,
+        "south": 7
+      },
+      "outcomes": null,
+      "ai_depth_2_move": {
+        "type": "slide",
+        "origin": 0,
+        "destination": 4
+      },
+      "transitions": [
+        {
+          "move": {
+            "type": "slide",
+            "origin": 0,
+            "destination": 1
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              null,
+              "north",
+              "north",
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "slide",
+            "origin": 0,
+            "destination": 4
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              null,
+              null,
+              "north",
+              null,
+              "north",
+              "north",
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "slide",
+            "origin": 2,
+            "destination": 1
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              "north",
+              "north",
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "slide",
+            "origin": 2,
+            "destination": 3
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              "north",
+              null,
+              null,
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "slide",
+            "origin": 2,
+            "destination": 6
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              "north",
+              null,
+              null,
+              null,
+              null,
+              "north",
+              "north",
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "slide",
+            "origin": 5,
+            "destination": 1
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              "north",
+              "north",
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "slide",
+            "origin": 5,
+            "destination": 4
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "slide",
+            "origin": 5,
+            "destination": 6
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              "north",
+              null,
+              null,
+              null,
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        },
+        {
+          "move": {
+            "type": "slide",
+            "origin": 5,
+            "destination": 9
+          },
+          "next_state": {
+            "turn": 7,
+            "cells": [
+              "north",
+              null,
+              "north",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "north",
+              "south",
+              null,
+              null,
+              "south",
+              null,
+              "south"
+            ]
+          }
+        }
+      ],
+      "invalid_moves": [
+        {
+          "move": {
+            "type": "place",
+            "cell": 16
+          },
+          "error": "illegal_move"
+        }
+      ]
+    },
+    {
+      "id": "turn_limit",
+      "state": {
+        "turn": 18,
+        "cells": [
+          "north",
+          null,
+          "north",
+          null,
+          null,
+          "north",
+          null,
+          "south",
+          null,
+          null,
+          null,
+          null,
+          null,
+          "south",
+          null,
+          "south"
+        ]
+      },
+      "active_player": null,
+      "terminal": true,
+      "legal_moves": [],
+      "territory_scores": {
+        "north": 6,
+        "south": 6
+      },
+      "outcomes": {
+        "north": "draw",
+        "south": "draw"
+      },
+      "ai_depth_2_move": null,
+      "transitions": [],
+      "invalid_moves": [
+        {
+          "move": {
+            "type": "place",
+            "cell": 16
+          },
+          "error": "illegal_move"
+        }
+      ]
+    },
+    {
+      "id": "early_immobilization",
+      "state": {
+        "turn": 6,
+        "cells": [
+          "north",
+          "north",
+          "south",
+          null,
+          "north",
+          "south",
+          null,
+          null,
+          "south",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "active_player": null,
+      "terminal": true,
+      "legal_moves": [],
+      "territory_scores": {
+        "north": 2,
+        "south": 4
+      },
+      "outcomes": {
+        "north": "loss",
+        "south": "win"
+      },
+      "ai_depth_2_move": null,
+      "transitions": [],
+      "invalid_moves": [
+        {
+          "move": {
+            "type": "place",
+            "cell": 16
+          },
+          "error": "illegal_move"
+        }
+      ]
+    }
+  ]
+}
