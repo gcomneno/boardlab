@@ -1,51 +1,90 @@
-# BoardLab — Lessons Learned
+# BoardLab — Architectural Lessons Learned
 
 [English](README.md) | [Italiano](README.it.md)
 
 ## Purpose
 
-This directory preserves engineering lessons demonstrated during BoardLab's
-Python engine, Kotlin parity, Android application, and CI development.
+This collection captures reusable architecture and software-design decisions
+demonstrated by BoardLab. It is a source for future, individually qualified
+LeLe Manager entries, not a knowledge vault or a record of completed study.
 
-These are project retrospectives, not completed learner exercises.
+## Architectural lessons
 
-## Lessons
+### 1. Behavioral contracts can bridge independent implementations
 
-1. **Evidence before implementation.** Inspect the repository, establish
-   constraints, and define observable PASS/FAIL gates before changing code.
-2. **Separate domain and presentation.** Game rules and state transitions
-   must remain independent of the CLI, Android UI, and platform lifecycle.
-3. **Use executable parity contracts.** Shared fixtures and transition
-   expectations are more reliable than visually comparing implementations.
-4. **Keep strategies interchangeable.** Deterministic baselines, explicit
-   budgets, and reproducible benchmarks enable meaningful AI comparisons.
-5. **Validate progressively.** Static checks, unit tests, parity checks,
-   platform builds, CI artifacts, and real-device testing answer different
-   questions; none replaces the others.
-6. **Treat CI artifacts as evidence.** Check archive integrity, application
-   metadata, signing status, and provenance rather than trusting a green job.
-7. **Distinguish debug from release.** A successful debug APK does not prove
-   release readiness. Release Lint and unsigned release packaging require
-   independent validation.
-8. **Do not bypass safety checks to make builds pass.** A missing offline
-   dependency is not evidence of defective source code. Diagnose dependency
-   resolution before disabling release checks.
-9. **Preserve project boundaries.** Keep SDKs, build outputs, private study
-   sources, and publication-safe documentation in their appropriate places.
-10. **Distinguish demonstrated from planned.** A successful real-device match
-    demonstrates basic usability, not production readiness, accessibility,
-    release signing, or comprehensive lifecycle testing.
+- **Problem:** A Python engine and a native Kotlin application must implement
+  the same game semantics without sharing runtime code.
+- **Trade-off:** Independent implementations duplicate domain logic, but avoid
+  embedding Python in Android or coupling the native application to the CLI.
+- **Decision:** Keep Python canonical and specify versioned, executable parity
+  fixtures covering states, legal actions, transitions and outcomes.
+- **Evidence:** [Android parity ADR](../architecture/adr/0002-android-parity.md);
+  Kotlin domain parity and its CI checks.
+- **Reusable when:** Migrating a domain across languages or platforms while
+  preserving observable behavior.
+
+### 2. Keep the functional domain independent of delivery mechanisms
+
+- **Problem:** Game rules must work in the CLI, strategy evaluation and Android
+  without depending on interface state or platform lifecycle.
+- **Trade-off:** Explicit boundaries add coordination code but prevent UI
+  concerns from contaminating domain invariants.
+- **Decision:** Separate immutable game state and deterministic transitions
+  from match coordination, the Kotlin controller and Jetpack Compose.
+- **Evidence:** [Tre Sigilli contract](../games/tre-sigilli.md);
+  platform-independent Kotlin GameController and Android application.
+- **Reusable when:** The same domain needs multiple frontends, adapters or
+  execution environments.
+
+### 3. Stable abstractions let new games reuse existing algorithms
+
+- **Problem:** Adding a second game could require rewriting match coordination
+  and every AI strategy.
+- **Trade-off:** A generic game contract constrains implementations but makes
+  strategy and orchestration reuse testable.
+- **Decision:** Implement Tre Sigilli and Reversi behind the same game contract;
+  retain interchangeable Random, Minimax, Alpha-Beta and MCTS strategies.
+- **Evidence:** [Reversi contract](../games/reversi.md);
+  generic strategy compatibility and integration tests.
+- **Reusable when:** Building extensible engines, rule systems or pluggable
+  decision algorithms.
+
+### 4. Determinism is an architectural capability, not only a test trick
+
+- **Problem:** Search strategies and cross-language behavior are difficult to
+  compare when outcomes depend on uncontrolled randomness or ordering.
+- **Trade-off:** Explicit seeds, budgets and tie-breaking constrain execution
+  but make results explainable and reproducible.
+- **Decision:** Define deterministic legal-action ordering and transition
+  contracts; use seeded tests and reproducible strategy benchmarks.
+- **Evidence:** [Tre Sigilli rules](../games/tre-sigilli.md);
+  [Reversi rules](../games/reversi.md) and benchmark documentation.
+- **Reusable when:** Debugging algorithms, comparing implementations or
+  validating regressions across environments.
+
+### 5. Architecture boundaries should have executable evidence
+
+- **Problem:** Diagrams and architectural intentions can drift from the
+  behavior actually shipped.
+- **Trade-off:** Contract fixtures and separate CI gates require maintenance,
+  but reveal violations at the boundary where they matter.
+- **Decision:** Validate Python semantics, Kotlin parity, Android debug builds
+  and unsigned release builds independently; inspect release artifacts rather
+  than treating CI success as proof of production readiness.
+- **Evidence:** [Android parity ADR](../architecture/adr/0002-android-parity.md);
+  SHIP-M2 through SHIP-M7 CI milestones and real-device validation.
+- **Reusable when:** An architecture spans runtimes, platforms or release
+  pipelines with distinct failure modes.
 
 ## Verified milestones
 
-- Python engine and strategy validation.
+- Python game engine and reusable strategy implementations.
 - Kotlin domain parity and platform-independent game controller.
-- Android Compose application and successful real-device match.
-- GitHub Actions debug APK and unsigned release APK.
-- Release Lint and unsigned APK verification.
+- Android Compose application tested in a complete real-device match.
+- CI-produced debug and unsigned release APKs; release Lint executed.
 
 ## Remaining production gates
 
 Automated Android tests, release signing and key management, lifecycle and
-accessibility validation, distribution policy, and publication readiness
-remain separate future work.
+accessibility validation, distribution policy and publication readiness
+remain future work. These lessons do not establish production readiness.
