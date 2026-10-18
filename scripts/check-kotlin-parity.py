@@ -87,6 +87,7 @@ def main():
     sources = [
         KOTLIN / "main/kotlin/boardlab/tre_sigilli/Model.kt",
         KOTLIN / "main/kotlin/boardlab/tre_sigilli/Rules.kt",
+        KOTLIN / "main/kotlin/boardlab/tre_sigilli/GameController.kt",
         KOTLIN / "test/kotlin/boardlab/tre_sigilli/ParityTest.kt",
     ]
 
@@ -117,7 +118,26 @@ def main():
             check=True,
         )
 
+        controller_test = KOTLIN / "test/kotlin/boardlab/tre_sigilli/GameControllerTest.kt"
+        controller_jar = directory / "controller-test.jar"
+        subprocess.run(
+            [
+                str(compiler),
+                *(
+                    str(KOTLIN / f"main/kotlin/boardlab/tre_sigilli/{name}")
+                    for name in ("Model.kt", "Rules.kt", "GameController.kt")
+                ),
+                str(controller_test),
+                "-include-runtime",
+                "-d",
+                str(controller_jar),
+            ],
+            check=True,
+        )
+        subprocess.run(["java", "-jar", str(controller_jar)], check=True)
+
     print("KOTLIN_REPRODUCIBLE_PARITY=PASS", flush=True)
+    print("KOTLIN_CONTROLLER_CI=PASS", flush=True)
 
 
 if __name__ == "__main__":
