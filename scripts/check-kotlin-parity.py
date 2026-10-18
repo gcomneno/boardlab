@@ -3,6 +3,7 @@
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -73,9 +74,11 @@ def export_cases(data, directory):
 
 
 def main():
-    compiler = Path(os.environ.get("KOTLINC", str(DEFAULT_COMPILER)))
-    if not compiler.is_file():
-        raise SystemExit(f"KOTLIN_COMPILER_MISSING={compiler}")
+    requested = os.environ.get("KOTLINC", str(DEFAULT_COMPILER))
+    resolved = shutil.which(requested)
+    if resolved is None:
+        raise SystemExit(f"KOTLIN_COMPILER_MISSING={requested}")
+    compiler = Path(resolved)
 
     data = json.loads(FIXTURE.read_text())
     if data["schema_version"] != 1 or data["game"] != "tre_sigilli":
