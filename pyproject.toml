@@ -47,6 +47,7 @@ strict = true
 files = ["src", "tests"]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["tests"]
 addopts = [
     "-ra",
