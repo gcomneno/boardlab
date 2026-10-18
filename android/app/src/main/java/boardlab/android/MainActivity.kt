@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import boardlab.tre_sigilli.GameController
 import boardlab.tre_sigilli.GameScreenState
@@ -104,6 +105,7 @@ private fun Board(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
+                            .testTag("board_cell_$cell")
                             .background(background)
                             .clickable { onTap(cell) },
                         horizontalAlignment = Alignment.CenterHorizontally,
