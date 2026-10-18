@@ -1,6 +1,6 @@
 # ADR 0002 — Android behavioral parity contract
 
-- Status: accepted for Kotlin domain parity (SHIP-M2); Android UI decision pending
+- Status: accepted for Kotlin domain parity (SHIP-M2) and Jetpack Compose UI (SHIP-M4)
 - Scope: BoardLab SHIP-M1
 - Target: Tre Sigilli, Android mobile-first
 
@@ -21,7 +21,7 @@ Python laboratory.
 - Keep Android UI separate from game rules and AI logic.
 - Avoid introducing Android dependencies into the Python core.
 
-Kotlin domain parity was explicitly approved for SHIP-M2. Jetpack Compose and the Android application architecture remain unapproved candidates.
+Kotlin domain parity was approved for SHIP-M2. Jetpack Compose with a separate Kotlin GameController was explicitly approved for SHIP-M4. Python remains canonical.
 
 ## Versioned parity contract
 
