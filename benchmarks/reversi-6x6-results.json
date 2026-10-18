@@ -1,0 +1,366 @@
+{
+  "experiment": "reversi-6x6",
+  "protocol": "benchmarks/reversi-6x6.md",
+  "source_commit": "3296607",
+  "recorded_at_utc": "2026-10-18T06:10:50.558950+00:00",
+  "configuration": {
+    "baseline": "random",
+    "candidates": [
+      "minimax",
+      "alpha_beta",
+      "mcts"
+    ],
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "roles": [
+      "BLACK",
+      "WHITE"
+    ],
+    "depth": 2,
+    "simulations": 32
+  },
+  "summary": {
+    "minimax": {
+      "matches": 10,
+      "wins": 7,
+      "draws": 0,
+      "losses": 3,
+      "total_actions": 331,
+      "total_elapsed_seconds": 0.5521849329995803,
+      "total_nodes_visited": 4668,
+      "total_evaluated_leaves": 3778
+    },
+    "alpha_beta": {
+      "matches": 10,
+      "wins": 7,
+      "draws": 0,
+      "losses": 3,
+      "total_actions": 331,
+      "total_elapsed_seconds": 0.3809024139995927,
+      "total_nodes_visited": 2929,
+      "total_evaluated_leaves": 2039
+    },
+    "mcts": {
+      "matches": 10,
+      "wins": 10,
+      "draws": 0,
+      "losses": 0,
+      "total_actions": 330,
+      "total_elapsed_seconds": 8.979303243999766,
+      "total_nodes_visited": null,
+      "total_evaluated_leaves": null
+    }
+  },
+  "matches": [
+    {
+      "candidate": "minimax",
+      "seed": 0,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 33,
+      "elapsed_seconds": 0.05557416999999987,
+      "nodes_visited": 421,
+      "evaluated_leaves": 326
+    },
+    {
+      "candidate": "minimax",
+      "seed": 0,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 30,
+      "elapsed_seconds": 0.055901339000001826,
+      "nodes_visited": 461,
+      "evaluated_leaves": 373
+    },
+    {
+      "candidate": "minimax",
+      "seed": 1,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 35,
+      "elapsed_seconds": 0.06527070100014498,
+      "nodes_visited": 576,
+      "evaluated_leaves": 464
+    },
+    {
+      "candidate": "minimax",
+      "seed": 1,
+      "candidate_player": "WHITE",
+      "outcome": "LOSS",
+      "actions": 33,
+      "elapsed_seconds": 0.06016573800002334,
+      "nodes_visited": 485,
+      "evaluated_leaves": 398
+    },
+    {
+      "candidate": "minimax",
+      "seed": 2,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 33,
+      "elapsed_seconds": 0.04584020499987673,
+      "nodes_visited": 380,
+      "evaluated_leaves": 300
+    },
+    {
+      "candidate": "minimax",
+      "seed": 2,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 32,
+      "elapsed_seconds": 0.06006200899992109,
+      "nodes_visited": 534,
+      "evaluated_leaves": 444
+    },
+    {
+      "candidate": "minimax",
+      "seed": 3,
+      "candidate_player": "BLACK",
+      "outcome": "LOSS",
+      "actions": 34,
+      "elapsed_seconds": 0.05000467399986519,
+      "nodes_visited": 425,
+      "evaluated_leaves": 342
+    },
+    {
+      "candidate": "minimax",
+      "seed": 3,
+      "candidate_player": "WHITE",
+      "outcome": "LOSS",
+      "actions": 35,
+      "elapsed_seconds": 0.045979739999893354,
+      "nodes_visited": 395,
+      "evaluated_leaves": 313
+    },
+    {
+      "candidate": "minimax",
+      "seed": 4,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 32,
+      "elapsed_seconds": 0.05126715799997328,
+      "nodes_visited": 456,
+      "evaluated_leaves": 376
+    },
+    {
+      "candidate": "minimax",
+      "seed": 4,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 34,
+      "elapsed_seconds": 0.06211919899988061,
+      "nodes_visited": 535,
+      "evaluated_leaves": 442
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 0,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 33,
+      "elapsed_seconds": 0.036462966000044617,
+      "nodes_visited": 262,
+      "evaluated_leaves": 167
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 0,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 30,
+      "elapsed_seconds": 0.040513250999993033,
+      "nodes_visited": 306,
+      "evaluated_leaves": 218
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 1,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 35,
+      "elapsed_seconds": 0.042992795999907685,
+      "nodes_visited": 341,
+      "evaluated_leaves": 229
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 1,
+      "candidate_player": "WHITE",
+      "outcome": "LOSS",
+      "actions": 33,
+      "elapsed_seconds": 0.03833811599997716,
+      "nodes_visited": 300,
+      "evaluated_leaves": 213
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 2,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 33,
+      "elapsed_seconds": 0.03512039999986882,
+      "nodes_visited": 275,
+      "evaluated_leaves": 195
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 2,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 32,
+      "elapsed_seconds": 0.042404082999837556,
+      "nodes_visited": 343,
+      "evaluated_leaves": 253
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 3,
+      "candidate_player": "BLACK",
+      "outcome": "LOSS",
+      "actions": 34,
+      "elapsed_seconds": 0.03385760500009383,
+      "nodes_visited": 244,
+      "evaluated_leaves": 161
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 3,
+      "candidate_player": "WHITE",
+      "outcome": "LOSS",
+      "actions": 35,
+      "elapsed_seconds": 0.03361621799990644,
+      "nodes_visited": 259,
+      "evaluated_leaves": 177
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 4,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 32,
+      "elapsed_seconds": 0.03556542299998,
+      "nodes_visited": 280,
+      "evaluated_leaves": 200
+    },
+    {
+      "candidate": "alpha_beta",
+      "seed": 4,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 34,
+      "elapsed_seconds": 0.04203155599998354,
+      "nodes_visited": 319,
+      "evaluated_leaves": 226
+    },
+    {
+      "candidate": "mcts",
+      "seed": 0,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 33,
+      "elapsed_seconds": 0.9300672350000241,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 0,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 35,
+      "elapsed_seconds": 0.9126619699998173,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 1,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 32,
+      "elapsed_seconds": 0.9163093220001883,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 1,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 34,
+      "elapsed_seconds": 0.895403098000088,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 2,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 33,
+      "elapsed_seconds": 0.9116460489999554,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 2,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 32,
+      "elapsed_seconds": 0.8399782689998574,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 3,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 32,
+      "elapsed_seconds": 0.9246802029999799,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 3,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 32,
+      "elapsed_seconds": 0.8639295739999397,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 4,
+      "candidate_player": "BLACK",
+      "outcome": "WIN",
+      "actions": 33,
+      "elapsed_seconds": 0.9191449750001084,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    },
+    {
+      "candidate": "mcts",
+      "seed": 4,
+      "candidate_player": "WHITE",
+      "outcome": "WIN",
+      "actions": 34,
+      "elapsed_seconds": 0.8654825489998075,
+      "nodes_visited": null,
+      "evaluated_leaves": null
+    }
+  ],
+  "notes": [
+    "Elapsed time is observational and not deterministic.",
+    "MCTS simulations are not equivalent to minimax/alpha-beta visited nodes.",
+    "All outcomes are from the candidate perspective."
+  ]
+}

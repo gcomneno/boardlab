@@ -5,6 +5,7 @@
     "translation_suffix": ".it.md",
     "canonical_documents": [
         "benchmarks/mcts-tre-sigilli.md",
+        "benchmarks/reversi-6x6-results.md",
         "benchmarks/reversi-6x6.md",
         "docs/REPO-HYGIENE.md",
         "docs/games/reversi.md",
