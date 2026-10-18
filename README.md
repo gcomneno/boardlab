@@ -83,8 +83,20 @@ separatamente in [Progresso didattico](docs/progress.it.md).
 
 ## Stato
 
-Il progetto è nella fase iniziale di definizione del dominio.
+BoardLab dispone di un motore Python generico, dei giochi Tre Sigilli
+e Reversi 6×6 e delle strategie Random, Minimax, Alpha-Beta e MCTS.
+I benchmark Reversi sono riproducibili e documentati.
 
-Nessun algoritmo è ancora stato implementato.
+Per Tre Sigilli sono disponibili contratti di parità Python/Kotlin,
+un controller Kotlin indipendente dalla piattaforma e un'app Android
+Jetpack Compose verificata in una partita completa su dispositivo reale.
+La CI produce APK debug e release unsigned; la firma e la pubblicazione
+non sono state completate.
 
-Consulta [la panoramica architetturale](docs/architecture/overview.md).
+Lo sviluppo software (BUILD), il progresso didattico (LEARN) e la
+validazione di prodotto (SHIP) sono tracciati separatamente.
+La Sessione 01 è preparata, ma non risulta studiata.
+
+Consulta la [roadmap](docs/roadmap.md), la
+[mappa LEARN/BUILD/SHIP](docs/learning-product-map.it.md) e le
+[lezioni architetturali](docs/lessons-learned/README.it.md).
