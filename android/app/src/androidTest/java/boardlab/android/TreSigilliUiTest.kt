@@ -1,6 +1,10 @@
 package boardlab.android
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -120,6 +124,57 @@ class TreSigilliUiTest {
         compose.onNodeWithText("Territorio · Nord: 0 · Sud: 0")
             .assertIsDisplayed()
         assertEmptyBoard()
+    }
+
+    @Test
+    fun contextualInstructionsAndLegalHighlights() {
+        compose.onNodeWithText(
+            "Piazza un sigillo in una casella verde"
+        ).assertIsDisplayed()
+
+        assertCellColor(0, Color(0xFFA5D6A7))
+
+        for (cell in 0..5) {
+            compose.onNodeWithTag("board_cell_$cell").performClick()
+        }
+
+        compose.onNodeWithText(
+            "Seleziona un tuo sigillo evidenziato"
+        ).assertIsDisplayed()
+
+        // NORTH owns 0, 2, 4. After six placements,
+        // origin 4 can slide to cell 8.
+        assertCellColor(4, Color(0xFFA5D6A7))
+
+        compose.onNodeWithTag("board_cell_4").performClick()
+
+        compose.onNodeWithText(
+            "Scegli una destinazione verde"
+        ).assertIsDisplayed()
+
+        assertCellColor(4, Color(0xFFFFD54F))
+        assertCellColor(8, Color(0xFFA5D6A7))
+
+        compose.onNodeWithTag("board_cell_8").performClick()
+
+        compose.onNodeWithText("Turno 8 · Sud").assertIsDisplayed()
+        compose.onNodeWithText(
+            "Seleziona un tuo sigillo evidenziato"
+        ).assertIsDisplayed()
+    }
+
+    private fun assertCellColor(cell: Int, expected: Color) {
+        val image = compose.onNodeWithTag("board_cell_$cell")
+            .captureToImage()
+        val bitmap = image.asAndroidBitmap()
+        // Sample inside the background, away from the centered glyph.
+        val actual = bitmap.getPixel(
+            bitmap.width / 8,
+            bitmap.height / 8,
+        )
+        check(actual == expected.toArgb()) {
+            "Cell $cell color: expected=${expected.toArgb()} actual=$actual"
+        }
     }
 
     private fun assertEmptyBoard() {
