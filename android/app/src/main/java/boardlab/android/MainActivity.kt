@@ -53,6 +53,7 @@ class MainActivity : ComponentActivity() {
 fun TreSigilliScreen() {
     val controller = remember { GameController() }
     var screen by remember { mutableStateOf(controller.screen) }
+    var mode by remember { mutableStateOf(controller.mode) }
     val score = territoryScore(screen.game)
     val outcome = gameOutcome(screen.game)
 
@@ -67,7 +68,7 @@ fun TreSigilliScreen() {
         Text("Tre Sigilli", style = MaterialTheme.typography.headlineMedium)
 
         Text(
-            if (controller.mode == GameMode.HUMAN_VS_ANDROID) {
+            if (mode == GameMode.HUMAN_VS_ANDROID) {
                 "Modalità: Contro Android"
             } else {
                 "Modalità: Due giocatori"
@@ -78,6 +79,7 @@ fun TreSigilliScreen() {
             Button(
                 onClick = {
                     controller.newGame(GameMode.HUMAN_VS_ANDROID)
+                    mode = controller.mode
                     screen = controller.screen
                 },
             ) {
@@ -86,6 +88,7 @@ fun TreSigilliScreen() {
             Button(
                 onClick = {
                     controller.newGame(GameMode.LOCAL_TWO_PLAYERS)
+                    mode = controller.mode
                     screen = controller.screen
                 },
             ) {
