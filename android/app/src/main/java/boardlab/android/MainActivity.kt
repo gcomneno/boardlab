@@ -27,6 +27,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import boardlab.tre_sigilli.GameController
 import boardlab.tre_sigilli.GameScreenState
+import boardlab.tre_sigilli.GameOutcome
+import boardlab.tre_sigilli.gameOutcome
+import boardlab.tre_sigilli.territoryScore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +48,8 @@ class MainActivity : ComponentActivity() {
 fun TreSigilliScreen() {
     val controller = remember { GameController() }
     var screen by remember { mutableStateOf(controller.screen) }
+    val score = territoryScore(screen.game)
+    val outcome = gameOutcome(screen.game)
 
     Column(
         modifier = Modifier.padding(20.dp),
@@ -53,12 +58,28 @@ fun TreSigilliScreen() {
     ) {
         Text("Tre Sigilli", style = MaterialTheme.typography.headlineMedium)
 
-        if (screen.legalMoves.isEmpty()) {
+        if (outcome != null) {
             Text("Partita terminata")
+            Text(
+                when (outcome) {
+                    GameOutcome.NORTH_WINS -> "Vince Nord"
+                    GameOutcome.SOUTH_WINS -> "Vince Sud"
+                    GameOutcome.DRAW -> "Pareggio"
+                },
+            )
         } else {
             val player = if (screen.game.turn % 2 == 0) "Nord" else "Sud"
             Text("Turno ${screen.game.turn + 1} · $player")
+            Text(
+                if (screen.game.turn < 6) {
+                    "Fase: piazzamento"
+                } else {
+                    "Fase: manovra"
+                },
+            )
         }
+
+        Text("Territorio · Nord: ${score.north} · Sud: ${score.south}")
 
         Board(
             screen = screen,
