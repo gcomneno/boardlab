@@ -26,8 +26,9 @@ jobs:
           java-version: '21'
 
       - name: Set up Android SDK 36
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
+          cmdline-tools-version: '12266719'
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Enable KVM
@@ -121,8 +122,9 @@ jobs:
           java-version: '21'
 
       - name: Set up Android SDK 36
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
+          cmdline-tools-version: '12266719'
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Build debug APK
@@ -153,8 +155,9 @@ jobs:
           java-version: '21'
 
       - name: Set up Android SDK 36
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
+          cmdline-tools-version: '12266719'
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Build unsigned release APK
