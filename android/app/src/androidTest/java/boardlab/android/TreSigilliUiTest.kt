@@ -13,6 +13,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import boardlab.tre_sigilli.GameOutcome
 import boardlab.tre_sigilli.Move
@@ -34,7 +35,7 @@ class TreSigilliUiTest {
 
     @Test
     fun firstMoveAdvancesTurnAndNewGameResetsBoard() {
-        compose.onNodeWithText("Tre Sigilli").assertIsDisplayed()
+        compose.onNodeWithText("Tre Sigilli").performScrollTo().assertIsDisplayed()
         compose.onAllNodes(
             SemanticsMatcher("board cell tag") { node ->
                 node.config.contains(SemanticsProperties.TestTag) &&
@@ -42,38 +43,38 @@ class TreSigilliUiTest {
             },
         ).assertCountEquals(16)
         assertEmptyBoard()
-        compose.onNodeWithText("Turno 1 · Nord").assertIsDisplayed()
-        compose.onNodeWithText("Fase: piazzamento").assertIsDisplayed()
+        compose.onNodeWithText("Turno 1 · Nord").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Fase: piazzamento").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Territorio · Nord: 0 · Sud: 0")
-            .assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
 
-        compose.onNodeWithTag("board_cell_0").performClick()
+        compose.onNodeWithTag("board_cell_0").performScrollTo().performClick()
 
         compose.onNodeWithTag("board_cell_0").assertTextEquals("N")
         for (cell in 1..15) {
             compose.onNodeWithTag("board_cell_$cell").assertTextEquals("·")
         }
-        compose.onNodeWithText("Turno 2 · Sud").assertIsDisplayed()
+        compose.onNodeWithText("Turno 2 · Sud").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Territorio · Nord: 3 · Sud: 0")
-            .assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
 
-        compose.onNodeWithText("Nuova partita").performClick()
+        compose.onNodeWithText("Nuova partita").performScrollTo().performClick()
 
-        compose.onNodeWithText("Turno 1 · Nord").assertIsDisplayed()
-        compose.onNodeWithText("Fase: piazzamento").assertIsDisplayed()
+        compose.onNodeWithText("Turno 1 · Nord").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Fase: piazzamento").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Territorio · Nord: 0 · Sud: 0")
-            .assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
         assertEmptyBoard()
     }
 
     @Test
     fun sixPlacementsTransitionToManeuverPhase() {
         for (cell in 0..5) {
-            compose.onNodeWithTag("board_cell_$cell").performClick()
+            compose.onNodeWithTag("board_cell_$cell").performScrollTo().performClick()
         }
 
-        compose.onNodeWithText("Turno 7 · Nord").assertIsDisplayed()
-        compose.onNodeWithText("Fase: manovra").assertIsDisplayed()
+        compose.onNodeWithText("Turno 7 · Nord").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Fase: manovra").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -89,13 +90,13 @@ class TreSigilliUiTest {
             when (move) {
                 is Place -> {
                     compose.onNodeWithTag("board_cell_${move.cell}")
-                        .performClick()
+                        .performScrollTo().performClick()
                 }
                 is Slide -> {
                     compose.onNodeWithTag("board_cell_${move.origin}")
-                        .performClick()
+                        .performScrollTo().performClick()
                     compose.onNodeWithTag("board_cell_${move.destination}")
-                        .performClick()
+                        .performScrollTo().performClick()
                 }
             }
 
@@ -105,7 +106,7 @@ class TreSigilliUiTest {
             val score = territoryScore(state)
             compose.onNodeWithText(
                 "Territorio · Nord: ${score.north} · Sud: ${score.south}"
-            ).assertIsDisplayed()
+            ).performScrollTo().assertIsDisplayed()
         }
 
         val outcome = checkNotNull(gameOutcome(state))
@@ -115,14 +116,14 @@ class TreSigilliUiTest {
             GameOutcome.DRAW -> "Pareggio"
         }
 
-        compose.onNodeWithText("Partita terminata").assertIsDisplayed()
-        compose.onNodeWithText(expectedLabel).assertIsDisplayed()
+        compose.onNodeWithText("Partita terminata").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(expectedLabel).performScrollTo().assertIsDisplayed()
 
-        compose.onNodeWithText("Nuova partita").performClick()
+        compose.onNodeWithText("Nuova partita").performScrollTo().performClick()
 
-        compose.onNodeWithText("Turno 1 · Nord").assertIsDisplayed()
+        compose.onNodeWithText("Turno 1 · Nord").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Territorio · Nord: 0 · Sud: 0")
-            .assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
         assertEmptyBoard()
     }
 
@@ -130,41 +131,42 @@ class TreSigilliUiTest {
     fun contextualInstructionsAndLegalHighlights() {
         compose.onNodeWithText(
             "Piazza un sigillo in una casella verde"
-        ).assertIsDisplayed()
+        ).performScrollTo().assertIsDisplayed()
 
         assertCellColor(0, Color(0xFFA5D6A7))
 
         for (cell in 0..5) {
-            compose.onNodeWithTag("board_cell_$cell").performClick()
+            compose.onNodeWithTag("board_cell_$cell").performScrollTo().performClick()
         }
 
         compose.onNodeWithText(
             "Seleziona un tuo sigillo evidenziato"
-        ).assertIsDisplayed()
+        ).performScrollTo().assertIsDisplayed()
 
         // NORTH owns 0, 2, 4. After six placements,
         // origin 4 can slide to cell 8.
         assertCellColor(4, Color(0xFFA5D6A7))
 
-        compose.onNodeWithTag("board_cell_4").performClick()
+        compose.onNodeWithTag("board_cell_4").performScrollTo().performClick()
 
         compose.onNodeWithText(
             "Scegli una destinazione verde"
-        ).assertIsDisplayed()
+        ).performScrollTo().assertIsDisplayed()
 
         assertCellColor(4, Color(0xFFFFD54F))
         assertCellColor(8, Color(0xFFA5D6A7))
 
-        compose.onNodeWithTag("board_cell_8").performClick()
+        compose.onNodeWithTag("board_cell_8").performScrollTo().performClick()
 
-        compose.onNodeWithText("Turno 8 · Sud").assertIsDisplayed()
+        compose.onNodeWithText("Turno 8 · Sud").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(
             "Seleziona un tuo sigillo evidenziato"
-        ).assertIsDisplayed()
+        ).performScrollTo().assertIsDisplayed()
     }
 
     private fun assertCellColor(cell: Int, expected: Color) {
         val image = compose.onNodeWithTag("board_cell_$cell")
+            .performScrollTo()
             .captureToImage()
         val bitmap = image.asAndroidBitmap()
         // Sample inside the background, away from the centered glyph.
@@ -180,45 +182,45 @@ class TreSigilliUiTest {
     @Test
     fun modeSelectorPreservesLocalPlayAndEnablesOfflineAndroid() {
         compose.onNodeWithText("Modalità: Due giocatori")
-            .assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
 
-        compose.onNodeWithText("Contro Android").performClick()
+        compose.onNodeWithText("Contro Android").performScrollTo().performClick()
 
         compose.onNodeWithText("Modalità: Contro Android")
-            .assertIsDisplayed()
-        compose.onNodeWithText("Turno 1 · Nord").assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Turno 1 · Nord").performScrollTo().assertIsDisplayed()
         assertEmptyBoard()
 
-        compose.onNodeWithTag("board_cell_0").performClick()
+        compose.onNodeWithTag("board_cell_0").performScrollTo().performClick()
 
         // Human NORTH and Android SOUTH have both completed one move.
-        compose.onNodeWithText("Turno 3 · Nord").assertIsDisplayed()
+        compose.onNodeWithText("Turno 3 · Nord").performScrollTo().assertIsDisplayed()
 
         compose.onNodeWithTag("board_cell_0").assertTextEquals("N")
 
         // Mode changes reset the game and retain the original local flow.
-        compose.onNodeWithText("Due giocatori").performClick()
+        compose.onNodeWithText("Due giocatori").performScrollTo().performClick()
 
         compose.onNodeWithText("Modalità: Due giocatori")
-            .assertIsDisplayed()
-        compose.onNodeWithText("Turno 1 · Nord").assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Turno 1 · Nord").performScrollTo().assertIsDisplayed()
         assertEmptyBoard()
 
-        compose.onNodeWithTag("board_cell_0").performClick()
+        compose.onNodeWithTag("board_cell_0").performScrollTo().performClick()
 
         // Local mode advances by exactly one turn.
-        compose.onNodeWithText("Turno 2 · Sud").assertIsDisplayed()
+        compose.onNodeWithText("Turno 2 · Sud").performScrollTo().assertIsDisplayed()
 
-        compose.onNodeWithText("Nuova partita").performClick()
+        compose.onNodeWithText("Nuova partita").performScrollTo().performClick()
         compose.onNodeWithText("Modalità: Due giocatori")
-            .assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
         assertEmptyBoard()
     }
 
     private fun assertEmptyBoard() {
         for (cell in 0..15) {
             compose.onNodeWithTag("board_cell_$cell")
-                .assertIsDisplayed()
+                .performScrollTo().assertIsDisplayed()
                 .assertTextEquals("·")
         }
     }
