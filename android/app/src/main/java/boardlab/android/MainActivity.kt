@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import boardlab.tre_sigilli.GameController
+import boardlab.tre_sigilli.GameMode
 import boardlab.tre_sigilli.GameScreenState
 import boardlab.tre_sigilli.GameOutcome
 import boardlab.tre_sigilli.Place
@@ -59,6 +60,33 @@ fun TreSigilliScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("Tre Sigilli", style = MaterialTheme.typography.headlineMedium)
+
+        Text(
+            if (controller.mode == GameMode.HUMAN_VS_ANDROID) {
+                "Modalità: Contro Android"
+            } else {
+                "Modalità: Due giocatori"
+            },
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    controller.newGame(GameMode.HUMAN_VS_ANDROID)
+                    screen = controller.screen
+                },
+            ) {
+                Text("Contro Android")
+            }
+            Button(
+                onClick = {
+                    controller.newGame(GameMode.LOCAL_TWO_PLAYERS)
+                    screen = controller.screen
+                },
+            ) {
+                Text("Due giocatori")
+            }
+        }
 
         if (outcome != null) {
             Text("Partita terminata")

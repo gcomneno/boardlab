@@ -177,6 +177,44 @@ class TreSigilliUiTest {
         }
     }
 
+    @Test
+    fun modeSelectorPreservesLocalPlayAndEnablesOfflineAndroid() {
+        compose.onNodeWithText("Modalità: Due giocatori")
+            .assertIsDisplayed()
+
+        compose.onNodeWithText("Contro Android").performClick()
+
+        compose.onNodeWithText("Modalità: Contro Android")
+            .assertIsDisplayed()
+        compose.onNodeWithText("Turno 1 · Nord").assertIsDisplayed()
+        assertEmptyBoard()
+
+        compose.onNodeWithTag("board_cell_0").performClick()
+
+        // Human NORTH and Android SOUTH have both completed one move.
+        compose.onNodeWithText("Turno 3 · Nord").assertIsDisplayed()
+
+        compose.onNodeWithTag("board_cell_0").assertTextEquals("N")
+
+        // Mode changes reset the game and retain the original local flow.
+        compose.onNodeWithText("Due giocatori").performClick()
+
+        compose.onNodeWithText("Modalità: Due giocatori")
+            .assertIsDisplayed()
+        compose.onNodeWithText("Turno 1 · Nord").assertIsDisplayed()
+        assertEmptyBoard()
+
+        compose.onNodeWithTag("board_cell_0").performClick()
+
+        // Local mode advances by exactly one turn.
+        compose.onNodeWithText("Turno 2 · Sud").assertIsDisplayed()
+
+        compose.onNodeWithText("Nuova partita").performClick()
+        compose.onNodeWithText("Modalità: Due giocatori")
+            .assertIsDisplayed()
+        assertEmptyBoard()
+    }
+
     private fun assertEmptyBoard() {
         for (cell in 0..15) {
             compose.onNodeWithTag("board_cell_$cell")

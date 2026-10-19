@@ -87,6 +87,8 @@ def main():
     sources = [
         KOTLIN / "main/kotlin/boardlab/tre_sigilli/Model.kt",
         KOTLIN / "main/kotlin/boardlab/tre_sigilli/Rules.kt",
+        KOTLIN / "main/kotlin/boardlab/tre_sigilli/Territory.kt",
+        KOTLIN / "main/kotlin/boardlab/tre_sigilli/AlphaBeta.kt",
         KOTLIN / "main/kotlin/boardlab/tre_sigilli/GameController.kt",
         KOTLIN / "test/kotlin/boardlab/tre_sigilli/ParityTest.kt",
     ]
@@ -125,7 +127,13 @@ def main():
                 str(compiler),
                 *(
                     str(KOTLIN / f"main/kotlin/boardlab/tre_sigilli/{name}")
-                    for name in ("Model.kt", "Rules.kt", "GameController.kt")
+                    for name in (
+                        "Model.kt",
+                        "Rules.kt",
+                        "Territory.kt",
+                        "AlphaBeta.kt",
+                        "GameController.kt",
+                    )
                 ),
                 str(controller_test),
                 "-include-runtime",
