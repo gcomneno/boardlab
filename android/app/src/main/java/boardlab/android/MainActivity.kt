@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -26,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import boardlab.tre_sigilli.GameController
+import boardlab.tre_sigilli.GameMode
 import boardlab.tre_sigilli.GameScreenState
 import boardlab.tre_sigilli.GameOutcome
 import boardlab.tre_sigilli.Place
@@ -50,15 +53,48 @@ class MainActivity : ComponentActivity() {
 fun TreSigilliScreen() {
     val controller = remember { GameController() }
     var screen by remember { mutableStateOf(controller.screen) }
+    var mode by remember { mutableStateOf(controller.mode) }
     val score = territoryScore(screen.game)
     val outcome = gameOutcome(screen.game)
 
     Column(
-        modifier = Modifier.padding(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("Tre Sigilli", style = MaterialTheme.typography.headlineMedium)
+
+        Text(
+            if (mode == GameMode.HUMAN_VS_ANDROID) {
+                "Modalità: Contro Android"
+            } else {
+                "Modalità: Due giocatori"
+            },
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = {
+                    controller.newGame(GameMode.HUMAN_VS_ANDROID)
+                    mode = controller.mode
+                    screen = controller.screen
+                },
+            ) {
+                Text("Contro Android")
+            }
+            Button(
+                onClick = {
+                    controller.newGame(GameMode.LOCAL_TWO_PLAYERS)
+                    mode = controller.mode
+                    screen = controller.screen
+                },
+            ) {
+                Text("Due giocatori")
+            }
+        }
 
         if (outcome != null) {
             Text("Partita terminata")
