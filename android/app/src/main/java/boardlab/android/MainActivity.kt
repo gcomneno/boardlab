@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import boardlab.tre_sigilli.GameController
 import boardlab.tre_sigilli.GameScreenState
 import boardlab.tre_sigilli.GameOutcome
+import boardlab.tre_sigilli.Place
+import boardlab.tre_sigilli.Slide
 import boardlab.tre_sigilli.gameOutcome
 import boardlab.tre_sigilli.territoryScore
 
@@ -81,6 +83,19 @@ fun TreSigilliScreen() {
 
         Text("Territorio · Nord: ${score.north} · Sud: ${score.south}")
 
+        if (outcome == null) {
+            Text(
+                when {
+                    screen.game.turn < 6 ->
+                        "Piazza un sigillo in una casella verde"
+                    screen.selectedCell == null ->
+                        "Seleziona un tuo sigillo evidenziato"
+                    else ->
+                        "Scegli una destinazione verde"
+                },
+            )
+        }
+
         Board(
             screen = screen,
             onTap = { cell ->
@@ -105,6 +120,19 @@ private fun Board(
     screen: GameScreenState,
     onTap: (Int) -> Unit,
 ) {
+    val legalTargets = when {
+        screen.game.turn < 6 ->
+            screen.legalMoves.filterIsInstance<Place>()
+                .map { it.cell }.toSet()
+        screen.selectedCell != null ->
+            screen.legalMoves.filterIsInstance<Slide>()
+                .filter { it.origin == screen.selectedCell }
+                .map { it.destination }.toSet()
+        else ->
+            screen.legalMoves.filterIsInstance<Slide>()
+                .map { it.origin }.toSet()
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         repeat(4) { row ->
             Row(
@@ -117,6 +145,7 @@ private fun Board(
                     val selected = screen.selectedCell == cell
                     val background = when {
                         selected -> Color(0xFFFFD54F)
+                        cell in legalTargets -> Color(0xFFA5D6A7)
                         occupant == "north" -> Color(0xFF90CAF9)
                         occupant == "south" -> Color(0xFFEF9A9A)
                         else -> Color(0xFFE0E0E0)
