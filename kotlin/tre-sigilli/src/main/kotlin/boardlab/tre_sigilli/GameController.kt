@@ -11,6 +11,15 @@ enum class GameMode {
     HUMAN_VS_ANDROID,
 }
 
+/**
+ * Minimal snapshot; legal moves are always recomputed.
+ */
+data class GameSnapshot(
+    val game: State,
+    val mode: GameMode,
+    val selectedCell: Int?,
+)
+
 class GameController(
     initialMode: GameMode = GameMode.LOCAL_TWO_PLAYERS,
     private val androidStrategy: AlphaBetaStrategy = AlphaBetaStrategy(depth = 2),
@@ -20,6 +29,44 @@ class GameController(
 
     var screen = GameScreenState(State(List(16) { null }, 0))
         private set
+
+    fun snapshot(): GameSnapshot =
+        GameSnapshot(
+            game = screen.game,
+            mode = mode,
+            selectedCell = screen.selectedCell,
+        )
+
+    fun restore(snapshot: GameSnapshot) {
+        validateState(snapshot.game)
+
+        // A human-vs-Android checkpoint is always on NORTH's turn,
+        // unless the game has ended.
+        require(
+            snapshot.mode != GameMode.HUMAN_VS_ANDROID ||
+                snapshot.game.turn % 2 == 0 ||
+                legalMoves(snapshot.game).isEmpty()
+        ) { "Android turn cannot be restored as a human turn" }
+
+        val moves = legalMoves(snapshot.game)
+        val selected = snapshot.selectedCell
+
+        require(
+            selected == null ||
+                (
+                    snapshot.game.turn >= 6 &&
+                        moves.filterIsInstance<Slide>()
+                            .any { it.origin == selected }
+                )
+        ) { "Invalid selected cell" }
+
+        // Commit only after all validation has succeeded.
+        mode = snapshot.mode
+        screen = GameScreenState(
+            game = snapshot.game,
+            selectedCell = selected,
+        )
+    }
 
     fun newGame(mode: GameMode = this.mode) {
         this.mode = mode

@@ -21,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import boardlab.tre_sigilli.GameController
 import boardlab.tre_sigilli.GameMode
 import boardlab.tre_sigilli.GameScreenState
+import boardlab.tre_sigilli.GameSnapshot
+import boardlab.tre_sigilli.State
 import boardlab.tre_sigilli.GameOutcome
 import boardlab.tre_sigilli.Place
 import boardlab.tre_sigilli.Slide
@@ -49,11 +53,51 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private val snapshotSaver = listSaver<GameSnapshot, Int>(
+    save = { snapshot ->
+        listOf(
+            snapshot.mode.ordinal,
+            snapshot.game.turn,
+            snapshot.selectedCell ?: -1,
+        ) + snapshot.game.cells.map { cell ->
+            when (cell) {
+                null -> 0
+                "north" -> 1
+                "south" -> 2
+                else -> error("Unknown player")
+            }
+        }
+    },
+    restore = { values ->
+        require(values.size == 19) { "Invalid snapshot length" }
+        val mode = GameMode.entries.getOrNull(values[0])
+            ?: throw IllegalArgumentException("Invalid game mode")
+        val cells = values.drop(3).map { value ->
+            when (value) {
+                0 -> null
+                1 -> "north"
+                2 -> "south"
+                else -> throw IllegalArgumentException("Invalid cell")
+            }
+        }
+        GameSnapshot(
+            game = State(cells, values[1]),
+            mode = mode,
+            selectedCell = values[2].takeUnless { it == -1 },
+        ).also { GameController().restore(it) }
+    },
+)
+
 @Composable
 fun TreSigilliScreen() {
-    val controller = remember { GameController() }
-    var screen by remember { mutableStateOf(controller.screen) }
-    var mode by remember { mutableStateOf(controller.mode) }
+    var snapshot by rememberSaveable(stateSaver = snapshotSaver) {
+        mutableStateOf(GameController().snapshot())
+    }
+    val controller = remember {
+        GameController().apply { restore(snapshot) }
+    }
+    val screen = GameScreenState(snapshot.game, snapshot.selectedCell)
+    val mode = snapshot.mode
     val score = territoryScore(screen.game)
     val outcome = gameOutcome(screen.game)
 
@@ -79,8 +123,7 @@ fun TreSigilliScreen() {
             Button(
                 onClick = {
                     controller.newGame(GameMode.HUMAN_VS_ANDROID)
-                    mode = controller.mode
-                    screen = controller.screen
+                    snapshot = controller.snapshot()
                 },
             ) {
                 Text("Contro Android")
@@ -88,8 +131,7 @@ fun TreSigilliScreen() {
             Button(
                 onClick = {
                     controller.newGame(GameMode.LOCAL_TWO_PLAYERS)
-                    mode = controller.mode
-                    screen = controller.screen
+                    snapshot = controller.snapshot()
                 },
             ) {
                 Text("Due giocatori")
@@ -136,14 +178,14 @@ fun TreSigilliScreen() {
             screen = screen,
             onTap = { cell ->
                 controller.tap(cell)
-                screen = controller.screen
+                snapshot = controller.snapshot()
             },
         )
 
         Button(
             onClick = {
                 controller.newGame()
-                screen = controller.screen
+                snapshot = controller.snapshot()
             },
         ) {
             Text("Nuova partita")

@@ -217,6 +217,49 @@ class TreSigilliUiTest {
         assertEmptyBoard()
     }
 
+    @Test
+    fun localGameSurvivesActivityRecreation() {
+        compose.onNodeWithTag("board_cell_0").performScrollTo().performClick()
+        compose.onNodeWithTag("board_cell_1").performScrollTo().performClick()
+
+        compose.activityRule.scenario.recreate()
+
+        compose.onNodeWithText("Modalità: Due giocatori")
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Turno 3 · Nord")
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("board_cell_0").assertTextEquals("N")
+        compose.onNodeWithTag("board_cell_1").assertTextEquals("S")
+
+        // Restored controller must remain interactive.
+        compose.onNodeWithTag("board_cell_2").performScrollTo().performClick()
+        compose.onNodeWithText("Turno 4 · Sud")
+            .performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun singlePlayerSurvivesActivityRecreation() {
+        compose.onNodeWithText("Contro Android")
+            .performScrollTo().performClick()
+        compose.onNodeWithTag("board_cell_0").performScrollTo().performClick()
+
+        compose.onNodeWithText("Turno 3 · Nord")
+            .performScrollTo().assertIsDisplayed()
+
+        compose.activityRule.scenario.recreate()
+
+        compose.onNodeWithText("Modalità: Contro Android")
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Turno 3 · Nord")
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("board_cell_0").assertTextEquals("N")
+
+        // The next human move must still trigger one Android reply.
+        compose.onNodeWithTag("board_cell_1").performScrollTo().performClick()
+        compose.onNodeWithText("Turno 5 · Nord")
+            .performScrollTo().assertIsDisplayed()
+    }
+
     private fun assertEmptyBoard() {
         for (cell in 0..15) {
             compose.onNodeWithTag("board_cell_$cell")
