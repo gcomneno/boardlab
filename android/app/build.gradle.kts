@@ -9,7 +9,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "boardlab.android"
+        applicationId = "com.giadaware.tresigilli"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
