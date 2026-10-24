@@ -72,8 +72,8 @@ class ScreenshotExportTest {
         capture("01-initial")
 
         // 2. Offline Android reply after one human move.
-        compose.onNodeWithText("Contro Android")
-            .performScrollTo().performClick()
+        compose.onNodeWithText("Opzioni").performScrollTo().performClick()
+        compose.onNodeWithText("Contro Android").performClick()
         compose.onNodeWithTag("board_cell_0")
             .performScrollTo().performClick()
         compose.onNodeWithText("Turno 3 · Nord")
@@ -82,8 +82,8 @@ class ScreenshotExportTest {
         capture("02-offline-ai")
 
         // 3. Enter the maneuver phase in local mode.
-        compose.onNodeWithText("Due giocatori")
-            .performScrollTo().performClick()
+        compose.onNodeWithText("Opzioni").performScrollTo().performClick()
+        compose.onNodeWithText("Due giocatori").performClick()
 
         for (cell in 0..5) {
             compose.onNodeWithTag("board_cell_$cell")

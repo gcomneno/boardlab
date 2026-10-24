@@ -11,6 +11,37 @@ enum class GameOutcome {
     DRAW,
 }
 
+data class CellInfluence(
+    val north: Int,
+    val south: Int,
+)
+
+/**
+ * Influence on one cell, including the occupying seal.
+ * Uses the same calculation as territorial scoring.
+ */
+fun cellInfluence(state: State, cell: Int): CellInfluence {
+    validateState(state)
+    require(cell in 0 until 16) { "Cell outside board" }
+    return countInfluence(state, cell)
+}
+
+private fun countInfluence(state: State, cell: Int): CellInfluence {
+    var north = 0
+    var south = 0
+
+    for (origin in 0 until 16) {
+        if (origin != cell && !adjacent(origin, cell)) continue
+
+        when (state.cells[origin]) {
+            "north" -> north++
+            "south" -> south++
+        }
+    }
+
+    return CellInfluence(north, south)
+}
+
 fun territoryScore(state: State): TerritoryScore {
     validateState(state)
 
@@ -18,21 +49,11 @@ fun territoryScore(state: State): TerritoryScore {
     var south = 0
 
     for (cell in 0 until 16) {
-        var northInfluence = 0
-        var southInfluence = 0
-
-        for (origin in 0 until 16) {
-            if (origin != cell && !adjacent(origin, cell)) continue
-
-            when (state.cells[origin]) {
-                "north" -> northInfluence++
-                "south" -> southInfluence++
-            }
-        }
+        val influence = countInfluence(state, cell)
 
         when {
-            northInfluence > southInfluence -> north++
-            southInfluence > northInfluence -> south++
+            influence.north > influence.south -> north++
+            influence.south > influence.north -> south++
         }
     }
 
