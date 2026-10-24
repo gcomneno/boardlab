@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#103b2d">
+  <meta name="description" content="Dado Goal: il gioco calcistico originale di Giancarlo Cicellyn Comneno.">
+  <title>Dado Goal — Gioca gratis</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <p class="eyebrow">GIADAWARE · BOARDLAB</p>
+      <h1>⚽ DADO GOAL</h1>
+      <p>Quattro dadi. Due squadre. Un solo obiettivo: GOAL!</p>
+    </header>
+
+    <section class="panel settings" aria-label="Impostazioni partita">
+      <label>Squadra 1
+        <input id="team-0" type="text" maxlength="24" value="Squadra 1">
+      </label>
+      <label>Colore
+        <input id="color-0" type="color" value="#e9bd48">
+      </label>
+      <label>Squadra 2
+        <input id="team-1" type="text" maxlength="24" value="Squadra 2">
+      </label>
+      <label>Colore
+        <input id="color-1" type="color" value="#66a5ef">
+      </label>
+      <label>Mani per squadra
+        <input id="hands" type="number" min="1" max="1000" step="1" value="10">
+      </label>
+      <button id="new" type="button">Nuova partita</button>
+    </section>
+
+    <section class="panel" aria-label="Tabellone">
+      <div class="scoreboard">
+        <div class="team" id="panel-0">
+          <span id="name-0">Squadra 1</span>
+          <strong id="goals-0">0</strong>
+          <small id="hands-0">0 / 10 mani</small>
+        </div>
+        <div class="separator">:</div>
+        <div class="team" id="panel-1">
+          <span id="name-1">Squadra 2</span>
+          <strong id="goals-1">0</strong>
+          <small id="hands-1">0 / 10 mani</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel play" aria-label="Campo di gioco">
+      <div class="pitch">
+        <p id="turn" class="turn" aria-live="polite"></p>
+        <div id="die" class="die" aria-label="Dado corrente">🎲</div>
+        <p id="phase" class="phase"></p>
+        <p id="result" class="result" role="status" aria-live="polite">
+          La partita può iniziare!
+        </p>
+        <button id="roll" type="button">Lancia il dado!</button>
+      </div>
+      <p id="message" class="message" aria-live="polite"></p>
+    </section>
+
+    <details class="panel">
+      <summary>Come si gioca?</summary>
+      <p>Ogni giocatore lancia il proprio dado squadra. Un tiro in porta o un cross porta al dado rosa.</p>
+      <p>Il dado rosa determina lo sviluppo dell'azione. Mezza rovesciata, rovesciata e colpo di testa portano al dado finale rosso/blu.</p>
+      <p>Il dado finale può segnare GOAL oppure terminare l'azione senza goal. RIGORE fa rilanciare lo stesso dado.</p>
+      <p>Passaggio permette di rilanciare il dado squadra. Ogni fine mano passa il gioco all'avversario, anche dopo un goal.</p>
+      <p>Vince chi segna più goal dopo il numero concordato di mani per squadra. Il pareggio è ammesso.</p>
+    </details>
+
+    <footer>
+      Dado Goal Originale · Adattamento digitale ·
+      Due giocatori locali · Nessun account · GiadaWare
+    </footer>
+  </main>
+</body>
+</html>
