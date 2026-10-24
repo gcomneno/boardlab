@@ -1,5 +1,7 @@
 # Tre Sigilli — SHIP-01 Product Brief
 
+Languages: [English](tre-sigilli-ship-product-brief.md) | [Italiano](tre-sigilli-ship-product-brief.it.md)
+
 Version: 0.1 — product direction approved; hypotheses pending validation
 Scope: product discovery and pre-publication validation
 

@@ -1,5 +1,7 @@
 # Tre Sigilli — SHIP-02 Gaming UX & Art Direction
 
+Languages: [English](tre-sigilli-ship-art-direction.md) | [Italiano](tre-sigilli-ship-art-direction.it.md)
+
 Stato: baseline visiva Free approvata; implementazione e QA da validare
 
 ## Obiettivo

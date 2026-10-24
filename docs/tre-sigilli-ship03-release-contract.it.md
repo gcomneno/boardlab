@@ -1,5 +1,7 @@
 # Tre Sigilli — SHIP-03 · Android Release Readiness
 
+Languages: [English](tre-sigilli-ship03-release-contract.md) | [Italiano](tre-sigilli-ship03-release-contract.it.md)
+
 Status: APPROVED — scope authorized; signing key generation requires separate authorization.
 
 ## Obiettivo

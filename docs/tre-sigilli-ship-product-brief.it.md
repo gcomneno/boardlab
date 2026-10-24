@@ -1,5 +1,7 @@
 # Tre Sigilli — Product Brief SHIP-01
 
+Languages: [English](tre-sigilli-ship-product-brief.md) | [Italiano](tre-sigilli-ship-product-brief.it.md)
+
 Versione: 0.1 — direzione prodotto approvata; ipotesi da validare
 Ambito: product discovery e validazione pre-pubblicazione
 

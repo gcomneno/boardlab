@@ -4,3 +4,12 @@ build/
 local.properties
 .idea/
 *.iml
+
+# Android release signing — never commit private keys or credentials
+*.jks
+*.keystore
+*.p12
+*.pfx
+release-signing.properties
+signing.properties
+keystore.properties
