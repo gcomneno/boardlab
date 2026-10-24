@@ -7,6 +7,9 @@ const board = $("board");
 let state = initial();
 let selected = null;
 let mode = "ai";
+let aiPending = false;
+let aiTimer = null;
+const AI_DELAY_MS = 700;
 
 function render() {
   const moves = legalMoves(state);
@@ -20,6 +23,9 @@ function render() {
       ? "Partita terminata · Pareggio"
       : `Partita terminata · Vince ${result === "north" ? "Avorio" : "Terracotta"}!`;
     $("hint").textContent = "Premi Nuova partita per giocare ancora.";
+  } else if (aiPending) {
+    $("status").textContent = "Il computer sta pensando…";
+    $("hint").textContent = "La tua mossa è stata eseguita. Attendi la risposta.";
   } else {
     $("status").textContent =
       `Turno ${state.turn + 1} di 18 · ${player(state) === "north" ? "Avorio" : "Terracotta"}`;
@@ -42,7 +48,8 @@ function render() {
     cell.type = "button";
     cell.className = "cell";
     if (i === selected) cell.classList.add("selected");
-    if (targets.has(i) && result === null) cell.classList.add("legal");
+    if (targets.has(i) && result === null && !aiPending) cell.classList.add("legal");
+    cell.disabled = aiPending;
 
     const occupant = state.cells[i];
     cell.setAttribute("aria-label",
@@ -65,7 +72,8 @@ function render() {
 
 function tap(cell) {
   const moves = legalMoves(state);
-  if (!moves.length || (mode === "ai" && player(state) !== "north")) return;
+  if (aiPending || !moves.length ||
+      (mode === "ai" && player(state) !== "north")) return;
 
   let move = null;
   if (state.turn < 6) {
@@ -88,12 +96,28 @@ function tap(cell) {
 
   if (mode === "ai" && legalMoves(state).length > 0) {
     if (player(state) !== "south") throw new Error("Invalid AI turn");
-    state = applyMove(state, chooseMove(state, 2));
+
+    aiPending = true;
+    render();
+
+    aiTimer = window.setTimeout(() => {
+      aiTimer = null;
+      state = applyMove(state, chooseMove(state, 2));
+      aiPending = false;
+      render();
+    }, AI_DELAY_MS);
+    return;
   }
+
   render();
 }
 
 function reset() {
+  if (aiTimer !== null) {
+    window.clearTimeout(aiTimer);
+    aiTimer = null;
+  }
+  aiPending = false;
   mode = $("mode").value;
   state = initial();
   selected = null;
