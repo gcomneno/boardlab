@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f0e6">
+  <meta name="description" content="Tre Sigilli: gioco strategico gratuito, direttamente nel browser.">
+  <title>Tre Sigilli — Gioca gratis</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <p class="eyebrow">GIADAWARE · BOARDLAB</p>
+      <h1>Tre Sigilli</h1>
+      <p class="subtitle">Tre sigilli a testa. Sedici caselle. La strategia decide.</p>
+    </header>
+
+    <section class="panel" aria-label="Impostazioni partita">
+      <label for="mode">Modalità</label>
+      <select id="mode">
+        <option value="ai">Contro il computer</option>
+        <option value="local">Due giocatori</option>
+      </select>
+      <button id="new" type="button">Nuova partita</button>
+    </section>
+
+    <details class="strategy-panel" id="strategy-panel">
+      <summary>Configura l'intelligenza artificiale</summary>
+      <p>Scegli l'algoritmo e i parametri, poi premi
+      <strong>Nuova partita</strong> per applicarli.</p>
+
+      <div class="strategy-fields">
+        <label for="algorithm">Algoritmo</label>
+        <select id="algorithm">
+          <option value="alpha_beta" selected>Alpha-Beta</option>
+          <option value="minimax">Minimax</option>
+          <option value="random">Casuale</option>
+          <option value="mcts">Monte Carlo Tree Search (MCTS)</option>
+        </select>
+
+        <div class="strategy-parameter" data-for="alpha_beta minimax">
+          <label for="depth">Profondità di ricerca (1–4)</label>
+          <input id="depth" type="number" min="1" max="4"
+                 step="1" value="2">
+        </div>
+
+        <div class="strategy-parameter" data-for="mcts">
+          <label for="simulations">Simulazioni MCTS (1–3000)</label>
+          <input id="simulations" type="number" min="1" max="3000"
+                 step="1" value="40">
+        </div>
+
+        <div class="strategy-parameter" data-for="mcts">
+          <label for="exploration">Esplorazione UCT (≥ 0)</label>
+          <input id="exploration" type="number" min="0"
+                 step="any" value="1.4142135623730951">
+        </div>
+
+        <div class="strategy-parameter" data-for="random mcts">
+          <label for="seed">Seed casuale (0–4294967295)</label>
+          <input id="seed" type="number" min="0" max="4294967295"
+                 step="1" value="42">
+        </div>
+      </div>
+
+      <p id="strategy-error" class="strategy-error"
+         role="alert"></p>
+      <p id="strategy-active" class="strategy-active"
+         aria-live="polite"></p>
+    </details>
+
+    <section class="guided-panel" aria-label="Prova il gioco">
+      <button id="guided-toggle" type="button"
+              aria-expanded="false" aria-controls="guided-controls">
+        Prova il gioco
+      </button>
+      <div id="guided-controls" hidden>
+        <p id="guided-instruction" aria-live="polite"></p>
+        <div class="guided-actions">
+          <button id="guided-suggest" type="button">
+            Suggerisci una mossa
+          </button>
+          <button id="guided-explain" type="button" disabled>
+            Perché questa mossa?
+          </button>
+          <button id="guided-accept" type="button" disabled>
+            Gioca la mossa suggerita
+          </button>
+        </div>
+        <p id="guided-explanation" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="game" aria-label="Partita">
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+      <div class="board" id="board" role="group" aria-label="Scacchiera 4 per 4"></div>
+      <div class="scores">
+        <div><span class="legend north"></span> Avorio <strong id="north-score">0</strong></div>
+        <div><span class="legend south"></span> Terracotta <strong id="south-score">0</strong></div>
+      </div>
+      <p class="hint" id="hint"></p>
+    </section>
+
+    <details>
+      <summary>Come si gioca?</summary>
+      <p>Si alternano i giocatori. Nei primi sei turni ciascuno colloca tre sigilli nelle caselle libere.</p>
+      <p>Poi ogni turno permette di spostare un proprio sigillo di una casella in orizzontale o verticale, senza occupare una casella già piena.</p>
+      <p>La partita termina dopo 18 mosse complessive o quando il giocatore di turno non può muovere.</p>
+      <h3>Come si conquistano i punti?</h3>
+      <p>Ogni casella vale <strong>1 punto</strong> per il giocatore
+      che la controlla, anche quando è vuota.</p>
+      <p>Per stabilire chi la controlla, conta i sigilli nella casella
+      stessa e nelle caselle immediatamente sopra, sotto, a destra
+      e a sinistra. Le diagonali non contano.</p>
+      <p><strong>Esempio:</strong> se una casella riceve influenza
+      da 2 sigilli Avorio e 1 Terracotta, assegna 1 punto ad Avorio.
+      Se le influenze sono uguali, non assegna punti a nessuno.</p>
+      <p>I punteggi mostrano il territorio controllato in quel momento:
+      possono aumentare o diminuire dopo ogni mossa.
+      Non sono punti cumulativi.</p>
+      <p>Alla fine vince chi controlla più caselle.
+      In caso di parità, la partita termina in pareggio.</p>
+    </details>
+
+    <footer>Gratuito · Offline dopo il caricamento · Nessun account · GiadaWare</footer>
+  </main>
+</body>
+</html>
