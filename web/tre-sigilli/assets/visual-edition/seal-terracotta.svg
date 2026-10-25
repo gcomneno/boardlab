@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="ceramic" cx=".32" cy=".22" r=".85">
+      <stop stop-color="#f4be94"/>
+      <stop offset=".25" stop-color="#cb7553"/>
+      <stop offset=".72" stop-color="#a84d39"/>
+      <stop offset="1" stop-color="#6e2c26"/>
+    </radialGradient>
+    <radialGradient id="gloss" cx=".3" cy=".16" r=".75">
+      <stop stop-color="#fff" stop-opacity=".57"/>
+      <stop offset=".6" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="128" cy="139" rx="112" ry="108"
+           fill="#241c18" opacity=".18"/>
+  <circle cx="128" cy="124" r="112"
+          fill="#d5b88b" stroke="#69503d" stroke-width="5"/>
+  <circle cx="128" cy="124" r="99"
+          fill="url(#ceramic)" stroke="#f4d6b5" stroke-width="5"/>
+  <circle cx="128" cy="124" r="80"
+          fill="none" stroke="#f8ddb5" stroke-width="3"/>
+  <circle cx="128" cy="124" r="70"
+          fill="none" stroke="#f4d4a5" stroke-width="2"
+          stroke-dasharray="3 11"/>
+  <g fill="none" stroke="#fff0c8" stroke-width="9"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 65L143 105L184 124L143 143L128 183
+             L113 143L72 124L113 105Z"/>
+    <circle cx="128" cy="124" r="18" stroke-width="5"/>
+  </g>
+  <circle cx="128" cy="124" r="99" fill="url(#gloss)"/>
+</svg>
