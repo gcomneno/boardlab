@@ -50,7 +50,9 @@
         "src/boardlab/games/README.md",
         "tests/README.md"
     ],
-    "excluded_documents": [],
+    "excluded_documents": [
+        "docs/games/dado-goal/CHANGELOG.md"
+    ],
     "ignored_directories": [
         ".git",
         ".venv",
