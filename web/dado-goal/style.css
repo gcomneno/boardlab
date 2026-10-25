@@ -1,0 +1,92 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #f4f7f4;
+  background: #10281f;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+.shell { max-width: 850px; margin: auto; padding: 24px 16px 40px; }
+header { text-align: center; margin-bottom: 28px; }
+h1 { font-size: clamp(2.3rem, 8vw, 4rem); margin: 8px 0; }
+.eyebrow { color: #c4e1a4; letter-spacing: .2em; font-size: .8rem; }
+.origin { color: #b7cbbf; font-size: .88rem; }
+.panel {
+  background: #1c3a2e;
+  border: 1px solid #426650;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px 0;
+}
+.settings { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; }
+.settings label { display: grid; gap: 7px; flex: 1 1 130px; }
+input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #92ad99;
+  font: inherit;
+}
+input[type="color"] { min-height: 44px; padding: 3px; }
+button {
+  background: #f3c94c;
+  color: #17241d;
+  border: 0;
+  border-radius: 12px;
+  padding: 13px 18px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { background: #ffde76; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.scoreboard { display: flex; align-items: center; gap: 12px; }
+.team {
+  flex: 1;
+  min-width: 0;
+  border-top: 6px solid var(--team-color);
+  padding: 12px 6px;
+  text-align: center;
+  opacity: .65;
+}
+.team.active { opacity: 1; background: #294e3b; border-radius: 8px; }
+.team span, .team small, .team strong { display: block; overflow-wrap: anywhere; }
+.team strong { font-size: 3.5rem; }
+.team small { color: #c6d5c8; }
+.separator { font-size: 2rem; font-weight: bold; }
+.pitch {
+  min-height: 330px;
+  background: repeating-linear-gradient(
+    0deg, #215b38 0, #215b38 52px, #286943 52px, #286943 104px
+  );
+  border: 3px solid #b8d5bc;
+  border-radius: 12px;
+  padding: 24px 12px;
+  text-align: center;
+}
+.turn { font-size: 1.4rem; font-weight: bold; }
+.die {
+  font-size: 4rem;
+  min-height: 1.3em;
+  display: grid;
+  place-items: center;
+}
+.die.rolling {
+  animation: die-roll 0.14s linear infinite;
+}
+@keyframes die-roll {
+  0% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+  50% { transform: scale(1.08) rotate(3deg); filter: brightness(1.08); }
+  100% { transform: scale(1) rotate(-3deg); filter: brightness(1); }
+}
+.phase { font-size: .9rem; letter-spacing: .1em; text-transform: uppercase; }
+.result { font-size: 1.7rem; font-weight: 800; min-height: 2.5em; }
+.message { text-align: center; font-size: 1.2rem; min-height: 1.5em; }
+summary { cursor: pointer; font-weight: bold; }
+details p { line-height: 1.6; }
+footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem; }
+@media (max-width: 480px) {
+  .shell { padding: 12px; }
+  .panel { padding: 12px; }
+  .team strong { font-size: 2.5rem; }
+}
