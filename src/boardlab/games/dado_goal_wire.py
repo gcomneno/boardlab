@@ -29,11 +29,7 @@ FIELDS = frozenset(
 
 
 def _pair(value: object, name: str) -> tuple[int, int]:
-    if (
-        type(value) is not list
-        or len(value) != 2
-        or any(type(item) is not int for item in value)
-    ):
+    if type(value) is not list or len(value) != 2 or any(type(item) is not int for item in value):
         raise ValueError(f"Invalid {name}")
 
     return (value[0], value[1])
@@ -66,10 +62,7 @@ def decode_state(payload: Mapping[str, Any]) -> State:
     if set(payload) != FIELDS:
         raise ValueError("Invalid snapshot fields")
 
-    if (
-        type(payload["schemaVersion"]) is not int
-        or payload["schemaVersion"] != SCHEMA_VERSION
-    ):
+    if type(payload["schemaVersion"]) is not int or payload["schemaVersion"] != SCHEMA_VERSION:
         raise ValueError("Unsupported schema version")
 
     n = payload["handsPerTeam"]
