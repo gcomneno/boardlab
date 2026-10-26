@@ -3,6 +3,8 @@ import {
 } from "./engine.mjs";
 import { validateStrategy } from "./strategies.mjs";
 
+import { initializeLocale, translate, formatMessage, explainAnalysis } from "./i18n.mjs";
+
 const $ = id => document.getElementById(id);
 const board = $("board");
 let state = initial();
@@ -50,7 +52,7 @@ function requestSuggestion() {
     state: structuredClone(state)
   });
 
-  $("guided-explanation").textContent = "Analizzo la posizione…";
+  $("guided-explanation").textContent = translate("analyzing");
   render();
 }
 
@@ -82,9 +84,9 @@ function updateGuide() {
   const active = guidedEnabled && mode === "ai";
 
   $("guided-controls").hidden = !active;
-  $("guided-toggle").textContent = active
-    ? "Esci dalla prova guidata"
-    : "Prova il gioco";
+  $("guided-toggle").textContent = translate(
+    active ? "guidedOn" : "guided"
+  );
   $("guided-toggle").setAttribute(
     "aria-expanded", String(active)
   );
@@ -100,27 +102,22 @@ function updateGuide() {
   $("guided-explain").disabled = !ready || !suggestion;
   $("guided-accept").disabled = !ready || !suggestion;
 
-  $("guided-instruction").textContent = finished
-    ? "Partita conclusa. Confronta i territori dei giocatori."
-    : !humanTurn || aiPending
-      ? "Osserva la risposta del computer."
-      : state.turn < 6
-        ? "Colloca un sigillo in una casella vuota. " +
-          "Puoi chiedere un suggerimento oppure giocare da solo."
-        : "Sposta un tuo sigillo in una casella " +
-          "ortogonalmente adiacente e libera.";
+  $("guided-instruction").textContent = translate(
+    finished ? "guidedFinished"
+      : !humanTurn || aiPending ? "guidedWait"
+        : state.turn < 6 ? "guidedPlace" : "guidedSlide"
+  );
 
   if (suggestion && explanationVisible) {
-    const e = suggestion.explanation;
     $("guided-explanation").textContent =
-      [e.description, e.summary, e.detail, e.disclaimer].join(" ");
+      explainAnalysis(suggestion.analysis);
   }
 }
 
 
 function parseNumber(id) {
   const input = $(id);
-  if (!input.value.trim()) throw new Error(`Parametro obbligatorio: ${id}`);
+  if (!input.value.trim()) throw new Error(formatMessage("requiredParameter", { name: id }));
   return Number(input.value);
 }
 
@@ -151,18 +148,19 @@ function showStrategyFields() {
 function describeStrategy(config) {
   const { algorithm, parameters } = config;
   if (algorithm === "random") {
-    return `Casuale · seed ${parameters.seed}`;
+    return formatMessage("strategyRandom", { seed: parameters.seed });
   }
   if (algorithm === "mcts") {
-    return `MCTS · ${parameters.simulations} simulazioni · ` +
-      `UCT ${parameters.exploration} · seed ${parameters.seed}`;
+    return formatMessage("strategyMcts", parameters);
   }
-  return `${algorithm === "minimax" ? "Minimax" : "Alpha-Beta"} · ` +
-    `profondità ${parameters.depth}`;
+  return formatMessage("strategyDepth", {
+    algorithm: algorithm === "minimax" ? "Minimax" : "Alpha-Beta",
+    depth: parameters.depth
+  });
 }
 
 function showAiError(message) {
-  $("strategy-error").textContent = `Errore IA: ${message}`;
+  $("strategy-error").textContent = formatMessage("aiError", { message });
   aiPending = false;
   pendingAiRequest = false;
 
@@ -264,14 +262,14 @@ function bindWorker(worker) {
 
       if (!valid || !data.explanation || !data.analysis) {
         $("guided-explanation").textContent =
-          "Suggerimento non valido.";
+          translate("invalidSuggestion");
         render();
         return;
       }
 
       suggestion = data;
       $("guided-explanation").textContent =
-        "Mossa evidenziata. Puoi seguirla o giocare liberamente.";
+        translate("suggestionReady");
       render();
       return;
     }
@@ -280,7 +278,7 @@ function bindWorker(worker) {
       if (data.id === suggestionRequestId) {
         clearSuggestion();
         $("guided-explanation").textContent =
-          data.message ?? "Suggerimento non disponibile";
+          data.message ?? translate("suggestionUnavailable");
         render();
         return;
       }
@@ -289,17 +287,17 @@ function bindWorker(worker) {
       if (data.id !== 0 &&
           (!aiPending || data.id !== workerRequestId)) return;
 
-      showAiError(data.message ?? "Errore del motore");
+      showAiError(data.message ?? translate("engineError"));
       return;
     }
 
-    showAiError("Comando sconosciuto dal motore");
+    showAiError(translate("unknownCommand"));
   };
 
   worker.onerror = event => {
     if (generation !== workerGeneration || worker !== aiWorker) return;
     event.preventDefault();
-    showAiError("Impossibile eseguire il motore");
+    showAiError(translate("engineUnavailable"));
   };
 }
 
@@ -310,20 +308,24 @@ function render() {
   $("north-score").textContent = score.north;
   $("south-score").textContent = score.south;
 
+  const playerName = side =>
+    translate(side === "north" ? "ivory" : "terracotta");
+
   if (result !== null) {
     $("status").textContent = result === "draw"
-      ? "Partita terminata · Pareggio"
-      : `Partita terminata · Vince ${result === "north" ? "Avorio" : "Terracotta"}!`;
-    $("hint").textContent = "Premi Nuova partita per giocare ancora.";
+      ? translate("gameDraw")
+      : formatMessage("gameWin", { player: playerName(result) });
+    $("hint").textContent = translate("gameAgain");
   } else if (aiPending) {
-    $("status").textContent = "Il computer sta pensando…";
-    $("hint").textContent = "La tua mossa è stata eseguita. Attendi la risposta.";
+    $("status").textContent = translate("gameThinking");
+    $("hint").textContent = translate("gameWait");
   } else {
-    $("status").textContent =
-      `Turno ${state.turn + 1} di 18 · ${player(state) === "north" ? "Avorio" : "Terracotta"}`;
-    $("hint").textContent = state.turn < 6
-      ? "Scegli una casella vuota per collocare un sigillo."
-      : "Seleziona un tuo sigillo, poi una casella adiacente libera.";
+    $("status").textContent = formatMessage("gameTurn", {
+      turn: state.turn + 1, player: playerName(player(state))
+    });
+    $("hint").textContent = translate(
+      state.turn < 6 ? "gamePlace" : "gameSlide"
+    );
   }
 
   const targets = new Set(
@@ -356,10 +358,11 @@ function render() {
     cell.disabled = aiPending;
 
     const occupant = state.cells[i];
-    cell.setAttribute("aria-label",
-      `Riga ${Math.floor(i / 4) + 1}, colonna ${i % 4 + 1}, ` +
-      (occupant === null ? "libera" : occupant === "north" ? "Avorio" : "Terracotta")
-    );
+    cell.setAttribute("aria-label", formatMessage("cell", {
+      row: Math.floor(i / 4) + 1,
+      column: i % 4 + 1,
+      occupant: occupant === null ? translate("free") : playerName(occupant)
+    }));
     cell.setAttribute("aria-pressed", String(i === selected));
 
     if (occupant !== null) {
@@ -421,6 +424,14 @@ function tap(cell) {
   render();
 }
 
+function updateStrategyDescription() {
+  $("strategy-active").textContent = activeConfig
+    ? formatMessage("activeAi", {
+        strategy: describeStrategy(activeConfig)
+      })
+    : translate("activeLocal");
+}
+
 function reset() {
   const nextMode = $("mode").value;
   let nextConfig = null;
@@ -458,9 +469,7 @@ function reset() {
   selected = null;
 
   $("strategy-error").textContent = "";
-  $("strategy-active").textContent = activeConfig
-    ? `Avversario attivo: ${describeStrategy(activeConfig)}`
-    : "Modalità: due giocatori locali";
+  updateStrategyDescription();
 
   if (aiWorker !== null) {
     // Capture the generation assigned to this active worker.
@@ -498,5 +507,15 @@ $("mode").addEventListener("change", () => {
   reset();
 });
 $("algorithm").addEventListener("change", showStrategyFields);
+initializeLocale(() => {
+  updateStrategyDescription();
+  render();
+
+  if (suggestionRequestId !== null) {
+    $("guided-explanation").textContent = translate("analyzing");
+  } else if (suggestion && !explanationVisible) {
+    $("guided-explanation").textContent = translate("suggestionReady");
+  }
+});
 showStrategyFields();
 reset();
