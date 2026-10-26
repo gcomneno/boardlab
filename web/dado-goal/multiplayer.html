@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dado Goal — Partita online (laboratorio)</title>
+  <link rel="stylesheet" href="./multiplayer-theme.css">
+  <script type="module" src="./multiplayer-play.mjs"></script>
+</head>
+<body>
+  <main>
+    <h1>⚽ Dado Goal — Sfida tra amici</h1>
+    <p>Laboratorio locale: due finestre, due giocatori,
+      un server autorevole.</p>
+
+    <section>
+      <h2>Crea una partita</h2>
+      <label>
+        Mani per squadra
+        <input id="hands" type="number" min="1" max="1000" value="3">
+      </label>
+      <button id="create" type="button">Crea partita</button>
+      <label>
+        <input id="remember" type="checkbox">
+        Ricorda questa postazione
+      </label>
+      <p>Usa questa opzione soltanto su un dispositivo personale.
+        Le credenziali salvate possono essere accessibili a chi usa
+        lo stesso browser.</p>
+    </section>
+
+    <section>
+      <h2>Invita un amico</h2>
+      <p>Trasmetti i due codici soltanto al tuo avversario.</p>
+      <label>
+        ID partita
+        <input id="match-id" type="text" size="45"
+               autocomplete="off" spellcheck="false">
+      </label>
+      <label>
+        Codice invito
+        <input id="invite" type="text" size="45"
+               autocomplete="off" spellcheck="false">
+      </label>
+      <button id="join" type="button">Entra nella partita</button>
+    </section>
+
+    <section>
+      <h2>Partita</h2>
+      <p id="status" role="status" aria-live="polite">
+        Nessuna partita attiva.
+      </p>
+      <p id="score">Risultato: —</p>
+      <p id="hands-done">Mani: —</p>
+      <p id="turn">Turno: —</p>
+      <p id="die">Dado: —</p>
+      <p id="last-roll">Ultimo lancio: —</p>
+      <button id="roll" type="button" disabled>
+        Lancia il dado
+      </button>
+      <button id="refresh" type="button" disabled>
+        Aggiorna stato
+      </button>
+      <button id="leave" type="button" disabled>
+        Dimentica questa postazione / Esci
+      </button>
+    </section>
+
+    <p>Senza consenso le credenziali restano soltanto in memoria.
+      Se scegli di ricordare la postazione, il browser tenterà
+      di recuperarla dopo il refresh verificandola con il server.
+      Questa funzione non protegge da script malevoli o da altri
+      utenti dello stesso dispositivo.</p>
+    <p>Non pubblicare questa pagina come servizio Internet.</p>
+  </main>
+</body>
+</html>
