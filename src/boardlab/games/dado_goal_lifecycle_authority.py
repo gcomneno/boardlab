@@ -63,10 +63,16 @@ class LifecycleAuthorityV4(LifecycleDatabaseV4):
         policy: LifecyclePolicy,
         *,
         clock: Callable[[], int] | None = None,
+        max_matches: int | None = None,
     ) -> None:
         super().__init__(path)
         if not isinstance(policy, LifecyclePolicy):
             raise TypeError("LifecyclePolicy required")
+        if max_matches is not None and (
+            type(max_matches) is not int or not 1 <= max_matches <= 1_000_000
+        ):
+            raise ValueError("Invalid match capacity")
+        self.max_matches = max_matches
         self.policy = policy
         self.clock = clock if clock is not None else lambda: int(time.time())
 
@@ -149,6 +155,10 @@ class LifecycleAuthorityV4(LifecycleDatabaseV4):
         payload = json.dumps(state, sort_keys=True, separators=(",", ":"))
 
         with self._write() as db:
+            if self.max_matches is not None:
+                count = db.execute("SELECT COUNT(*) FROM lifecycle_matches").fetchone()[0]
+                if count >= self.max_matches:
+                    raise LifecycleAuthorityError("Match capacity reached")
             db.execute(
                 "INSERT INTO lifecycle_matches "
                 "(match_id,revision,status,state_json,"
