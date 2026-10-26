@@ -17,23 +17,27 @@ from boardlab.games.dado_goal_durable import (
     DurableMatchError,
     DurableMatchManager,
 )
+from boardlab.games.dado_goal_lifecycle import LifecyclePolicy
+from boardlab.games.dado_goal_lifecycle_authority import (
+    LifecycleAuthorityError,
+    LifecycleAuthorityV4,
+)
 from boardlab.games.dado_goal_match import MatchError, MatchManager
+from boardlab.games.dado_goal_rate_limit import RateLimiter
 
 MAX_BODY = 4096
-MATCH_PATH = re.compile(
-    r"^/api/v1/matches/([A-Za-z0-9_-]{20,128})(?:/(join|roll))?$"
-)
+MATCH_PATH = re.compile(r"^/api/v1/matches/([A-Za-z0-9_-]{20,128})(?:/(join|roll))?$")
 
 ERRORS = {
     "Unknown match": (404, "MATCH_NOT_FOUND"),
+    "Match expired": (410, "MATCH_EXPIRED"),
     "Unauthorized participant": (401, "UNAUTHORIZED"),
     "Invalid invitation": (401, "UNAUTHORIZED"),
     "Not your turn": (403, "NOT_YOUR_TURN"),
     "Stale revision": (409, "STALE_REVISION"),
     "Match is not joinable": (409, "MATCH_NOT_JOINABLE"),
     "Match is not active": (409, "MATCH_NOT_ACTIVE"),
-    "Request ID reused with other revision":
-        (409, "REQUEST_ID_CONFLICT"),
+    "Request ID reused with other revision": (409, "REQUEST_ID_CONFLICT"),
     "Match capacity reached": (503, "CAPACITY_EXCEEDED"),
     "Invalid match length": (400, "BAD_REQUEST"),
     "Invalid request ID": (400, "BAD_REQUEST"),
@@ -65,27 +69,32 @@ def _bad_constant(value: str) -> None:
 class LocalHTTPServer(ThreadingHTTPServer):
     allow_reuse_address = True
     daemon_threads = True
+    request_timeout_seconds: float = 5.0
 
     def __init__(
         self,
-        manager: MatchManager | DurableMatchManager | None = None,
+        manager: MatchManager | DurableMatchManager | LifecycleAuthorityV4 | None = None,
     ):
         super().__init__(("127.0.0.1", 0), DadoGoalHandler)
         self.manager = manager if manager is not None else MatchManager()
+        self.rate_limiter: RateLimiter | None = None
 
 
 class DadoGoalHandler(BaseHTTPRequestHandler):
     server: LocalHTTPServer
     protocol_version = "HTTP/1.1"
 
+    def setup(self) -> None:
+        super().setup()
+        # Bound idle headers and incomplete HTTP request bodies.
+        self.connection.settimeout(self.server.request_timeout_seconds)
+
     def log_message(self, format: str, *args: Any) -> None:
         # Deliberately do not log paths, tokens or request data.
         pass
 
     def _send(self, status: int, payload: dict[str, Any]) -> None:
-        data = json.dumps(
-            payload, ensure_ascii=False, allow_nan=False
-        ).encode("utf-8")
+        data = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")
 
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -98,10 +107,15 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
     def _error(self, status: int, code: str) -> None:
         # Never reuse an errored connection with unread input.
         self.close_connection = True
-        self._send(status, {"error": {
-            "code": code,
-            "message": code.replace("_", " ").capitalize(),
-        }})
+        self._send(
+            status,
+            {
+                "error": {
+                    "code": code,
+                    "message": code.replace("_", " ").capitalize(),
+                }
+            },
+        )
 
     def _guard(self) -> None:
         # Reject ambiguous HTTP message framing.
@@ -175,21 +189,11 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
     def _serve_asset(self, route: str) -> None:
         """Serve only explicitly approved multiplayer assets."""
         assets = {
-            "/multiplayer.html": (
-                "multiplayer.html", "text/html; charset=utf-8"
-            ),
-            "/multiplayer-play.mjs": (
-                "multiplayer-play.mjs", "text/javascript; charset=utf-8"
-            ),
-            "/multiplayer-client.mjs": (
-                "multiplayer-client.mjs", "text/javascript; charset=utf-8"
-            ),
-            "/multiplayer-theme.css": (
-                "multiplayer-theme.css", "text/css; charset=utf-8"
-            ),
-            "/dado-goal-handmade-dice.png": (
-                "dado-goal-handmade-dice.png", "image/png"
-            ),
+            "/multiplayer.html": ("multiplayer.html", "text/html; charset=utf-8"),
+            "/multiplayer-play.mjs": ("multiplayer-play.mjs", "text/javascript; charset=utf-8"),
+            "/multiplayer-client.mjs": ("multiplayer-client.mjs", "text/javascript; charset=utf-8"),
+            "/multiplayer-theme.css": ("multiplayer-theme.css", "text/css; charset=utf-8"),
+            "/dado-goal-handmade-dice.png": ("dado-goal-handmade-dice.png", "image/png"),
         }
 
         filename, media_type = assets[route]
@@ -206,7 +210,7 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
             "default-src 'none'; "
             "script-src 'self'; connect-src 'self'; "
             "style-src 'self'; img-src 'self'; form-action 'none'; "
-            "base-uri 'none'; frame-ancestors 'none'"
+            "base-uri 'none'; frame-ancestors 'none'",
         )
         self.end_headers()
         self.wfile.write(data)
@@ -214,6 +218,16 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
     def _dispatch(self) -> None:
         self._guard()
         path = self._path()
+        if self.command == "POST" and (
+            path == "/api/v1/matches"
+            or (
+                (match := MATCH_PATH.fullmatch(path)) is not None
+                and match.group(2) in ("join", "roll")
+            )
+        ):
+            limiter = self.server.rate_limiter
+            if limiter is not None and not limiter.allow():
+                raise APIError(429, "RATE_LIMITED")
 
         if self.command == "GET" and path in {
             "/multiplayer.html",
@@ -239,9 +253,7 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
         match_id, action = match.groups()
 
         if self.command == "GET" and action is None:
-            self._send(
-                200, self.server.manager.snapshot(match_id, self._bearer())
-            )
+            self._send(200, self.server.manager.snapshot(match_id, self._bearer()))
             return
 
         if self.command == "POST" and action == "join":
@@ -275,10 +287,8 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
             self._dispatch()
         except APIError as exc:
             self._error(exc.status, exc.code)
-        except (MatchError, DurableMatchError) as exc:
-            status, code = ERRORS.get(
-                str(exc), (400, "BAD_REQUEST")
-            )
+        except (MatchError, DurableMatchError, LifecycleAuthorityError) as exc:
+            status, code = ERRORS.get(str(exc), (400, "BAD_REQUEST"))
             self._error(status, code)
 
     def do_GET(self) -> None:
@@ -289,11 +299,10 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
 
 
 def create_local_server(
-    manager: MatchManager | DurableMatchManager | None = None,
+    manager: MatchManager | DurableMatchManager | LifecycleAuthorityV4 | None = None,
 ) -> LocalHTTPServer:
     """Construct a loopback-only server; caller controls its lifecycle."""
     return LocalHTTPServer(manager)
-
 
 
 def create_durable_local_server(
@@ -307,3 +316,25 @@ def create_durable_local_server(
     manager = DurableMatchManager(database_path)
     manager.initialize()
     return create_local_server(manager)
+
+
+def create_lifecycle_local_server(
+    database_path: str | Path,
+    policy: LifecyclePolicy,
+) -> LocalHTTPServer:
+    """Explicit SQLite v4 HTTP factory; loopback only."""
+    manager = LifecycleAuthorityV4(database_path, policy)
+    manager.initialize()
+    return create_local_server(manager)
+
+
+def create_rate_limited_local_server(
+    manager: MatchManager | DurableMatchManager | LifecycleAuthorityV4,
+    limiter: RateLimiter,
+) -> LocalHTTPServer:
+    """Explicit opt-in rate limiting for loopback HTTP tests."""
+    if not isinstance(limiter, RateLimiter):
+        raise TypeError("RateLimiter required")
+    server = create_local_server(manager)
+    server.rate_limiter = limiter
+    return server
