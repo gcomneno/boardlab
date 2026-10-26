@@ -10,6 +10,7 @@ import json
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import BoundedSemaphore
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -78,6 +79,26 @@ class LocalHTTPServer(ThreadingHTTPServer):
         super().__init__(("127.0.0.1", 0), DadoGoalHandler)
         self.manager = manager if manager is not None else MatchManager()
         self.rate_limiter: RateLimiter | None = None
+        self.read_rate_limiter: RateLimiter | None = None
+        self.max_connections = 32
+        self._connection_slots = BoundedSemaphore(self.max_connections)
+
+    def process_request(self, request: Any, client_address: Any) -> None:
+        """Reject overload before spawning a request thread."""
+        if not self._connection_slots.acquire(blocking=False):
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self._connection_slots.release()
+            raise
+
+    def process_request_thread(self, request: Any, client_address: Any) -> None:
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self._connection_slots.release()
 
 
 class DadoGoalHandler(BaseHTTPRequestHandler):
@@ -218,6 +239,12 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
     def _dispatch(self) -> None:
         self._guard()
         path = self._path()
+        if self.command == "GET":
+            match = MATCH_PATH.fullmatch(path)
+            if match is not None and match.group(2) is None:
+                limiter = self.server.read_rate_limiter
+                if limiter is not None and not limiter.allow():
+                    raise APIError(429, "RATE_LIMITED")
         if self.command == "POST" and (
             path == "/api/v1/matches"
             or (
