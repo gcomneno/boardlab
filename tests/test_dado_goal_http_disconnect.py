@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -18,14 +18,15 @@ def test_json_response_handles_disconnected_peer(error: OSError) -> None:
     handler.wfile = Mock()
     handler.wfile.write.side_effect = error
     handler.close_connection = False
-    handler.send_response = Mock()
-    handler.send_header = Mock()
-    handler.end_headers = Mock()
-
-    handler._send(400, {"error": {"code": "BAD_HOST"}})
+    with (
+        patch.object(handler, "send_response", Mock()) as response_mock,
+        patch.object(handler, "send_header", Mock()),
+        patch.object(handler, "end_headers", Mock()),
+    ):
+        handler._send(400, {"error": {"code": "BAD_HOST"}})
 
     assert handler.close_connection is True
-    handler.send_response.assert_called_once_with(400)
+    response_mock.assert_called_once_with(400)
 
 
 @pytest.mark.parametrize(
@@ -39,14 +40,15 @@ def test_asset_response_handles_disconnected_peer(
     handler.wfile = Mock()
     handler.wfile.write.side_effect = error
     handler.close_connection = False
-    handler.send_response = Mock()
-    handler.send_header = Mock()
-    handler.end_headers = Mock()
-
-    handler._serve_asset("/multiplayer.html")
+    with (
+        patch.object(handler, "send_response", Mock()) as response_mock,
+        patch.object(handler, "send_header", Mock()),
+        patch.object(handler, "end_headers", Mock()),
+    ):
+        handler._serve_asset("/multiplayer.html")
 
     assert handler.close_connection is True
-    handler.send_response.assert_called_once_with(200)
+    response_mock.assert_called_once_with(200)
 
 
 @pytest.mark.parametrize(

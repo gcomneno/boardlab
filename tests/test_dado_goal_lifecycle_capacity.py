@@ -5,6 +5,7 @@ from __future__ import annotations
 import multiprocessing as mp
 import sqlite3
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -81,7 +82,7 @@ def test_existing_default_remains_unlimited(tmp_path: Path) -> None:
         instance.create(2)
 
 
-def concurrent_create(path: str, queue: mp.Queue) -> None:
+def concurrent_create(path: str, queue: mp.Queue[Any]) -> None:
     instance = LifecycleAuthorityV4(
         path,
         POLICY,

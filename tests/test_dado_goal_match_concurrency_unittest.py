@@ -2,17 +2,18 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier, Lock
+from typing import Any
 from unittest import TestCase, main
 from unittest.mock import patch
 
 from boardlab.games.dado_goal_match import MatchError, MatchManager
 
 
-def race(count, operation):
+def race(count: Any, operation: Any) -> Any:
     """Start all participating workers at the same barrier."""
     barrier = Barrier(count)
 
-    def worker(index):
+    def worker(index: Any) -> Any:
         barrier.wait(timeout=10)
         try:
             return ("ok", operation(index))
@@ -24,25 +25,20 @@ def race(count, operation):
 
 
 class ConcurrencyTests(TestCase):
-
-    def setUp(self):
+    def setUp(self) -> None:
         self.manager = MatchManager()
         created = self.manager.create(2)
         self.match_id = created["matchId"]
         self.host = created["hostToken"]
         self.invite = created["inviteToken"]
 
-    def activate(self):
-        return self.manager.join(
-            self.match_id, self.invite
-        )["guestToken"]
+    def activate(self) -> Any:
+        return self.manager.join(self.match_id, self.invite)["guestToken"]
 
-    def test_simultaneous_join_allows_one_guest(self):
+    def test_simultaneous_join_allows_one_guest(self) -> None:
         results = race(
             8,
-            lambda _: self.manager.join(
-                self.match_id, self.invite
-            ),
+            lambda _: self.manager.join(self.match_id, self.invite),
         )
 
         successful = [v for status, v in results if status == "ok"]
@@ -52,20 +48,16 @@ class ConcurrencyTests(TestCase):
         self.assertEqual(len(rejected), 7)
 
         token = successful[0]["guestToken"]
-        self.assertEqual(
-            self.manager.snapshot(self.match_id, token)["seat"], 1
-        )
-        self.assertEqual(
-            self.manager.snapshot(self.match_id, self.host)["revision"], 1
-        )
+        self.assertEqual(self.manager.snapshot(self.match_id, token)["seat"], 1)
+        self.assertEqual(self.manager.snapshot(self.match_id, self.host)["revision"], 1)
 
-    def test_identical_concurrent_roll_is_idempotent(self):
+    def test_identical_concurrent_roll_is_idempotent(self) -> Any:
         self.activate()
 
         count_lock = Lock()
         draws = [0]
 
-        def deterministic_roll(_):
+        def deterministic_roll(_: Any) -> Any:
             with count_lock:
                 draws[0] += 1
             return 2
@@ -76,9 +68,7 @@ class ConcurrencyTests(TestCase):
         ):
             results = race(
                 12,
-                lambda _: self.manager.roll(
-                    self.match_id, self.host, "same-roll", 1
-                ),
+                lambda _: self.manager.roll(self.match_id, self.host, "same-roll", 1),
             )
 
         accepted = [v for status, v in results if status == "ok"]
@@ -89,11 +79,9 @@ class ConcurrencyTests(TestCase):
         self.assertEqual(sum(x["duplicate"] for x in accepted), 11)
         self.assertEqual({x["revision"] for x in accepted}, {2})
 
-        self.assertEqual(
-            self.manager.snapshot(self.match_id, self.host)["revision"], 2
-        )
+        self.assertEqual(self.manager.snapshot(self.match_id, self.host)["revision"], 2)
 
-    def test_distinct_requests_same_revision_only_one_wins(self):
+    def test_distinct_requests_same_revision_only_one_wins(self) -> None:
         self.activate()
 
         with patch(
@@ -119,7 +107,7 @@ class ConcurrencyTests(TestCase):
         self.assertEqual(rng.call_count, 1)
         self.assertEqual(accepted[0]["revision"], 2)
 
-    def test_wrong_seat_cannot_race_active_player(self):
+    def test_wrong_seat_cannot_race_active_player(self) -> None:
         guest = self.activate()
 
         with patch(
@@ -142,23 +130,19 @@ class ConcurrencyTests(TestCase):
         self.assertEqual(accepted[0]["revision"], 2)
         self.assertEqual(rng.call_count, 1)
 
-    def test_replayed_receipt_does_not_advance_state(self):
+    def test_replayed_receipt_does_not_advance_state(self) -> None:
         self.activate()
 
         with patch(
             "boardlab.games.dado_goal_match.secrets.randbelow",
             return_value=2,
         ) as rng:
-            original = self.manager.roll(
-                self.match_id, self.host, "stable-id", 1
-            )
+            original = self.manager.roll(self.match_id, self.host, "stable-id", 1)
 
             before = self.manager.snapshot(self.match_id, self.host)
 
             for _ in range(50):
-                replay = self.manager.roll(
-                    self.match_id, self.host, "stable-id", 1
-                )
+                replay = self.manager.roll(self.match_id, self.host, "stable-id", 1)
                 self.assertTrue(replay["duplicate"])
                 self.assertEqual(replay["state"], original["state"])
 
@@ -167,25 +151,19 @@ class ConcurrencyTests(TestCase):
         self.assertEqual(before, after)
         self.assertEqual(rng.call_count, 1)
 
-    def test_replayed_id_with_new_revision_rejected(self):
+    def test_replayed_id_with_new_revision_rejected(self) -> None:
         self.activate()
 
         with patch(
             "boardlab.games.dado_goal_match.secrets.randbelow",
             return_value=2,
         ):
-            self.manager.roll(
-                self.match_id, self.host, "bound-id", 1
-            )
+            self.manager.roll(self.match_id, self.host, "bound-id", 1)
 
-        with self.assertRaisesRegex(
-            MatchError, "Request ID reused"
-        ):
-            self.manager.roll(
-                self.match_id, self.host, "bound-id", 2
-            )
+        with self.assertRaisesRegex(MatchError, "Request ID reused"):
+            self.manager.roll(self.match_id, self.host, "bound-id", 2)
 
-    def test_concurrent_capacity_limit(self):
+    def test_concurrent_capacity_limit(self) -> None:
         manager = MatchManager(max_matches=3)
 
         results = race(12, lambda _: manager.create(1))
@@ -195,9 +173,7 @@ class ConcurrencyTests(TestCase):
 
         self.assertEqual(len(accepted), 3)
         self.assertEqual(len(rejected), 9)
-        self.assertEqual(
-            len({v["matchId"] for v in accepted}), 3
-        )
+        self.assertEqual(len({v["matchId"] for v in accepted}), 3)
 
 
 if __name__ == "__main__":

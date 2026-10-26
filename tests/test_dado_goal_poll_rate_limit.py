@@ -7,6 +7,7 @@ import json
 import threading
 from collections.abc import Iterator
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -103,7 +104,7 @@ def test_poll_quota_independent_from_write_quota(
     assert status == 201
 
     path = f"/api/v1/matches/{created['matchId']}"
-    token = created["hostToken"]
+    token = cast(str, created["hostToken"])
 
     for _ in range(2):
         status, snapshot = send(server, "GET", path, token=token)
@@ -112,7 +113,7 @@ def test_poll_quota_independent_from_write_quota(
 
     status, payload = send(server, "GET", path, token=token)
     assert status == 429
-    assert payload["error"]["code"] == "RATE_LIMITED"
+    assert cast(dict[str, object], payload["error"])["code"] == "RATE_LIMITED"
 
     # Excessive reads must not consume the independent write quota.
     status, _ = send(
@@ -136,7 +137,7 @@ def test_poll_quota_recovers_after_window(
     )
 
     path = f"/api/v1/matches/{created['matchId']}"
-    token = created["hostToken"]
+    token = cast(str, created["hostToken"])
 
     for _ in range(2):
         assert send(server, "GET", path, token=token)[0] == 200
@@ -170,7 +171,7 @@ def test_static_assets_do_not_consume_poll_quota(
             server,
             "GET",
             path,
-            token=created["hostToken"],
+            token=cast(str, created["hostToken"]),
         )[0]
         == 200
     )

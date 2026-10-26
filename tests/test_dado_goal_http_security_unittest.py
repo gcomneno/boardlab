@@ -4,12 +4,13 @@ import http.client
 import json
 import threading
 import unittest
+from typing import Any
 
 from boardlab.games.dado_goal_http import create_local_server
 
 
 class HTTPSecurityTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.server = create_local_server()
         self.thread = threading.Thread(
             target=self.server.serve_forever,
@@ -17,12 +18,12 @@ class HTTPSecurityTests(unittest.TestCase):
         )
         self.thread.start()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self.server.shutdown()
         self.server.server_close()
         self.thread.join(timeout=5)
 
-    def request(self, method, path, body=None, headers=None):
+    def request(self, method: Any, path: Any, body: Any = None, headers: Any = None) -> Any:
         conn = http.client.HTTPConnection(
             "127.0.0.1",
             self.server.server_port,
@@ -42,13 +43,13 @@ class HTTPSecurityTests(unittest.TestCase):
         finally:
             conn.close()
 
-    def test_loopback_binding(self):
+    def test_loopback_binding(self) -> None:
         self.assertEqual(
             self.server.server_address[0],
             "127.0.0.1",
         )
 
-    def test_unknown_routes(self):
+    def test_unknown_routes(self) -> None:
         for path in (
             "/",
             "/api/v1/unknown",
@@ -59,7 +60,7 @@ class HTTPSecurityTests(unittest.TestCase):
                 self.assertEqual(status, 404)
                 self.assertIn("error", body)
 
-    def test_query_string_rejected(self):
+    def test_query_string_rejected(self) -> None:
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches?token=secret",
@@ -69,7 +70,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(body["error"]["code"], "BAD_REQUEST")
 
-    def test_duplicate_json_keys_rejected(self):
+    def test_duplicate_json_keys_rejected(self) -> None:
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -79,7 +80,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(body["error"]["code"], "BAD_REQUEST")
 
-    def test_nonfinite_json_rejected(self):
+    def test_nonfinite_json_rejected(self) -> None:
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -89,7 +90,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(body["error"]["code"], "BAD_REQUEST")
 
-    def test_wrong_origin_rejected(self):
+    def test_wrong_origin_rejected(self) -> None:
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -102,7 +103,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 403)
         self.assertEqual(body["error"]["code"], "ORIGIN_DENIED")
 
-    def test_oversized_json_rejected(self):
+    def test_oversized_json_rejected(self) -> None:
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -112,7 +113,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 413)
         self.assertEqual(body["error"]["code"], "PAYLOAD_TOO_LARGE")
 
-    def test_replies_are_not_cacheable(self):
+    def test_replies_are_not_cacheable(self) -> None:
         status, body, headers = self.request(
             "POST",
             "/api/v1/matches",
@@ -127,7 +128,7 @@ class HTTPSecurityTests(unittest.TestCase):
             "nosniff",
         )
 
-    def test_invitation_is_not_authorization(self):
+    def test_invitation_is_not_authorization(self) -> None:
         status, created, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -141,15 +142,12 @@ class HTTPSecurityTests(unittest.TestCase):
         status, body, _ = self.request(
             "GET",
             f"/api/v1/matches/{mid}",
-            headers={
-                "Authorization":
-                    f'Bearer {created["inviteToken"]}'
-            },
+            headers={"Authorization": f"Bearer {created['inviteToken']}"},
         )
         self.assertEqual(status, 401)
         self.assertEqual(body["error"]["code"], "UNAUTHORIZED")
 
-    def test_unknown_json_properties_rejected(self):
+    def test_unknown_json_properties_rejected(self) -> None:
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",

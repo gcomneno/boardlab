@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 from boardlab.games.dado_goal_durable import DurableMatchManager
@@ -54,8 +55,7 @@ else:
 
 
 class ProcessCrashTests(unittest.TestCase):
-
-    def setUp(self):
+    def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
 
@@ -73,7 +73,7 @@ class ProcessCrashTests(unittest.TestCase):
             created["inviteToken"],
         )
 
-    def subprocess_crash(self, mode, request_id):
+    def subprocess_crash(self, mode: Any, request_id: Any) -> Any:
         payload = {
             "mode": mode,
             "path": str(self.path),
@@ -103,15 +103,11 @@ class ProcessCrashTests(unittest.TestCase):
             msg=process.stderr,
         )
 
-    def test_crash_before_commit_rolls_back(self):
-        before = self.manager.snapshot(
-            self.match_id, self.host
-        )
+    def test_crash_before_commit_rolls_back(self) -> None:
+        before = self.manager.snapshot(self.match_id, self.host)
         before_counts = self.manager.counts(self.match_id)
 
-        self.subprocess_crash(
-            "before_commit", "aborted-request"
-        )
+        self.subprocess_crash("before_commit", "aborted-request")
 
         recovered = DurableMatchManager(self.path)
         recovered.initialize()
@@ -125,26 +121,20 @@ class ProcessCrashTests(unittest.TestCase):
             before_counts,
         )
 
-    def test_crash_after_commit_preserves_receipt(self):
-        self.subprocess_crash(
-            "after_commit", "committed-request"
-        )
+    def test_crash_after_commit_preserves_receipt(self) -> None:
+        self.subprocess_crash("after_commit", "committed-request")
 
         recovered = DurableMatchManager(self.path)
         recovered.initialize()
 
         self.assertEqual(
-            recovered.snapshot(
-                self.match_id, self.host
-            )["revision"],
+            recovered.snapshot(self.match_id, self.host)["revision"],
             2,
         )
 
         with patch(
             "boardlab.games.dado_goal_durable.secrets.randbelow",
-            side_effect=AssertionError(
-                "Replay attempted another die roll"
-            ),
+            side_effect=AssertionError("Replay attempted another die roll"),
         ):
             replay = recovered.roll(
                 self.match_id,
@@ -160,36 +150,26 @@ class ProcessCrashTests(unittest.TestCase):
             (2, 1),
         )
 
-    def test_recovered_authorization(self):
-        self.subprocess_crash(
-            "after_commit", "authorized-request"
-        )
+    def test_recovered_authorization(self) -> None:
+        self.subprocess_crash("after_commit", "authorized-request")
 
         recovered = DurableMatchManager(self.path)
         recovered.initialize()
 
-        snapshot = recovered.snapshot(
-            self.match_id, self.host
-        )
+        snapshot = recovered.snapshot(self.match_id, self.host)
 
         self.assertEqual(snapshot["seat"], 0)
 
-    def test_database_integrity_after_crash(self):
-        self.subprocess_crash(
-            "before_commit", "integrity-request"
-        )
+    def test_database_integrity_after_crash(self) -> None:
+        self.subprocess_crash("before_commit", "integrity-request")
 
         import sqlite3
 
         with sqlite3.connect(self.path) as db:
-            result = db.execute(
-                "PRAGMA integrity_check"
-            ).fetchone()[0]
+            result = db.execute("PRAGMA integrity_check").fetchone()[0]
             self.assertEqual(result, "ok")
 
-            foreign_keys = db.execute(
-                "PRAGMA foreign_key_check"
-            ).fetchall()
+            foreign_keys = db.execute("PRAGMA foreign_key_check").fetchall()
             self.assertEqual(foreign_keys, [])
 
 

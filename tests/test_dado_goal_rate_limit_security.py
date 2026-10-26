@@ -6,7 +6,7 @@ import http.client
 import json
 import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -87,7 +87,7 @@ def test_invalid_json_media_consumes_quota(service: Any) -> None:
 
     status, payload = send(server, "POST", "/api/v1/matches", {"handsPerTeam": 2})
     assert status == 429
-    assert payload["error"]["code"] == "RATE_LIMITED"
+    assert cast(dict[str, object], payload["error"])["code"] == "RATE_LIMITED"
 
 
 def test_failed_invitation_consumes_quota(service: Any) -> None:
@@ -135,7 +135,7 @@ def test_get_snapshot_does_not_consume_write_quota(service: Any) -> None:
             server,
             "GET",
             f"/api/v1/matches/{created['matchId']}",
-            token=created["hostToken"],
+            token=cast(str, created["hostToken"]),
         )
         assert status == 200
 

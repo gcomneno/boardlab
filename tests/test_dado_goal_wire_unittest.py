@@ -3,6 +3,7 @@
 import copy
 import json
 import unittest
+from typing import Any, cast
 
 from boardlab.games.dado_goal import (
     Phase,
@@ -19,13 +20,13 @@ from boardlab.games.dado_goal_wire import (
 
 
 class WireSchemaTests(unittest.TestCase):
-    def test_initial_roundtrip(self):
+    def test_initial_roundtrip(self) -> None:
         for n in (1, 2, 3, 10, 1000):
             state = initial_state(n)
             wire = json.loads(json.dumps(encode_state(state)))
             self.assertEqual(decode_state(wire), state)
 
-    def test_goal_roundtrip(self):
+    def test_goal_roundtrip(self) -> None:
         state = initial_state(2)
         for face in (
             TeamFace.SHOT,
@@ -40,12 +41,10 @@ class WireSchemaTests(unittest.TestCase):
             state,
         )
 
-    def test_finished_roundtrip(self):
+    def test_finished_roundtrip(self) -> None:
         state = initial_state(1)
         for _ in range(2):
-            state = apply_roll(
-                state, TeamFace.INTERCEPTED
-            )
+            state = apply_roll(state, TeamFace.INTERCEPTED)
 
         self.assertIs(state.phase, Phase.FINISHED)
         self.assertEqual(
@@ -53,14 +52,14 @@ class WireSchemaTests(unittest.TestCase):
             state,
         )
 
-    def test_duplicate_keys_not_accepted_as_fields(self):
+    def test_duplicate_keys_not_accepted_as_fields(self) -> None:
         payload = encode_state(initial_state(1))
         payload["unexpected"] = 42
 
         with self.assertRaises(ValueError):
             decode_state(payload)
 
-    def test_reject_malformed_snapshots(self):
+    def test_reject_malformed_snapshots(self) -> None:
         valid = encode_state(initial_state(2))
 
         modifications = [
@@ -89,19 +88,20 @@ class WireSchemaTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     decode_state(payload)
 
-    def test_reject_non_objects(self):
-        for value in (None, [], "state", 123):
+    def test_reject_non_objects(self) -> None:
+        invalid_values: tuple[object, ...] = (None, [], "state", 123)
+        for value in invalid_values:
             with self.subTest(value=value), self.assertRaises(ValueError):
-                decode_state(value)
+                decode_state(cast(Any, value))
 
-    def test_no_presentation_fields(self):
+    def test_no_presentation_fields(self) -> None:
         payload = encode_state(initial_state(1))
 
         self.assertNotIn("lastRoll", payload)
         self.assertNotIn("names", payload)
         self.assertNotIn("colors", payload)
 
-    def test_json_roundtrip_is_stable(self):
+    def test_json_roundtrip_is_stable(self) -> None:
         state = initial_state(2)
 
         state = apply_roll(state, TeamFace.SHOT)
@@ -109,9 +109,7 @@ class WireSchemaTests(unittest.TestCase):
         state = apply_roll(state, ResultFace.PENALTY)
 
         first = encode_state(state)
-        second = encode_state(
-            decode_state(json.loads(json.dumps(first)))
-        )
+        second = encode_state(decode_state(json.loads(json.dumps(first))))
 
         self.assertEqual(first, second)
 
