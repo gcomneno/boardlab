@@ -123,7 +123,11 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            # Peer disconnected before the HTTP response completed.
+            self.close_connection = True
 
     def _error(self, status: int, code: str) -> None:
         # Never reuse an errored connection with unread input.
@@ -234,7 +238,11 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
             "base-uri 'none'; frame-ancestors 'none'",
         )
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            # Peer disconnected before the HTTP response completed.
+            self.close_connection = True
 
     def _dispatch(self) -> None:
         self._guard()
@@ -317,6 +325,13 @@ class DadoGoalHandler(BaseHTTPRequestHandler):
         except (MatchError, DurableMatchError, LifecycleAuthorityError) as exc:
             status, code = ERRORS.get(str(exc), (400, "BAD_REQUEST"))
             self._error(status, code)
+
+    def handle(self) -> None:
+        """Close expected broken connections without hiding server faults."""
+        try:
+            super().handle()
+        except (ConnectionResetError, BrokenPipeError, TimeoutError):
+            self.close_connection = True
 
     def do_GET(self) -> None:
         self._handle()
