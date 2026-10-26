@@ -18,6 +18,11 @@
     </header>
 
     <section class="panel" aria-label="Impostazioni partita">
+      <label for="language">Lingua</label>
+      <select id="language" aria-label="Language / Lingua">
+        <option value="it">Italiano</option>
+        <option value="en">English</option>
+      </select>
       <label for="mode">Modalità</label>
       <select id="mode">
         <option value="ai">Contro il computer</option>
@@ -28,8 +33,7 @@
 
     <details class="strategy-panel" id="strategy-panel">
       <summary>Configura l'intelligenza artificiale</summary>
-      <p>Scegli l'algoritmo e i parametri, poi premi
-      <strong>Nuova partita</strong> per applicarli.</p>
+      <p id="strategy-help">Scegli l'algoritmo e i parametri, poi premi Nuova partita per applicarli.</p>
 
       <div class="strategy-fields">
         <label for="algorithm">Algoritmo</label>
