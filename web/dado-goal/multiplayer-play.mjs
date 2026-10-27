@@ -11,7 +11,23 @@ try {
   // Private browsing or browser policy may disable storage.
 }
 
-const client = new MultiplayerClient({ storage: browserStorage });
+let csrfToken = null;
+let authenticated = false;
+
+const client = new MultiplayerClient({
+  storage: browserStorage,
+  fetchImpl: (input, init = {}) => {
+    const headers = new Headers(init.headers);
+    if (csrfToken && init.method && init.method !== "GET") {
+      headers.set("X-Dado-CSRF", csrfToken);
+    }
+    return globalThis.fetch(input, {
+      ...init,
+      headers,
+      credentials: "same-origin",
+    });
+  },
+});
 
 let snapshot = null;
 let lastFace = null;
@@ -47,8 +63,8 @@ function render() {
   $("roll").disabled = !myTurn || busy;
   $("refresh").disabled = !active || busy;
   $("leave").disabled = !client.seatToken || busy;
-  $("create").disabled = Boolean(client.seatToken) || busy;
-  $("join").disabled = Boolean(client.seatToken) || busy;
+  $("create").disabled = !authenticated || Boolean(client.seatToken) || busy;
+  $("join").disabled = !authenticated || Boolean(client.seatToken) || busy;
 
   if (!state) return;
 
@@ -105,6 +121,59 @@ async function synchronize() {
     polling = false;
   }
 }
+
+$("login").addEventListener("click", () => work(async () => {
+  const accessKey = $("access-key").value;
+  if (!accessKey.trim()) throw new Error("Inserisci la chiave di accesso.");
+
+  const response = await globalThis.fetch("/auth/login", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ accessKey }),
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  const result = await response.json();
+  if (!response.ok || typeof result.csrfToken !== "string") {
+    throw new Error("Accesso rifiutato. Verifica la chiave.");
+  }
+
+  csrfToken = result.csrfToken;
+  authenticated = true;
+  $("access-key").value = "";
+  $("auth-status").textContent = "Accesso effettuato.";
+  $("login").disabled = true;
+  $("logout").disabled = false;
+  render();
+}));
+
+$("logout").addEventListener("click", () => work(async () => {
+  const response = await globalThis.fetch("/auth/logout", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "X-Dado-CSRF": csrfToken,
+    },
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("Impossibile terminare la sessione.");
+
+  csrfToken = null;
+  authenticated = false;
+  client.leave();
+  snapshot = null;
+  lastFace = null;
+  $("match-id").value = "";
+  $("invite").value = "";
+  $("auth-status").textContent = "Sessione terminata.";
+  $("login").disabled = false;
+  $("logout").disabled = true;
+  render();
+}));
 
 $("create").addEventListener("click", () => work(async () => {
   const raw = $("hands").value.trim();
