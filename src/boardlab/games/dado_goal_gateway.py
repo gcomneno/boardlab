@@ -22,7 +22,9 @@ class GatewayServer(ThreadingHTTPServer):
     allow_reuse_address = True
 
     def __init__(
-        self, upstream_port: int, *,
+        self,
+        upstream_port: int,
+        *,
         public_origin: str | None = None,
         access_key: str | None = None,
     ) -> None:
@@ -32,13 +34,10 @@ class GatewayServer(ThreadingHTTPServer):
         if public_origin is not None:
             parsed = urlsplit(public_origin)
             hostname = parsed.hostname
-            valid_hostname = (
-                hostname == "localhost"
-                or (
-                    hostname is not None
-                    and hostname.endswith(".trycloudflare.com")
-                    and len(hostname) > len(".trycloudflare.com")
-                )
+            valid_hostname = hostname == "localhost" or (
+                hostname is not None
+                and hostname.endswith(".trycloudflare.com")
+                and len(hostname) > len(".trycloudflare.com")
             )
             canonical = (
                 f"https://localhost:{self.server_port}"
@@ -113,9 +112,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
         access_key = self.server.access_key
         if access_key is not None:
             supplied = self.headers.get_all("X-Dado-Access-Key", [])
-            if len(supplied) != 1 or not hmac.compare_digest(
-                supplied[0], access_key
-            ):
+            if len(supplied) != 1 or not hmac.compare_digest(supplied[0], access_key):
                 self._reply(
                     403,
                     b'{"error":"ACCESS_DENIED"}',
@@ -167,9 +164,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
             if key.lower() in ALLOWED_REQUEST_HEADERS:
                 headers[key] = value
         if origin is not None:
-            headers["Origin"] = (
-                f"http://127.0.0.1:{self.server.upstream_port}"
-            )
+            headers["Origin"] = f"http://127.0.0.1:{self.server.upstream_port}"
 
         try:
             connection = http.client.HTTPConnection(
@@ -177,27 +172,28 @@ class GatewayHandler(BaseHTTPRequestHandler):
             )
             try:
                 connection.request(
-                    self.command, self.path, body=body,
+                    self.command,
+                    self.path,
+                    body=body,
                     headers=headers,
                 )
                 response = connection.getresponse()
                 payload = response.read(MAX_BODY + 1)
                 if len(payload) > MAX_BODY:
                     self._reply(
-                        502, b'{"error":"UPSTREAM_LIMIT"}',
+                        502,
+                        b'{"error":"UPSTREAM_LIMIT"}',
                         "application/json",
                     )
                     return
-                content_type = (
-                    response.getheader("Content-Type")
-                    or "application/octet-stream"
-                )
+                content_type = response.getheader("Content-Type") or "application/octet-stream"
                 self._reply(response.status, payload, content_type)
             finally:
                 connection.close()
         except (OSError, http.client.HTTPException):
             self._reply(
-                502, b'{"error":"UPSTREAM_UNAVAILABLE"}',
+                502,
+                b'{"error":"UPSTREAM_UNAVAILABLE"}',
                 "application/json",
             )
 

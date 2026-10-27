@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import http.client
 from threading import Thread
+from typing import Any
 
 import pytest
 
@@ -11,7 +12,7 @@ from boardlab.games.dado_goal_gateway import GatewayServer
 from boardlab.games.dado_goal_http import create_local_server
 
 
-def test_https_origin_rejects_invalid_configurations():
+def test_https_origin_rejects_invalid_configurations() -> None:
     for origin in (
         "http://localhost:1000",
         "https://example.com",
@@ -23,7 +24,7 @@ def test_https_origin_rejects_invalid_configurations():
             GatewayServer(1, public_origin=origin)
 
 
-def test_https_origin_maps_to_loopback_upstream():
+def test_https_origin_maps_to_loopback_upstream() -> None:
     upstream = create_local_server()
     gateway = GatewayServer(upstream.server_port)
     gateway.public_origin = f"https://localhost:{gateway.server_port}"
@@ -60,7 +61,7 @@ def test_https_origin_maps_to_loopback_upstream():
             thread.join(timeout=5)
 
 
-def test_public_origin_configuration_and_exact_host():
+def test_public_origin_configuration_and_exact_host() -> None:
     origin = "https://dado-goal-example.trycloudflare.com"
     gateway = GatewayServer(1, public_origin=origin)
     try:
@@ -82,6 +83,6 @@ def test_public_origin_configuration_and_exact_host():
         "https://user@dado-goal-example.trycloudflare.com",
     ],
 )
-def test_public_origin_rejects_invalid_values(origin):
+def test_public_origin_rejects_invalid_values(origin: Any) -> None:
     with pytest.raises(ValueError):
         GatewayServer(1, public_origin=origin)
