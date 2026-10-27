@@ -10,6 +10,19 @@
 <body>
   <main>
     <h1>⚽ Dado Goal — Sfida tra amici</h1>
+    <section id="auth-panel" aria-labelledby="auth-heading">
+      <h2 id="auth-heading">Accesso</h2>
+      <label>
+        Chiave di accesso
+        <input id="access-key" type="password"
+               autocomplete="current-password" required>
+      </label>
+      <button id="login" type="button">Accedi</button>
+      <button id="logout" type="button" disabled>Esci</button>
+      <p id="auth-status" role="status" aria-live="polite">
+        Accedi per creare o raggiungere una partita.
+      </p>
+    </section>
     <p>Laboratorio locale: due finestre, due giocatori,
       un server autorevole.</p>
 
@@ -19,7 +32,7 @@
         Mani per squadra
         <input id="hands" type="number" min="1" max="1000" value="3">
       </label>
-      <button id="create" type="button">Crea partita</button>
+      <button id="create" type="button" disabled>Crea partita</button>
       <label>
         <input id="remember" type="checkbox">
         Ricorda questa postazione
@@ -42,7 +55,7 @@
         <input id="invite" type="text" size="45"
                autocomplete="off" spellcheck="false">
       </label>
-      <button id="join" type="button">Entra nella partita</button>
+      <button id="join" type="button" disabled>Entra nella partita</button>
     </section>
 
     <section>
@@ -71,7 +84,7 @@
       di recuperarla dopo il refresh verificandola con il server.
       Questa funzione non protegge da script malevoli o da altri
       utenti dello stesso dispositivo.</p>
-    <p>Non pubblicare questa pagina come servizio Internet.</p>
+    <p>Condividi con l’avversario solo il codice invito, mai la chiave di accesso.</p>
   </main>
 </body>
 </html>
