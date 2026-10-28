@@ -1,0 +1,75 @@
+/* Dado Goal handmade dice theme — multiplayer-only, no engine changes. */
+:root { color-scheme: dark; font-family: system-ui, sans-serif; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #fff7ec;
+  background: #10110e url('./dado-goal-handmade-dice.png') center 30% / cover fixed no-repeat;
+  line-height: 1.5;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(8,10,9,.9) 0%,rgba(8,10,9,.79) 52%,rgba(8,10,9,.37) 100%);
+}
+main {
+  position: relative;
+  width: min(100% - 2rem, 760px);
+  margin: clamp(1rem,4vw,3rem) auto;
+  padding: clamp(1.2rem,4vw,2.6rem);
+  border: 1px solid rgba(255,228,177,.3);
+  border-radius: 22px;
+  background: rgba(15, 18, 18, .85);
+  box-shadow: 0 24px 90px rgba(0,0,0,.5);
+  backdrop-filter: blur(12px);
+}
+h1 { font-size: clamp(1.8rem,5vw,3rem); line-height: 1.1; margin: 0 0 1rem; color: #ffe1a1; }
+h2 { font-size: 1.1rem; color: #ffd484; margin: .2rem 0 .8rem; }
+section { padding: 1.1rem 0; border-top: 1px solid rgba(255,255,255,.17); }
+label { display: block; margin: .8rem 0; font-weight: 600; }
+input { display: block; width: 100%; max-width: 100%; margin-top: .3rem; padding: .75rem; border: 1px solid #9e9b8b; border-radius: 10px; background: #212724; color: #fff; font-size: 1rem; }
+input:focus-visible,button:focus-visible { outline: 3px solid #ffdc72; outline-offset: 3px; }
+button { cursor: pointer; border: 0; border-radius: 10px; margin: .3rem .3rem .3rem 0; padding: .75rem 1rem; font-weight: 800; font-size: 1rem; color: #1a1b15; background: #ffd470; }
+button:hover:not(:disabled) { background: #ffe7a6; }
+button:disabled { opacity: .42; cursor: not-allowed; }
+#status { font-weight: 700; color: #b6f1c8; }
+#score { font-size: 1.5rem; font-weight: 900; color: #fff0c5; }
+@media (max-width: 640px) {
+  body { background-attachment: scroll; background-position: center top; }
+  main { width: calc(100% - 1rem); padding: 1rem; margin: .5rem auto; }
+}
+@media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; } }
+
+
+/* DG-CF26: inline checkbox alignment */
+label:has(> input[type="checkbox"]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+}
+
+label > input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+/* Keep the exit action separate from match controls. */
+.match-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .3rem;
+}
+
+.match-actions button {
+  margin: .3rem 0;
+}
+
+.match-actions #leave {
+  margin-left: auto;
+}

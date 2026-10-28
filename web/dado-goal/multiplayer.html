@@ -23,8 +23,8 @@
         Accedi per creare o raggiungere una partita.
       </p>
     </section>
-    <p>Laboratorio locale: due finestre, due giocatori,
-      un server autorevole.</p>
+    <p>Multiplayer online: due giocatori, una partita
+      condivisa in tempo reale.</p>
 
     <section>
       <h2>Crea una partita</h2>
@@ -44,17 +44,13 @@
 
     <section>
       <h2>Invita un amico</h2>
-      <p>Trasmetti i due codici soltanto al tuo avversario.</p>
-      <label>
-        ID partita
-        <input id="match-id" type="text" size="45"
-               autocomplete="off" spellcheck="false">
-      </label>
+      <p>Condividi soltanto il codice invito con il tuo avversario.</p>
       <label>
         Codice invito
-        <input id="invite" type="text" size="45"
+        <input id="invite-code" type="text" size="60"
                autocomplete="off" spellcheck="false">
       </label>
+      <button id="copy-invite" type="button">Copia codice invito</button>
       <button id="join" type="button" disabled>Entra nella partita</button>
     </section>
 
@@ -68,15 +64,17 @@
       <p id="turn">Turno: —</p>
       <p id="die">Dado: —</p>
       <p id="last-roll">Ultimo lancio: —</p>
-      <button id="roll" type="button" disabled>
-        Lancia il dado
-      </button>
-      <button id="refresh" type="button" disabled>
-        Aggiorna stato
-      </button>
-      <button id="leave" type="button" disabled>
-        Dimentica questa postazione / Esci
-      </button>
+      <div class="match-actions">
+        <button id="roll" type="button" disabled>
+          Lancia il dado
+        </button>
+        <button id="refresh" type="button" disabled>
+          Aggiorna stato
+        </button>
+        <button id="leave" type="button" disabled>
+          Esci
+        </button>
+      </div>
     </section>
 
     <p>Senza consenso le credenziali restano soltanto in memoria.

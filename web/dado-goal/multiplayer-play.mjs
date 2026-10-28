@@ -4,6 +4,23 @@ import {
 } from "./multiplayer-client.mjs";
 
 const $ = id => document.getElementById(id);
+
+// One user-facing invitation; two independent server credentials.
+function encodeInvite(matchId, inviteToken) {
+  return `DG1.${matchId}.${inviteToken}`;
+}
+
+function decodeInvite(code) {
+  const match = /^DG1\.([A-Za-z0-9_-]{20,128})\.([A-Za-z0-9_-]{20,256})$/
+    .exec(code.trim());
+
+  if (!match) {
+    throw new Error("Codice invito non valido.");
+  }
+
+  return { matchId: match[1], inviteToken: match[2] };
+}
+
 let browserStorage = null;
 try {
   browserStorage = window.localStorage;
@@ -86,7 +103,9 @@ function render() {
   } else if (status === "waiting") {
     message("Partita creata: in attesa dell'amico.");
   } else {
-    message(`Partita attiva — revisione ${snapshot.revision}.`);
+    message(
+      `Partita attiva — lancio ${Math.max(0, snapshot.revision - 1)}.`
+    );
   }
 }
 
@@ -113,6 +132,10 @@ async function synchronize() {
     const next = await client.snapshot();
     if (!snapshot || next.revision >= snapshot.revision) {
       snapshot = next;
+      if (next.lastRoll) {
+        lastFace =
+          `Giocatore ${next.lastRoll.seat + 1}: ${next.lastRoll.face}`;
+      }
       render();
     }
   } catch (error) {
@@ -167,8 +190,7 @@ $("logout").addEventListener("click", () => work(async () => {
   client.leave();
   snapshot = null;
   lastFace = null;
-  $("match-id").value = "";
-  $("invite").value = "";
+  $("invite-code").value = "";
   $("auth-status").textContent = "Sessione terminata.";
   $("login").disabled = false;
   $("logout").disabled = true;
@@ -182,19 +204,29 @@ $("create").addEventListener("click", () => work(async () => {
   }
 
   const created = await client.create(Number(raw));
-  $("match-id").value = created.matchId;
-  $("invite").value = created.inviteToken;
+  $("invite-code").value = encodeInvite(
+    created.matchId, created.inviteToken
+  );
   snapshot = created.snapshot;
   lastFace = null;
   if ($("remember").checked) client.remember();
 }));
 
-$("join").addEventListener("click", () => work(async () => {
-  const id = $("match-id").value.trim();
-  const invite = $("invite").value.trim();
 
-  snapshot = await client.join(id, invite);
-  $("invite").value = "";
+$("copy-invite").addEventListener("click", () => work(async () => {
+  const code = $("invite-code").value.trim();
+  decodeInvite(code);
+  await navigator.clipboard.writeText(code);
+  message("Codice invito copiato.");
+}));
+
+$("join").addEventListener("click", () => work(async () => {
+  const { matchId, inviteToken } = decodeInvite(
+    $("invite-code").value
+  );
+
+  snapshot = await client.join(matchId, inviteToken);
+  $("invite-code").value = "";
   lastFace = null;
   if ($("remember").checked) client.remember();
 }));
@@ -207,7 +239,7 @@ $("roll").addEventListener("click", () => work(async () => {
   const revision = snapshot.revision;
 
   const result = await client.roll(revision, requestId);
-  lastFace = result.face;
+  lastFace = `Giocatore ${client.seat + 1}: ${result.face}`;
 
   snapshot = {
     revision: result.revision,
@@ -226,8 +258,7 @@ $("leave").addEventListener("click", () => {
   client.leave();
   snapshot = null;
   lastFace = null;
-  $("invite").value = "";
-  $("match-id").value = "";
+  $("invite-code").value = "";
   $("remember").checked = false;
   message("Postazione dimenticata e sessione locale abbandonata.");
   render();
@@ -258,9 +289,11 @@ async function recoverOnLoad() {
     const restored = await client.restore();
     if (!restored) return;
     snapshot = restored;
-    lastFace = null;
+    lastFace = restored.lastRoll
+      ? `Giocatore ${restored.lastRoll.seat + 1}: ${restored.lastRoll.face}`
+      : null;
     $("remember").checked = true;
-    $("match-id").value = client.matchId;
+    $("invite-code").value = "";
     render();
   } catch (error) {
     message(errorMessage(error));
