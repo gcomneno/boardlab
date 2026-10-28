@@ -49,13 +49,13 @@ async function digest(value) {
   ).join("");
 }
 
-async function allowLogin(db, request) {
+async function allowRequest(db, request, scope, limit) {
   // Cloudflare supplies this header; direct public access without
   // an identifiable client is rejected rather than unmetered.
   const ip = request.headers.get("CF-Connecting-IP");
   if (!ip || ip.length > 64) return false;
 
-  const client = await digest(ip);
+  const client = await digest(`${scope}:${ip}`);
   const now = Math.floor(Date.now() / 1000);
 
   const row = await db.prepare(`
@@ -72,7 +72,7 @@ async function allowLogin(db, request) {
     RETURNING attempts
   `).bind(client, now).first();
 
-  return row !== null && row.attempts <= 10;
+  return row !== null && row.attempts <= limit;
 }
 
 function boundaryValid(request) {
@@ -119,7 +119,7 @@ export default {
       }
 
       if (path === "/auth/login" && request.method === "POST") {
-        if (!(await allowLogin(env.DB, request))) {
+        if (!(await allowRequest(env.DB, request, "login", 10))) {
           return error(429, "RATE_LIMITED");
         }
         return login(request, env.DB, env.ACCESS_KEY);
@@ -133,6 +133,23 @@ export default {
         if (!(await authenticate(request, env.DB))) {
           return sessionDenied();
         }
+
+        if (request.method === "POST") {
+          const operation = path === "/api/v1/matches"
+            ? ["create", 5]
+            : path.endsWith("/join")
+              ? ["join", 15]
+              : path.endsWith("/roll")
+                ? ["roll", 60]
+                : ["other", 10];
+
+          if (!(await allowRequest(
+            env.DB, request, operation[0], operation[1]
+          ))) {
+            return error(429, "RATE_LIMITED");
+          }
+        }
+
         const authority = new D1Authority(env.DB);
         return routeMultiplayer(request, authority);
       }

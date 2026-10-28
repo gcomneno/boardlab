@@ -14,7 +14,7 @@
     {
       "binding": "DB",
       "database_name": "dado-goal-multiplayer",
-      "database_id": "00000000-0000-4000-8000-000000000004",
+      "database_id": "72279682-30b6-4508-ae25-c7d0a7abf30e",
       "migrations_dir": "migrations"
     }
   ]
