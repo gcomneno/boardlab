@@ -1,0 +1,9 @@
+# Local Wrangler runtime state; never commit databases or caches.
+.wrangler/
+
+# Local dependencies and credentials.
+node_modules/
+.env
+.env.*
+.dev.vars
+.dev.vars.*

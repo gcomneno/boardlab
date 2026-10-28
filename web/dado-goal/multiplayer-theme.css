@@ -42,3 +42,18 @@ button:disabled { opacity: .42; cursor: not-allowed; }
   main { width: calc(100% - 1rem); padding: 1rem; margin: .5rem auto; }
 }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; } }
+
+
+/* DG-CF26: inline checkbox alignment */
+label:has(> input[type="checkbox"]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.6rem;
+}
+
+label > input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  flex: 0 0 auto;
+}
