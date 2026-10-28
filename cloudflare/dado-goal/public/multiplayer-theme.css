@@ -57,3 +57,19 @@ label > input[type="checkbox"] {
   margin: 0;
   flex: 0 0 auto;
 }
+
+/* Keep the exit action separate from match controls. */
+.match-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .3rem;
+}
+
+.match-actions button {
+  margin: .3rem 0;
+}
+
+.match-actions #leave {
+  margin-left: auto;
+}
