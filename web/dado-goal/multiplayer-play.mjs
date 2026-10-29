@@ -82,6 +82,8 @@ function render() {
   $("leave").disabled = !client.seatToken || busy;
   $("create").disabled = !authenticated || Boolean(client.seatToken) || busy;
   $("join").disabled = !authenticated || Boolean(client.seatToken) || busy;
+  $("copy-invite").disabled =
+    !$("invite-code").value.trim() || busy;
 
   if (!state) return;
 
@@ -146,27 +148,21 @@ async function synchronize() {
 }
 
 $("login").addEventListener("click", () => work(async () => {
-  const accessKey = $("access-key").value;
-  if (!accessKey.trim()) throw new Error("Inserisci la chiave di accesso.");
-
-  const response = await globalThis.fetch("/auth/login", {
+  const response = await globalThis.fetch("/auth/guest", {
     method: "POST",
     headers: {
       Accept: "application/json",
-      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ accessKey }),
     credentials: "same-origin",
     cache: "no-store",
   });
   const result = await response.json();
   if (!response.ok || typeof result.csrfToken !== "string") {
-    throw new Error("Accesso rifiutato. Verifica la chiave.");
+    throw new Error("Accesso non disponibile. Riprova più tardi.");
   }
 
   csrfToken = result.csrfToken;
   authenticated = true;
-  $("access-key").value = "";
   $("auth-status").textContent = "Accesso effettuato.";
   $("login").disabled = true;
   $("logout").disabled = false;
@@ -213,44 +209,38 @@ $("create").addEventListener("click", () => work(async () => {
 }));
 
 
-$("copy-invite").addEventListener("click", () => work(async () => {
+$("invite-code").addEventListener("input", render);
+
+let copyResetTimer = null;
+
+$("copy-invite").addEventListener("click", async () => {
+  const button = $("copy-invite");
   const code = $("invite-code").value.trim();
-  decodeInvite(code);
-  await navigator.clipboard.writeText(code);
-  message("Codice invito copiato.");
-}));
 
-$("join").addEventListener("click", () => work(async () => {
-  const { matchId, inviteToken } = decodeInvite(
-    $("invite-code").value
-  );
+  if (!code || busy) return;
 
-  snapshot = await client.join(matchId, inviteToken);
-  $("invite-code").value = "";
-  lastFace = null;
-  if ($("remember").checked) client.remember();
-}));
+  if (copyResetTimer !== null) {
+    clearTimeout(copyResetTimer);
+    copyResetTimer = null;
+  }
 
-$("roll").addEventListener("click", () => work(async () => {
-  if (!snapshot || snapshot.status !== "active" ||
-      snapshot.state.player !== client.seat) return;
+  button.classList.remove("copy-success");
+  button.textContent = "Copia codice invito";
 
-  const requestId = crypto.randomUUID();
-  const revision = snapshot.revision;
+  try {
+    await navigator.clipboard.writeText(code);
+    button.textContent = "✓ Copiato!";
+    button.classList.add("copy-success");
 
-  const result = await client.roll(revision, requestId);
-  lastFace = `Giocatore ${client.seat + 1}: ${result.face}`;
-
-  snapshot = {
-    revision: result.revision,
-    status: result.status,
-    seat: client.seat,
-    state: result.state,
-  };
-}));
-
-$("refresh").addEventListener("click", () => {
-  void synchronize();
+    copyResetTimer = setTimeout(() => {
+      button.textContent = "Copia codice invito";
+      button.classList.remove("copy-success");
+      copyResetTimer = null;
+      render();
+    }, 1300);
+  } catch {
+    message("Impossibile copiare: seleziona il codice e copialo manualmente.");
+  }
 });
 
 $("leave").addEventListener("click", () => {

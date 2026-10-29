@@ -106,6 +106,15 @@ export async function login(request, db, accessKey) {
     return reply(403, { error: "ACCESS_DENIED" });
   }
 
+  return issueSession(db);
+}
+
+// Anonymous access uses the same secure cookie and CSRF contract.
+export async function guestLogin(db) {
+  return issueSession(db);
+}
+
+async function issueSession(db) {
   const sessionToken = randomToken();
   const csrfToken = randomToken();
   const now = Math.floor(Date.now() / 1000);

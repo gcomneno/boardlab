@@ -5,7 +5,7 @@ body {
   margin: 0;
   min-height: 100vh;
   color: #fff7ec;
-  background: #10110e url('./dado-goal-handmade-dice.png') center 30% / cover fixed no-repeat;
+  background: #10110e url('./dado-goal-handmade-dice.png') calc(50% + 120px) 50% / cover fixed no-repeat;
   line-height: 1.5;
 }
 body::before {
@@ -13,7 +13,7 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(8,10,9,.9) 0%,rgba(8,10,9,.79) 52%,rgba(8,10,9,.37) 100%);
+  background: linear-gradient(90deg, rgba(8,10,9,.35) 0%,rgba(8,10,9,.30) 52%,rgba(8,10,9,.15) 100%);
 }
 main {
   position: relative;
@@ -22,9 +22,9 @@ main {
   padding: clamp(1.2rem,4vw,2.6rem);
   border: 1px solid rgba(255,228,177,.3);
   border-radius: 22px;
-  background: rgba(15, 18, 18, .85);
+  background: rgba(15, 18, 18, .75);
   box-shadow: 0 24px 90px rgba(0,0,0,.5);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(2px);
 }
 h1 { font-size: clamp(1.8rem,5vw,3rem); line-height: 1.1; margin: 0 0 1rem; color: #ffe1a1; }
 h2 { font-size: 1.1rem; color: #ffd484; margin: .2rem 0 .8rem; }
@@ -72,4 +72,49 @@ label > input[type="checkbox"] {
 
 .match-actions #leave {
   margin-left: auto;
+}
+
+
+/* Secondary information: readable, without competing with game controls. */
+.game-notes {
+  color: #b9c3bc;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.game-notes p {
+  margin: 0.45rem 0;
+}
+
+/* Brief, accessible confirmation after copying the invitation. */
+#copy-invite.copy-success {
+  background: #b6f1c8;
+  color: #173222;
+  animation: invite-copied .25s ease-out;
+}
+
+@keyframes invite-copied {
+  from { transform: scale(.97); }
+  to { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #copy-invite.copy-success {
+    animation: none;
+  }
+}
+
+/* Discreet copyright footer. */
+.game-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, .17);
+  color: #b9c3bc;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.game-footer p {
+  margin: .3rem 0;
 }
