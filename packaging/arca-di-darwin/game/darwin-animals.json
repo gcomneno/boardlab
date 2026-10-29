@@ -1,0 +1,190 @@
+{
+  "chapter": "ultima-scelta",
+  "title": "Capitolo 6 — L'Ultima Scelta di Darwin",
+  "capacity": 1,
+  "required_animals": 1,
+  "scoring": "riflessione_senza_punti",
+  "note": "Catalogo divulgativo: comprende specie, generi e gruppi zoologici; le emoji sono indicative.",
+  "animals": [
+    {
+      "id": "armadillo",
+      "name": "Armadillo",
+      "emoji": "🐾",
+      "scientific": "Dasypodidae",
+      "category": "vivente",
+      "region": "Sud America",
+      "didactic_note": "La sua corazza è formata da placche ossee. Darwin studiò anche grandi mammiferi fossili dotati di protezioni simili."
+    },
+    {
+      "id": "caracara",
+      "name": "Caracara",
+      "emoji": "🦅",
+      "scientific": "Caracara spp.",
+      "category": "vivente",
+      "region": "Sud America",
+      "didactic_note": "È un rapace opportunista: oltre a cacciare può nutrirsi di carogne. Svolge così anche il ruolo di spazzino dell'ecosistema."
+    },
+    {
+      "id": "cervo-pampas",
+      "name": "Cervo delle pampas",
+      "emoji": "🦌",
+      "scientific": "Ozotoceros bezoarticus",
+      "category": "vivente",
+      "region": "Sud America",
+      "didactic_note": "Vive nelle praterie sudamericane. La trasformazione degli ambienti erbosi può ridurre lo spazio disponibile per questa specie."
+    },
+    {
+      "id": "cormorano",
+      "name": "Cormorano",
+      "emoji": "🐦",
+      "scientific": "Phalacrocoracidae",
+      "category": "vivente",
+      "region": "Coste e isole",
+      "didactic_note": "Si immerge per catturare pesci. Le sue zampe palmate sono utili per nuotare."
+    },
+    {
+      "id": "fringuello",
+      "name": "Fringuello delle Galápagos",
+      "emoji": "🐦",
+      "scientific": "Geospiza spp.",
+      "category": "vivente",
+      "region": "Galápagos",
+      "didactic_note": "I fringuelli delle Galápagos sono celebri per i loro becchi adattati a cibi differenti. Ma durante il viaggio del Beagle furono altri piccoli uccelli a richiamare particolarmente l'attenzione di Darwin. Riuscirai a scoprire quali?"
+    },
+    {
+      "id": "guanaco",
+      "name": "Guanaco",
+      "emoji": "🦙",
+      "scientific": "Lama guanicoe",
+      "category": "vivente",
+      "region": "Patagonia",
+      "didactic_note": "È un camelide selvatico sudamericano, parente del lama. Il suo mantello lo protegge dal clima delle regioni aperte e fredde."
+    },
+    {
+      "id": "iguana-marina",
+      "name": "Iguana marina",
+      "emoji": "🦎",
+      "scientific": "Amblyrhynchus cristatus",
+      "category": "vivente",
+      "region": "Galápagos",
+      "didactic_note": "È una lucertola capace di cercare alghe in mare. Vive nelle Galápagos ed è un esempio straordinario di adattamento."
+    },
+    {
+      "id": "iguana-terrestre",
+      "name": "Iguana terrestre",
+      "emoji": "🦎",
+      "scientific": "Conolophus spp.",
+      "category": "vivente",
+      "region": "Galápagos",
+      "didactic_note": "Questa iguana vive sulla terraferma e mangia soprattutto vegetali, compresi in alcuni casi i cactus."
+    },
+    {
+      "id": "macrauchenia",
+      "name": "Macrauchenia",
+      "emoji": "🦙",
+      "scientific": "Macrauchenia patachonica",
+      "category": "fossile",
+      "region": "Patagonia",
+      "didactic_note": "Era un grande mammifero erbivoro oggi estinto. Darwin ne raccolse resti fossili durante il viaggio del Beagle."
+    },
+    {
+      "id": "megatherium",
+      "name": "Megatherium",
+      "emoji": "🦣",
+      "scientific": "Megatherium",
+      "category": "fossile",
+      "region": "Sud America",
+      "didactic_note": "Era un gigantesco bradipo terrestre estinto. I suoi fossili mostrano quanto fossero differenti alcuni mammiferi del passato."
+    },
+    {
+      "id": "mylodon",
+      "name": "Mylodon",
+      "emoji": "🦣",
+      "scientific": "Mylodon darwinii",
+      "category": "fossile",
+      "region": "Sud America",
+      "didactic_note": "Era un bradipo terrestre estinto. I suoi resti aiutano a ricostruire la fauna sudamericana preistorica."
+    },
+    {
+      "id": "nandu",
+      "name": "Ñandù minore",
+      "emoji": "🐦",
+      "scientific": "Rhea pennata",
+      "category": "vivente",
+      "region": "Patagonia",
+      "didactic_note": "È un grande uccello incapace di volare, ma abile nella corsa. Le differenze fra i nandù sudamericani interessarono Darwin."
+    },
+    {
+      "id": "pinguino",
+      "name": "Pinguino sudamericano",
+      "emoji": "🐧",
+      "scientific": "Spheniscus spp.",
+      "category": "vivente",
+      "region": "Sud America",
+      "didactic_note": "I pinguini sono uccelli che non volano: usano invece le ali come pinne per nuotare."
+    },
+    {
+      "id": "tartaruga-gigante",
+      "name": "Tartaruga gigante",
+      "emoji": "🐢",
+      "scientific": "Chelonoidis spp.",
+      "category": "vivente",
+      "region": "Galápagos",
+      "didactic_note": "Le tartarughe giganti delle Galápagos possono vivere molto a lungo. Le popolazioni delle diverse isole presentano differenze importanti."
+    },
+    {
+      "id": "tordo-imitatore",
+      "name": "Tordo imitatore delle Galápagos",
+      "emoji": "🐦",
+      "scientific": "Mimus spp.",
+      "category": "vivente",
+      "region": "Galápagos",
+      "didactic_note": "🔎 Un indizio dalla storia! Darwin notò che questi uccelli erano differenti da un'isola delle Galápagos all'altra. Questa osservazione contribuì a fargli mettere in discussione l'idea che le specie fossero immutabili. Una piccola differenza può far nascere una grande domanda!"
+    },
+    {
+      "id": "toxodon",
+      "name": "Toxodon",
+      "emoji": "🐾",
+      "scientific": "Toxodon platensis",
+      "category": "fossile",
+      "region": "Sud America",
+      "didactic_note": "Era un grande mammifero erbivoro estinto. Darwin ne raccolse fossili che suscitarono importanti domande sulla fauna del passato."
+    },
+    {
+      "id": "tuco-tuco",
+      "name": "Tuco-tuco",
+      "emoji": "🐹",
+      "scientific": "Ctenomys spp.",
+      "category": "vivente",
+      "region": "Sud America",
+      "didactic_note": "È un roditore sudamericano che scava gallerie sotterranee, usando il terreno come rifugio."
+    },
+    {
+      "id": "viscaccia",
+      "name": "Viscaccia",
+      "emoji": "🐾",
+      "scientific": "Lagostomus maximus",
+      "category": "vivente",
+      "region": "Pampas",
+      "didactic_note": "È un roditore sudamericano che vive in gruppi e utilizza tane scavate nel terreno."
+    },
+    {
+      "id": "volpe-falkland",
+      "name": "Volpe delle Falkland",
+      "emoji": "🦊",
+      "scientific": "Dusicyon australis",
+      "category": "estinto_storico",
+      "region": "Falkland",
+      "didactic_note": "Questo canide viveva nelle isole Falkland ed è ormai estinto. La sua storia aiuta a riflettere sulla vulnerabilità delle specie insulari."
+    },
+    {
+      "id": "volpe-darwin",
+      "name": "Volpe di Darwin",
+      "emoji": "🦊",
+      "scientific": "Lycalopex fulvipes",
+      "category": "vivente",
+      "region": "Cile",
+      "didactic_note": "È un piccolo canide selvatico del Cile, raro e minacciato. Proteggere le foreste in cui vive è importante per la sua conservazione."
+    }
+  ]
+}

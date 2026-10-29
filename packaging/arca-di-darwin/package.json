@@ -1,0 +1,45 @@
+{
+  "name": "arca-di-darwin-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "L'Arca di Darwin - gioco educativo offline",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win nsis --x64 --publish never",
+    "dist:mac": "electron-builder --mac dmg --universal --publish never",
+    "dist:linux": "electron-builder --linux AppImage --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "38.2.2",
+    "electron-builder": "26.0.12"
+  },
+  "build": {
+    "appId": "it.giadaware.boardlab.arcadidarwin",
+    "productName": "L'Arca di Darwin",
+    "files": [
+      "main.cjs",
+      "game/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": true
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.education",
+      "identity": null
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Education"
+    }
+  }
+}

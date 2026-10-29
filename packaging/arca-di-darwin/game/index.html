@@ -1,0 +1,1706 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>L'Arca di Darwin</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(145deg,#10262c,#173b38);color:#edf7ef}
+main{max-width:1050px;margin:auto;padding:24px}
+header{text-align:center;padding:25px 0}
+h1{font-size:clamp(2.2rem,6vw,4rem);margin:8px}
+.subtitle{color:#b5d6c7}
+.panel{background:#203e43;border:1px solid #4c6c68;border-radius:18px;padding:22px;margin:18px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px}
+.animal{background:#2c5053;border:2px solid #527674;border-radius:15px;padding:16px;cursor:pointer;text-align:center;color:inherit;font:inherit;min-height:170px}
+.animal.selected{background:#356b4b;border-color:#b5e995}
+.animal:focus-visible,button:focus-visible{outline:3px solid white;outline-offset:3px}
+.emoji{font-size:3rem;display:block}
+.name{font-weight:800;font-size:1.15rem;text-transform:capitalize}
+.small{font-size:.85rem;color:#c1d9d4;margin-top:7px}
+button.action{border:0;border-radius:12px;padding:13px 20px;background:#a8df91;color:#173126;font-weight:800;cursor:pointer}
+button.action:disabled{opacity:.4;cursor:not-allowed}
+button.secondary{background:#63838b;color:white}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+select{padding:12px;background:#143136;color:white;border:1px solid #73958a;border-radius:9px}
+#result{font-size:1.15rem;line-height:1.7;white-space:pre-line}
+.success{color:#b7efa3}.failure{color:#ffbfab}
+.bbird{display:flex;gap:20px;align-items:center;background:#294c54;border-left:5px solid #a8df91;border-radius:15px;padding:20px}
+.bbird .face{font-size:4rem}
+.meters{display:flex;gap:18px;flex-wrap:wrap}
+.meter{background:#173238;padding:12px;border-radius:10px}
+footer{text-align:center;color:#a1bdb8;padding:25px;font-size:.85rem}
+
+/* The Ark's hold: an interactive visual representation of embarked species. */
+.hold{
+ position:relative;
+ overflow:hidden;
+ border:12px solid #69482e;
+ border-radius:28px;
+ padding:28px 18px;
+ background:
+  repeating-linear-gradient(90deg,
+   #62432e 0px,#62432e 38px,
+   #785237 40px,#785237 78px);
+ box-shadow:inset 0 0 80px #20130c,0 15px 35px #071b1b;
+}
+.hold::before{
+ content:"";
+ position:absolute;
+ inset:0;
+ pointer-events:none;
+ background:linear-gradient(180deg,#f8c97b22,transparent 65%,#100a0755);
+}
+.hold-title{
+ position:relative;
+ text-align:center;
+ color:#ffe0a5;
+ text-shadow:2px 3px 5px #241509;
+}
+.stalls{
+ position:relative;
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:14px;
+ margin-top:22px;
+}
+.stall{
+ min-height:145px;
+ border:5px solid #a57a4d;
+ border-radius:12px;
+ background:#281c15aa;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex-direction:column;
+ text-align:center;
+ box-shadow:inset 0 0 24px #100904;
+}
+.stall .occupant{font-size:3.5rem}
+.stall .occupant-name{
+ color:#ffe5b4;
+ font-weight:800;
+ text-transform:capitalize;
+}
+.stall.empty{border-style:dashed;color:#d0b38a}
+.hold-bbird{
+ position:relative;
+ text-align:center;
+ font-size:2.5rem;
+ margin-top:18px;
+}
+.hold-caption{
+ position:relative;
+ text-align:center;
+ color:#f6ddb5;
+ font-size:.9rem;
+}
+@media(min-width:700px){
+ .stalls{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+.stall-controls{display:flex;gap:8px;margin-top:8px}
+.stall-controls button{
+ border:1px solid #cda46b;
+ border-radius:7px;
+ background:#77502f;
+ color:white;
+ padding:6px 10px;
+ cursor:pointer;
+}
+.stall-controls button:disabled{opacity:.25;cursor:default}
+.stall.flooded{
+ background:linear-gradient(0deg,#2475a7cc 0%,#153d52bb 65%);
+ border-color:#73c8f3;
+}
+.stall.flooded::before{
+ content:"🌊 COMPARTIMENTO ALLAGATO";
+ color:#c7f0ff;
+ font-size:.68rem;
+ font-weight:800;
+ margin-bottom:8px;
+}
+body.storm-mode{
+ background:linear-gradient(145deg,#101b35,#203b53,#152c39);
+}
+body.storm-mode .hold{
+ border-color:#526879;
+ box-shadow:inset 0 0 90px #071421,0 15px 35px #071b1b;
+}
+body.storm-mode .hold::after{
+ content:"🌧️ DILUVIO IN CORSO";
+ position:absolute;
+ top:8px;
+ right:12px;
+ color:#c9eaff;
+ font-weight:900;
+ font-size:.8rem;
+ letter-spacing:.08em;
+ pointer-events:none;
+}
+body.storm-mode .bbird{
+ border-left-color:#83c8fa;
+}
+.ark-banner{display:block;width:100%;max-width:960px;height:auto;margin:0 auto 18px;border-radius:18px}
+
+/* Il titolo resta disponibile ai lettori di schermo. */
+.ark-banner ~ h1,
+.ark-banner ~ .subtitle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+#help-dialog, #suggestions-dialog, #darwin-research-dialog {
+  width: min(92vw, 560px);
+  max-height: 80vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 28px;
+  border: 1px solid #79aaa5;
+  border-radius: 20px;
+  background: #203f46;
+  color: #f5f8f5;
+  box-shadow: 0 18px 65px #0009;
+}
+#help-dialog::backdrop, #suggestions-dialog::backdrop, #darwin-research-dialog::backdrop {
+  background: rgba(0, 12, 17, .78);
+}
+#help-dialog h2, #suggestions-dialog h2, #darwin-research-dialog h2 {
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+#help-dialog #help-close, #suggestions-dialog #suggestions-close {
+  margin-top: 18px;
+}
+
+
+.animal-resources{
+ margin-top:6px;
+ font-weight:600;
+}
+
+
+/* Pulsante Aiuto! nella fascia dell'Uccellino Azzurro. */
+.bbird {
+  display: flex;
+  align-items: center;
+}
+
+.bbird-help-action {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding-left: 1rem;
+}
+
+@media (max-width: 540px) {
+  .bbird {
+    flex-wrap: wrap;
+  }
+
+  .bbird-help-action {
+    width: 100%;
+    padding-left: 0;
+    margin-top: .75rem;
+  }
+}
+
+
+#final-choice-dialog {
+ width:min(920px,94vw);
+ max-height:90vh;
+ overflow-y:auto;
+ box-sizing:border-box;
+ padding:1.25rem;
+ border-radius:16px;
+}
+#final-choice-dialog::backdrop {
+ background:rgba(0,0,0,.75);
+}
+.final-choice-grid {
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+ gap:.65rem;
+ margin:1rem 0;
+}
+.final-choice-animal {
+ border:2px solid #7e91a0;
+ border-radius:10px;
+ padding:.75rem;
+ background:transparent;
+ color:inherit;
+ font:inherit;
+ text-align:left;
+ cursor:pointer;
+}
+.final-choice-animal[aria-pressed="true"] {
+ border-color:#46b9dc;
+ outline:2px solid #46b9dc;
+}
+.final-choice-animal small {
+ display:block;
+ margin-top:.3rem;
+}
+#final-choice-reason {
+ display:block;
+ box-sizing:border-box;
+ width:100%;
+ min-height:90px;
+ padding:.7rem;
+ border-radius:8px;
+ font:inherit;
+}
+#final-choice-result {white-space:pre-line}
+
+
+/* Ambientazioni specifiche dei capitoli 4 e 5. */
+body.chapter-forest {
+  background: #123d32;
+  transition: background-color .5s ease;
+}
+
+body.chapter-islands {
+  background: #b58a35;
+  transition: background-color .5s ease;
+}
+
+
+/* Posizioni riservate nei capitoli 3 e 4. */
+.stall.blocked {
+  border: 2px dashed #d7b365;
+  background: rgba(97,72,36,.65);
+  color: #fff0bf;
+  text-align: center;
+}
+body.chapter-forest .stall.blocked {
+  border-color: #a6d89c;
+  background: rgba(23,79,48,.78);
+  color: #e0f6d8;
+}
+
+
+/* Capitolo 6: atmosfera del gran finale. */
+body.chapter-finale {
+  background: #302b50;
+  transition: background-color .5s ease;
+}
+
+#final-complete-dialog {
+  width: min(90vw, 510px);
+  box-sizing: border-box;
+  padding: 30px;
+  border: 2px solid #dfc68e;
+  border-radius: 20px;
+  background: #302b50;
+  color: #ffffff;
+  text-align: center;
+  box-shadow: 0 20px 70px #0009;
+}
+
+#final-complete-dialog::backdrop {
+  background: rgba(8, 10, 24, .82);
+}
+
+#final-complete-dialog h2 {
+  font-size: 1.45rem;
+  line-height: 1.5;
+}
+
+#final-complete-score {
+  color: #ffe3a0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+#final-complete-close {
+  margin-top: 18px;
+}
+
+</style>
+</head>
+<body>
+<main>
+<header>
+<img src="assets/arca-di-darwin-banner.png" alt="Arca di legno tra le onde con animali e uccellino azzurro" class="ark-banner">
+<h1>L'Arca di Darwin</h1>
+<p class="subtitle">Salva le specie. Ricostruisci la natura. Affronta il cambiamento.</p>
+
+</header>
+<section class="bbird">
+<div class="face">🐦</div>
+<div><strong>L'Uccellino Azzurro della Felicità</strong>
+<p id="bbird">Benvenuto a bordo! Ti guiderò io!</p>
+
+</div>
+<div class="bbird-help-action">
+<button id="help-button" type="button" class="action secondary"
+ aria-haspopup="dialog" aria-controls="help-dialog">🐦 Aiuto!</button>
+</div>
+</section>
+<section class="panel" id="puzzle-panel">
+<h2>🧩 L'Angolo dell'Uccellino Azzurro</h2>
+<div class="controls">
+<label for="difficulty">Argomento:</label>
+<select id="difficulty">
+<option value="facile">Come si gioca</option>
+<option value="medio">Disposizione degli animali</option>
+<option value="difficile">Indizi avanzati</option>
+<option value="ricerca">🔬 Ricerca scientifica</option>
+</select>
+<button id="puzzle-start" class="action secondary">🧩 Suggerimenti</button>
+<button id="darwin-research-button" type="button"
+ class="action secondary" aria-haspopup="dialog"
+ aria-controls="darwin-research-dialog">📚 Ricerca su Darwin</button>
+
+
+
+</div>
+
+</section>
+<section class="panel">
+<h2>🚢 La Stiva — Prima notte del Diluvio</h2>
+<div class="controls">
+<label for="scenario">Ecosistema:</label>
+<select id="scenario"></select>
+
+</div>
+<p id="chapter-progress" role="status" aria-live="polite"></p>
+<h3 id="mission"></h3>
+<p id="description"></p>
+
+
+</section>
+<section class="panel">
+<h2>🛶 All'interno dell'Arca</h2>
+<p id="hold-instructions">Seleziona quattro animali e usa ◀ ▶ per sistemarli.</p>
+<div class="hold" aria-label="Stiva dell'Arca">
+<h3 class="hold-title">⚓ Stiva dell'Arca — Compartimenti</h3>
+<div id="stalls" class="stalls"></div>
+<div class="hold-bbird" aria-label="Uccellino Azzurro della Felicità">🐦</div>
+<p class="hold-caption">L'Uccellino Azzurro sorveglia l'imbarco!</p>
+</div>
+</section>
+
+<div class="meters">
+<div class="meter" id="food"></div>
+<div class="meter" id="water"></div>
+<div class="meter" id="capacity">🛶 Posti liberi: 4 / 4</div>
+<div class="meter" id="score-meter" style="margin-left:auto">🏆 Punteggio: 0 / —</div>
+<div class="meter" id="total-score">🏆 Totale: 0</div>
+</div>
+<section class="panel">
+<h2>🐾 Scegli gli animali</h2>
+<p id="counter">Imbarcati: 0 / 4</p>
+<div id="animals" class="grid"></div>
+
+</section>
+<section class="panel">
+<div class="controls">
+<button id="check" class="action" disabled>🚢 Salpa!</button>
+<button id="next" class="action secondary">➡️ Capitolo successivo</button>
+<button id="reset" class="action secondary">Ricomincia</button>
+</div>
+<p id="result" role="status" aria-live="polite"></p>
+</section>
+<footer>BoardLab · L'Arca di Darwin · Un'avventura tra ecologia, evoluzione e scelte impossibili 🐦</footer>
+</main>
+
+<dialog id="final-complete-dialog"
+ aria-labelledby="final-complete-title">
+  <h2 id="final-complete-title">
+    💙 Hai completato tutte e sei le missioni!
+  </h2>
+  <p id="final-complete-score"></p>
+  <button id="final-complete-close"
+   type="button" class="action secondary">
+    Chiudi
+  </button>
+</dialog>
+
+<dialog id="suggestions-dialog" aria-labelledby="suggestions-title">
+<h2 id="suggestions-title">🧩 I suggerimenti dell'Uccellino Azzurro</h2>
+<p id="suggestions-intro"></p>
+<ol id="suggestions-list"></ol>
+<button id="suggestions-close" type="button" class="action secondary">Chiudi</button>
+</dialog>
+<dialog id="help-dialog" aria-labelledby="help-title">
+  <h2 id="help-title">🐦 L'Uccellino sistema l'Arca!</h2>
+  <p id="bird-help" style="white-space:pre-line;line-height:1.8"></p>
+  <button id="help-close" type="button" class="action secondary">
+    Chiudi
+  </button>
+</dialog>
+<dialog id="darwin-research-dialog"
+ aria-labelledby="darwin-research-title">
+ <h2 id="darwin-research-title">📚 Ricerca su Charles Darwin</h2>
+
+
+
+
+ <p>Un piccolo viaggio nella storia della zoologia.
+ Scopri gli animali che aiutarono Darwin a interrogarsi
+ sulla diversità delle specie.</p>
+
+ <h3>🌍 Il viaggio del Beagle</h3>
+ <p>Tra il 1831 e il 1836 Charles Darwin viaggiò a bordo
+ dell'HMS Beagle, osservando animali, piante, fossili
+ e ambienti naturali in varie regioni del mondo.</p>
+
+ <h3>🐦 Gli uccelli delle Galápagos</h3>
+ <p>I tordi imitatori delle diverse isole mostrarono
+ a Darwin differenze particolarmente interessanti.
+ I fringuelli, raccolti durante il viaggio, furono
+ successivamente studiati dall'ornitologo John Gould,
+ che ne riconobbe le affinità.</p>
+
+ <h3>🐢 Rettili e ambienti insulari</h3>
+ <p>Le tartarughe giganti, le iguane marine e quelle
+ terrestri delle Galápagos sono esempi importanti
+ di adattamento a condizioni ambientali differenti.</p>
+
+ <h3>🦊 Mammiferi e fossili</h3>
+ <p>Darwin osservò guanachi, armadilli e canidi
+ sudamericani, e raccolse fossili di grandi mammiferi
+ estinti. Il confronto fra animali viventi ed estinti
+ contribuì alle sue riflessioni scientifiche.</p>
+
+ <h3>🛶 E nel nostro gioco?</h3>
+ <p>L'Arca di Darwin è una simulazione ecologica ispirata
+ alla biodiversità, non una ricostruzione letterale
+ della fauna incontrata durante il viaggio.
+ Leone, zebra, elefante e giraffa fanno parte del gioco,
+ ma non erano specie studiate sul campo da Darwin
+ durante la spedizione del Beagle.</p>
+
+ <section id="darwin-one-animal"
+ aria-labelledby="darwin-question-title">
+ <h3 id="darwin-question-title">
+  🐦 Quale animale salverebbe Darwin se potesse salvarne soltanto uno?
+ </h3>
+
+ <p>Non conosciamo la risposta: Darwin non ci ha lasciato
+ una scelta documentata per una situazione simile.</p>
+
+ <p>Durante il viaggio del Beagle studiò animali molto
+ differenti, confrontando caratteristiche, ambienti
+ e distribuzione geografica.</p>
+
+ <p><strong>Una domanda per te:</strong>
+ salveresti un animale perché è raro, perché svolge
+ un ruolo importante nel suo ecosistema oppure
+ perché ci aiuta a comprendere la natura?</p>
+
+ <p>Non cercare la risposta qui:
+ <strong>sarai tu a decidere nell'ultima missione!</strong></p>
+</section>
+
+<h3>🔎 Continua la ricerca</h3>
+ <ul>
+  <li><a href="https://www.nhm.ac.uk/our-science/services/collections/zoology/birds/skins/hms-beagle.html"
+   target="_blank" rel="noopener noreferrer">
+   Natural History Museum — Uccelli del Beagle</a></li>
+  <li><a href="https://www.nhm.ac.uk/our-science/services/collections/digital/programme/darwins-fossils.html"
+   target="_blank" rel="noopener noreferrer">
+   Natural History Museum — Mammiferi fossili</a></li>
+  <li><a href="https://darwin-online.org.uk/"
+   target="_blank" rel="noopener noreferrer">
+   Darwin Online — Opere e documenti originali</a></li>
+ </ul>
+
+ <button id="darwin-research-close" type="button"
+  class="action secondary">Chiudi</button>
+</dialog>
+
+
+
+
+<script src="game-engine.js"></script>
+<script>const ARK_GAME_DATA={"species": [{"name": "leone", "description": "Predatore territoriale", "emoji": "🦁", "food": 3, "water": 2, "habitat": "savana", "role": "predatore"}, {"name": "zebra", "description": "Erbivoro di prateria", "emoji": "🦓", "food": 2, "water": 2, "habitat": "savana", "role": "erbivoro"}, {"name": "elefante", "description": "Grande ingegnere dell'ecosistema", "emoji": "🐘", "food": 3, "water": 4, "habitat": "savana", "role": "ingegnere"}, {"name": "coniglio", "description": "Piccolo erbivoro prolifico", "emoji": "🐇", "food": 1, "water": 1, "habitat": "prateria", "role": "erbivoro"}, {"name": "lupo", "description": "Predatore sociale", "emoji": "🐺", "food": 3, "water": 2, "habitat": "foresta", "role": "predatore"}, {"name": "tartaruga", "description": "Rettilе resistente", "emoji": "🐢", "food": 1, "water": 1, "habitat": "palude", "role": "resistente"}, {"name": "volpe", "description": "Predatore opportunista", "emoji": "🦊", "food": 2, "water": 2, "habitat": "foresta", "role": "predatore"}, {"name": "giraffa", "description": "Grande erbivoro della savana", "emoji": "🦒", "food": 3, "water": 3, "habitat": "savana", "role": "erbivoro"}, {"name": "castoro", "description": "Ingegnere delle zone umide", "emoji": "🦫", "food": 2, "water": 2, "habitat": "palude", "role": "ingegnere"}, {"name": "anatra", "description": "Uccello acquatico onnivoro", "emoji": "🦆", "food": 1, "water": 1, "habitat": "palude", "role": "onnivoro"}], "scenarios": [{"id": "stiva", "title": "Capitolo 1 — La Stiva dell'Arca", "description": "Il Diluvio sta arrivando. Prepara la stiva scegliendo quattro specie in grado di convivere. Gestisci le scorte di cibo e acqua, mantieni l'equilibrio tra gli animali e organizza una disposizione sicura.", "food": 9, "water": 9, "capacity": 4, "favored": "prateria", "event": "L'Arca supera la prima notte di tempesta.", "pigeon": "Cip cip! Ho controllato la stiva! Attenzione alle scorte e ai predatori!", "viable_count": 10}, {"id": "diluvio", "title": "Capitolo 2 — L'Allagamento", "description": "La tempesta ha raggiunto l'Arca e il primo compartimento è allagato. Alcune specie sono più adatte di altre ad affrontare queste condizioni. Riorganizza la stiva senza compromettere la sicurezza degli animali.", "food": 9, "water": 9, "capacity": 4, "favored": "palude", "event": "La tempesta è superata. L'Arca continua il viaggio.", "pigeon": "CIP! Il primo compartimento è allagato! Quale animale potrebbe affrontare questa situazione?", "viable_count": 10}, {"id": "savana", "title": "Capitolo 3 — La Savana in Siccità", "description": "La stagione secca ha ridotto drasticamente la disponibilità d'acqua. Hai soltanto 6 unità d'acqua per quattro animali. Scegli specie con consumi sostenibili e assicurati che possano convivere. Il compartimento 3 è inaccessibile a causa della siccità.", "food": 9, "water": 6, "capacity": 6, "favored": "savana", "event": "La siccità mette alla prova gli animali più assetati.", "pigeon": "Ho visto acqua a est! Attenzione alle specie che bevono molto.", "viable_count": 10, "blocked_compartments": [3]}, {"id": "foresta", "title": "Capitolo 4 — Il Mosaico Forestale", "description": "La foresta si rigenera formando un mosaico di ambienti. Scegli quattro animali appartenenti a quattro habitat differenti. Rispetta le scorte e separa le specie incompatibili. I compartimenti 3 e 5 devono restare liberi come corridoi ecologici.", "food": 10, "water": 10, "capacity": 6, "favored": "foresta", "event": "Una stagione piovosa favorisce la vegetazione.", "pigeon": "Ho esplorato gli alberi! Qui la biodiversità sarà preziosa.", "viable_count": 10, "blocked_compartments": [3, 5]}, {"id": "isole", "title": "Capitolo 5 — L'Arcipelago del Nuovo Mondo", "description": "L'Arca raggiunge l'Arcipelago del Nuovo Mondo. Sul Ponte superiore puoi scegliere otto animali tra dieci specie. Gestisci cibo e acqua, mantieni l'equilibrio ecologico e organizza una disposizione sicura. Una specie adatta agli ambienti acquatici sarà indispensabile.", "food": 15, "water": 15, "capacity": 8, "favored": "palude", "event": "Le maree cambiano gli habitat disponibili.", "pigeon": "Dall'alto vedo tante isole! Servirà una scelta equilibrata.", "viable_count": 5}, {"id": "ultima-scelta", "title": "Capitolo 6 — L'Ultima Scelta di Darwin", "description": "Un solo compartimento rimane disponibile. Scegli uno dei venti animali del catalogo storico. Quale salveresti? La scelta appartiene a te: non conosciamo quale animale avrebbe scelto Darwin.", "food": 0, "water": 0, "capacity": 1, "required_animals": 1, "favored": "", "event": "L'ultima scelta appartiene a te.", "bbird": "Cip cip! Un solo posto e venti possibilità. Quale animale sceglierai, e perché?", "viable_count": 20, "mode": "historical-choice", "maximum_score": 350}], "levels": [{"difficulty": "facile", "animals": ["zebra", "coniglio", "tartaruga", "elefante"], "clues": ["La zebra occupa il compartimento 1.", "Il coniglio occupa il compartimento 2.", "La tartaruga occupa il compartimento 3."], "solution": ["zebra", "coniglio", "tartaruga", "elefante"]}, {"difficulty": "medio", "animals": ["zebra", "coniglio", "tartaruga", "elefante"], "clues": ["La zebra non può stare nel compartimento 1.", "Il coniglio occupa il compartimento 4.", "L'elefante occupa il compartimento 3."], "solution": ["tartaruga", "zebra", "elefante", "coniglio"]}, {"difficulty": "difficile", "animals": ["zebra", "coniglio", "tartaruga", "elefante"], "clues": ["La zebra non può stare nel compartimento 1.", "La zebra non può stare nel compartimento 2.", "La zebra non può stare nel compartimento 4.", "Il coniglio non può stare nel compartimento 2.", "Il coniglio non può stare nel compartimento 4.", "La tartaruga non può stare nel compartimento 2."], "solution": ["coniglio", "elefante", "zebra", "tartaruga"]}]};</script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+
+const helpButton=$("help-button");
+const helpPanel=$("bird-help");
+
+function helpText(){
+ if(puzzleMode){
+  return [
+   "CIP! Sei nel rompicapo!",
+   "Leggi gli indizi e disponi i quattro animali.",
+   "Ogni compartimento ospita un animale.",
+   "Usa le frecce per cambiare l'ordine.",
+   "Premi Salpa! per verificare la soluzione.",
+   "Puoi tornare alla storia quando vuoi."
+  ].join("\n");
+ }
+
+ const rules=[
+  "CIP CIP! Ecco come salvare gli animali!",
+  "",
+  "1. Scegli quattro specie differenti.",
+  "2. Usa le frecce ◀ ▶ per cambiare i compartimenti.",
+  "3. Leone e zebra non possono stare vicini.",
+  "4. Lupo e coniglio non possono stare vicini.",
+  "5. Non superare le scorte di cibo e acqua.",
+  "6. I predatori non possono superare gli erbivori.",
+  "7. Premi Salpa! per verificare.",
+  "8. Completa la missione per sbloccare il capitolo successivo."
+ ];
+
+ if(current?.id==="diluvio"){
+  rules.push("","ATTENZIONE: il primo compartimento è allagato!");
+  rules.push("Soltanto la tartaruga può occuparlo.");
+ }
+
+ if(current?.id==="isole"){
+  rules.push("","Sulle isole hai 15 unità di cibo e 15 di acqua.");
+ }
+
+ return rules.join("\n");
+}
+
+const helpDialog=$("help-dialog");
+const helpClose=$("help-close");
+
+helpButton.addEventListener("click",()=>{
+  if(!current || species.length<4)return;
+
+
+  if(current.id==="ultima-scelta"){
+   helpPanel.textContent=[
+    "CIP CIP! Questa è l'Ultima Scelta di Darwin!",
+    "",
+    "Rimane un solo compartimento.",
+    "Scegli liberamente uno dei venti animali.",
+    "Non esiste una soluzione migliore obbligatoria.",
+    "",
+    "Vuoi conoscere un animale?",
+    "Apri Suggerimenti → Ricerca scientifica.",
+    "È gratuita e non riduce il punteggio!",
+    "",
+    "Quando sei pronto, premi Salpa!"
+   ].join("\n");
+   helpDialog.showModal();
+   return;
+  }
+
+
+
+  if(!window.confirm(
+    "🐦 Vuoi davvero che l'Uccellino Azzurro sistemi gli animali?\n\n"+
+    "Questa funzione rivela la disposizione con il punteggio massimo. "+
+    "Potrai ancora premere Salpa! per completarlo."
+  ))return;
+
+
+  // Prima conserviamo, se possibile, i quattro animali già scelti.
+  // Ogni disposizione è verificata dal motore ufficiale del gioco.
+  const names=species.filter(s=>current.id==="isole" || !["volpe","giraffa","castoro","anatra"].includes(s.name))
+    .filter(s=>!["stiva","diluvio"].includes(current.id) || s.name!=="lupo")
+    .map(s=>s.name);
+  let solution=null;
+  let maximumScore=-Infinity;
+
+  // Esplora tutte le disposizioni di quattro specie disponibili.
+  // Non si ferma alla prima soluzione valida.
+  function search(prefix=[]){
+    if(prefix.length===4){
+      const layouts=[];
+
+      if(current.capacity===6){
+        for(let a=0;a<6;a++){
+          for(let b=a+1;b<6;b++){
+            const layout=Array(6).fill(null);
+            let k=0;
+
+            for(let i=0;i<6;i++){
+              if(i!==a && i!==b)layout[i]=prefix[k++];
+            }
+            layouts.push(layout);
+          }
+        }
+      }else{
+        layouts.push([...prefix]);
+      }
+
+      for(const layout of layouts){
+        const evaluation=ArkEngine.evaluate(layout,current.id);
+        if(evaluation.valid && evaluation.score>maximumScore){
+          maximumScore=evaluation.score;
+          solution=[...layout];
+        }
+      }
+      return;
+    }
+
+    for(const name of names){
+      if(prefix.includes(name))continue;
+      search([...prefix,name]);
+    }
+  }
+
+  function searchFinal(){
+    const catalog=new Map(species.map(s=>[s.name,s]));
+
+    function examine(group){
+      const animals=group.map(name=>catalog.get(name));
+      const food=animals.reduce((sum,s)=>sum+s.food,0);
+      const water=animals.reduce((sum,s)=>sum+s.water,0);
+      const predators=animals.filter(s=>s.role==="predatore").length;
+      const herbivores=animals.filter(s=>s.role==="erbivoro").length;
+
+      if(food>current.food || water>current.water ||
+         predators>herbivores || !group.includes("tartaruga"))return;
+
+      let found=false;
+
+      function arrange(prefix,remaining){
+        if(found)return;
+
+        if(!remaining.length){
+          const result=ArkEngine.evaluate(prefix,current.id);
+          if(result.valid){
+            found=true;
+            if(result.score>maximumScore){
+              maximumScore=result.score;
+              solution=[...prefix];
+            }
+          }
+          return;
+        }
+
+        for(let i=0;i<remaining.length;i++){
+          const name=remaining[i];
+          const last=prefix[prefix.length-1];
+
+          if((last==="leone" && name==="zebra") ||
+             (last==="zebra" && name==="leone") ||
+             (last==="lupo" && name==="coniglio") ||
+             (last==="coniglio" && name==="lupo"))continue;
+
+          arrange(
+            [...prefix,name],
+            remaining.filter((_,j)=>j!==i)
+          );
+
+          if(found)return;
+        }
+      }
+
+      arrange([],group);
+    }
+
+    function combinations(start,group){
+      if(group.length===8){
+        examine(group);
+        return;
+      }
+
+      for(let i=start;i<=names.length-(8-group.length);i++){
+        combinations(i+1,[...group,names[i]]);
+      }
+    }
+
+    combinations(0,[]);
+  }
+
+  if(current.id==="isole")searchFinal();
+  else search();
+
+  if(!solution){
+   helpPanel.textContent=
+    "Cip! Non ho trovato una disposizione valida per questo capitolo.";
+  }else{
+   selected.clear();
+   assistedChapters.add(current.id);
+    saveProgress();
+    solution.filter(Boolean).forEach(name=>selected.add(name));
+   arrangement=[...solution];
+   $("result").textContent="";
+   $("result").className="";
+   render();
+   helpPanel.textContent=
+    "CIP CIP! Ho trovato la disposizione migliore!\n" +
+     "Chiudi questa finestra e premi Salpa! per verificare la missione.";
+  }
+
+  helpDialog.showModal();
+ });
+
+helpClose.addEventListener("click",()=>helpDialog.close());
+
+
+$("darwin-research-button").addEventListener("click",()=>{
+  $("darwin-research-dialog").showModal();
+});
+
+$("darwin-research-close").addEventListener("click",()=>{
+  $("darwin-research-dialog").close();
+});
+
+function refreshHelp(){
+ if(helpDialog.open)helpPanel.textContent=helpText();
+}
+
+const selected=new Set();
+let arrangement=[];
+let species=[],scenarios=[],current=null;
+let puzzleMode=false;
+let puzzleLevels=[];
+let puzzleDifficulty="facile";
+let unlockedChapter=0;
+const completedChapters=new Set();
+ const assistedChapters=new Set();
+
+const SAVE_KEY="ark-progress-v1";
+
+ const chapterRecords=Object.create(null);
+ const chapterMaximums=Object.create(null);
+ let currentChapterScore=0;
+
+ function totalScore(){
+  return scenarios.reduce(
+   (sum,s)=>sum+(chapterRecords[s.id]||0),0
+  )+awardedFinalPoints();
+ }
+
+ function updateScoreUI(){
+  if(!current)return;
+
+  const maximum=chapterMaximums[current.id];
+  const limit=Number.isFinite(maximum)?maximum:"—";
+
+  $("score-meter").textContent=
+   "🏆 Punteggio: "+currentChapterScore+" / "+limit;
+
+  $("total-score").textContent=
+    "🏆 Totale: "+totalScore().toLocaleString("it-IT")+" / 1.000";
+ }
+
+ // Trova il massimo mediante il motore reale.
+ // Per un gruppo di specie basta una disposizione valida:
+ // il punteggio non cambia riordinando lo stesso gruppo.
+ function calculateMaximum(scenario){
+  const available=species.filter(s=>
+   (scenario.id==="isole" ||
+    !["volpe","giraffa","castoro","anatra"].includes(s.name)) &&
+   (!["stiva","diluvio"].includes(scenario.id) ||
+    s.name!=="lupo")
+  );
+
+  const required=scenario.id==="isole"?8:4;
+  let maximum=-1;
+
+  function evaluateGroup(group){
+   const food=group.reduce((sum,s)=>sum+s.food,0);
+   const water=group.reduce((sum,s)=>sum+s.water,0);
+   if(food>scenario.food || water>scenario.water)return;
+
+   const names=group.map(s=>s.name);
+   const arrangement=Array(scenario.capacity).fill(null);
+   const used=new Set();
+   let found=false;
+
+   function arrange(position){
+    if(found)return;
+
+    if(position===arrangement.length){
+     if(used.size!==required)return;
+     const result=ArkEngine.evaluate(arrangement,scenario.id);
+     if(result.valid){
+      found=true;
+      maximum=Math.max(maximum,result.score);
+     }
+     return;
+    }
+
+    const remaining=arrangement.length-position;
+    const missing=required-used.size;
+    if(missing>remaining)return;
+
+    // Sono ammesse caselle vuote nei capitoli 3 e 4.
+    if(remaining>missing){
+     arrangement[position]=null;
+     arrange(position+1);
+     if(found)return;
+    }
+
+    for(const name of names){
+     if(used.has(name))continue;
+     const previous=position?arrangement[position-1]:null;
+
+     if(
+      (previous==="leone" && name==="zebra") ||
+      (previous==="zebra" && name==="leone") ||
+      (previous==="lupo" && name==="coniglio") ||
+      (previous==="coniglio" && name==="lupo")
+     )continue;
+
+     arrangement[position]=name;
+     used.add(name);
+     arrange(position+1);
+     used.delete(name);
+     if(found)return;
+    }
+
+    arrangement[position]=null;
+   }
+
+   arrange(0);
+  }
+
+  function groups(start,group){
+   if(group.length===required){
+    evaluateGroup(group);
+    return;
+   }
+   for(let i=start;i<=available.length-(required-group.length);i++){
+    groups(i+1,[...group,available[i]]);
+   }
+  }
+
+  groups(0,[]);
+  if(maximum<0){
+   throw new Error("Nessuna soluzione: "+scenario.id);
+  }
+  return maximum;
+ }
+
+
+function saveProgress(){
+ try{
+  localStorage.setItem(SAVE_KEY,JSON.stringify({
+   completed:[...completedChapters],
+    best:{...chapterRecords},
+    assisted:[...assistedChapters]
+  }));
+ }catch(error){
+  console.warn("Salvataggio non disponibile",error);
+ }
+}
+
+function loadProgress(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
+  if(!saved || !Array.isArray(saved.completed))return;
+
+  // Accettiamo soltanto un prefisso consecutivo dei capitoli.
+  // Questo impedisce di sbloccare capitoli arbitrari.
+  for(const scenario of scenarios){
+   if(!saved.completed.includes(scenario.id))break;
+   completedChapters.add(scenario.id);
+  }
+
+  unlockedChapter=Math.min(
+   completedChapters.size,
+   scenarios.length-1
+  );
+
+  if(Array.isArray(saved.assisted)){
+   for(const id of saved.assisted){
+    const index=scenarios.findIndex(s=>s.id===id);
+    if(index>=0 && index<=unlockedChapter &&
+       id!=="ultima-scelta"){
+     assistedChapters.add(id);
+    }
+   }
+  }
+
+  // I salvataggi precedenti non avevano i record.
+  for(const scenario of scenarios){
+   const value=saved.best?.[scenario.id];
+   if(
+    completedChapters.has(scenario.id) &&
+    Number.isInteger(value) &&
+    value>=0 &&
+    value<=chapterMaximums[scenario.id]
+   ){
+    chapterRecords[scenario.id]=value;
+   }
+  }
+ }catch(error){
+  console.warn("Progressi non disponibili",error);
+ }
+}
+
+
+function updateChapterProgress(){
+ const el=$("chapter-progress");
+ if(!el || !current || puzzleMode)return;
+ const index=scenarios.findIndex(s=>s.id===current.id);
+ const completed=completedChapters.has(current.id);
+ el.textContent=completed
+  ? "🏆 Capitolo "+(index+1)+" di "+scenarios.length+
+    " completato! "+(index+1<scenarios.length
+     ?"Premi «Capitolo successivo» per continuare."
+     :"Hai completato tutta l'avventura!")
+  : "📖 Capitolo "+(index+1)+" di "+scenarios.length+
+    " · Completati: "+completedChapters.size+
+    " · Supera questa missione per proseguire!";
+}
+
+function clear(){
+ selected.clear();arrangement=current?.capacity>=6?Array(current.capacity).fill(null):[];$("result").textContent="";$("result").className="";
+ render();
+}
+function choose(id){
+ puzzleMode=false;
+  const targetIndex=scenarios.findIndex(s=>s.id===id);
+  if(targetIndex<0 || targetIndex>unlockedChapter)return;
+  current=scenarios[targetIndex];
+  currentChapterScore=0;
+ $("scenario").value=id;
+  updateChapterProgress();
+  refreshHelp();
+ $("next").disabled=!completedChapters.has(id) || id==="ultima-scelta";
+  $("next").hidden=id==="ultima-scelta";
+  $("next").style.display=id==="ultima-scelta"?"none":"";
+  $("next").textContent=id==="isole"
+   ?"➡️ Capitolo 6 — L'Ultima Scelta"
+   :"➡️ Capitolo successivo";
+ document.body.classList.toggle("storm-mode",id==="diluvio");
+  document.body.classList.toggle("chapter-forest",id==="foresta");
+  document.body.classList.toggle("chapter-finale",id==="ultima-scelta");
+  document.body.classList.toggle("chapter-islands",id==="savana");
+ document.querySelector(".hold-title").textContent=
+    current.id==="ultima-scelta"
+     ?"⚓ L'ultimo compartimento"
+     :current.capacity===8
+      ?"⚓ Ponte superiore — Compartimenti"
+      :current.capacity===6
+        ?"⚓ Ponte intermedio — Compartimenti"
+        :"⚓ Stiva dell'Arca — Compartimenti";
+  document.querySelector(".hold").setAttribute(
+    "aria-label",
+    current.id==="ultima-scelta"
+     ?"Ultimo compartimento"
+     :current.capacity===8
+      ?"Ponte superiore"
+      :current.capacity===6
+        ?"Ponte intermedio"
+        :"Stiva dell'Arca"
+  );
+  $("hold-instructions").textContent=
+    id==="ultima-scelta"
+      ?"Scegli un solo animale da imbarcare."
+      :id==="isole"
+        ?"Seleziona otto animali e usa ◀ ▶ per sistemarli."
+        :"Seleziona quattro animali e usa ◀ ▶ per sistemarli.";
+
+  document.querySelector(".hold").parentElement
+    .querySelector("h2").textContent=
+      id==="ultima-scelta"
+        ?"🛶 L'Ultima Scelta"
+        :"🛶 All'interno dell'Arca";
+
+  $("mission").textContent=current.title;
+ $("description").textContent=current.description;
+ $("food").textContent="🌿 Cibo disponibile: "+current.food;
+ $("water").textContent="💧 Acqua disponibile: "+current.water;
+ $("bbird").textContent=current.id==="stiva"?"Benvenuto nella stiva! Scegli quattro animali, controlla le scorte e separa quelli incompatibili.":current.bbird;
+
+  if(id==="ultima-scelta"){
+   restoreFinalChoicePoints();
+   let saved=null;
+   try{
+    saved=JSON.parse(localStorage.getItem(FINAL_CHOICE_KEY)||"null");
+   }catch(error){
+    console.warn("Scelta finale non disponibile",error);
+   }
+   finalAnimalId=completedChapters.has("ultima-scelta") &&
+    DARWIN_HISTORICAL_ANIMALS.some(
+     a=>a.id===saved?.animalId
+    )?saved.animalId:null;
+
+   currentChapterScore=awardedFinalPoints();
+  }else{
+   finalAnimalId=null;
+  }
+
+  clear();
+}
+function updateResources(){
+  if(!current)return;
+
+  // Le scorte dipendono dagli animali attualmente imbarcati.
+  const aboard=species.filter(s=>selected.has(s.name));
+  const foodUsed=aboard.reduce((sum,s)=>sum+s.food,0);
+  const waterUsed=aboard.reduce((sum,s)=>sum+s.water,0);
+  const capacity=current.capacity??4;
+
+  const foodLeft=current.food-foodUsed;
+  const waterLeft=current.water-waterUsed;
+  const placesLeft=capacity-aboard.length;
+
+  // Aggiorna anche il contatore nella scheda del capitolo.
+  $("capacity").textContent=
+    "🛶 Posti liberi: "+placesLeft+" / "+capacity;
+
+  $("food").textContent="🌿 Cibo rimasto: "+foodLeft+" / "+current.food;
+  $("water").textContent="💧 Acqua rimasta: "+waterLeft+" / "+current.water;
+  $("counter").textContent="🛶 Posti liberi: "+placesLeft+
+    " / "+capacity+" · Imbarcati: "+aboard.length;
+
+  $("food").style.color=foodLeft<0?"#ff8585":"";
+  $("water").style.color=waterLeft<0?"#ff8585":"";
+  $("counter").style.color=placesLeft<0?"#ff8585":"";
+}
+
+function blockedPositions(){
+  return new Set((current?.blocked_compartments||[]).map(n=>n-1));
+}
+
+function renderHold(){
+ const stalls=$("stalls");
+ stalls.replaceChildren();
+ const aboard=arrangement;
+ const flooded=!puzzleMode&&current?.id==="diluvio";
+  const blocked=puzzleMode?new Set():blockedPositions();
+ for(let i=0;i<(current?.capacity??4);i++){
+  const stall=document.createElement("div");
+  stall.className="stall"+(!aboard[i]?" empty":"")
+   +(flooded&&i===0?" flooded":"")
+    +(blocked.has(i)?" blocked":"");
+  if(aboard[i]){
+   const animal=species.find(s=>s.name===aboard[i]);
+   const symbol=document.createElement("span");
+   symbol.className="occupant";
+   symbol.textContent=animal?.emoji||"🐾";
+   const name=document.createElement("span");
+   name.className="occupant-name";
+   name.textContent=aboard[i];
+   stall.append(symbol,name);
+   const controls=document.createElement("div");
+   controls.className="stall-controls";
+   for(const [direction,label] of [[-1,"◀"],[1,"▶"]]){
+    const move=document.createElement("button");
+    move.type="button";
+    move.textContent=label;
+    move.title="Sposta animale";
+    let target=i+direction;
+     while(blocked.has(target))target+=direction;
+     move.disabled=target<0||target>=aboard.length;
+    move.addEventListener("click",()=>{
+     const j=target;
+     [arrangement[i],arrangement[j]]=[arrangement[j],arrangement[i]];
+     $("result").textContent="";
+     render();
+    });
+    controls.append(move);
+   }
+   stall.append(controls);
+  }else{
+   stall.textContent=blocked.has(i)
+     ?current.id==="savana"
+       ?"🌾 Inaccessibile per siccità"
+       :"🌿 Corridoio ecologico"
+     :"Compartimento libero";
+  }
+  stalls.append(stall);
+ }
+}
+function render(){
+  const stallsLayout=$("stalls");
+  stallsLayout.style.display="";
+  stallsLayout.style.justifyContent="";
+  stallsLayout.style.alignItems="";
+
+ if(current?.id==="ultima-scelta"){
+
+  $("food").style.display="none";
+  $("water").style.display="none";
+  $("help-button").style.display="";
+
+  const chosen=DARWIN_HISTORICAL_ANIMALS.find(
+   a=>a.id===finalAnimalId
+  );
+
+  $("capacity").textContent=
+   "🛶 Posti liberi: "+(chosen?0:1)+" / 1";
+  $("counter").textContent=
+   "🛶 Imbarcati: "+(chosen?1:0)+" / 1";
+
+  const stalls=$("stalls");
+  stalls.replaceChildren();
+  const stall=document.createElement("div");
+  stall.className="stall"+(chosen?"":" empty");
+
+  if(chosen){
+   const symbol=document.createElement("span");
+   symbol.className="occupant";
+   symbol.textContent=chosen.emoji;
+   const name=document.createElement("span");
+   name.className="occupant-name";
+   name.textContent=chosen.name;
+   stall.append(symbol,name);
+  }else{
+   stall.textContent="Un solo compartimento libero";
+  }
+  stalls.append(stall);
+  stalls.style.display="flex";
+  stalls.style.justifyContent="center";
+  stalls.style.alignItems="center";
+
+  const grid=$("animals");
+  grid.replaceChildren();
+
+  for(const animal of DARWIN_HISTORICAL_ANIMALS){
+   const button=document.createElement("button");
+   button.type="button";
+   button.className="animal"+
+    (animal.id===finalAnimalId?" selected":"");
+   button.setAttribute(
+    "aria-pressed",String(animal.id===finalAnimalId)
+   );
+
+   const symbol=document.createElement("span");
+   symbol.className="emoji";
+   symbol.textContent=animal.emoji;
+
+   const name=document.createElement("div");
+   name.className="name";
+   name.textContent=animal.name;
+
+   const details=document.createElement("div");
+   details.className="small";
+   details.textContent=animal.scientific+" · "+animal.region;
+
+   const category=document.createElement("div");
+   category.className="small";
+   category.textContent=animal.category==="fossile"
+    ?"🦴 Conosciuto attraverso fossili"
+    :animal.category==="estinto_storico"
+     ?"⚠️ Specie estinta"
+     :"🌿 Specie vivente";
+
+   button.append(symbol,name,details,category);
+   button.addEventListener("click",()=>{
+    finalAnimalId=animal.id;
+    $("result").textContent="";
+    $("result").className="";
+    render();
+   });
+   grid.append(button);
+  }
+
+  $("check").disabled=!chosen;
+  updateScoreUI();
+  return;
+ }
+
+
+ $("food").style.display="";
+ $("water").style.display="";
+ $("help-button").style.display="";
+
+  updateScoreUI();
+ updateResources();
+ renderHold();
+
+ $("animals").replaceChildren();
+ for(const s of species){
+   if(current?.id!=="isole" && ["volpe","giraffa","castoro","anatra"].includes(s.name))continue;
+   // Capitolo 1: il lupo viene introdotto dal secondo capitolo.
+   if(["stiva","diluvio"].includes(current?.id) && s.name==="lupo")continue;
+  const button=document.createElement("button");
+  button.type="button";
+  button.className="animal"+(selected.has(s.name)?" selected":"");
+  button.setAttribute("aria-pressed",String(selected.has(s.name)));
+  const symbol=document.createElement("span");
+  symbol.className="emoji";symbol.textContent=s.emoji;
+  const name=document.createElement("div");
+  name.className="name";name.textContent=s.name;
+  const info=document.createElement("div");
+  info.className="small";
+  info.textContent=s.description;
+
+  const resources=document.createElement("div");
+  resources.className="small animal-resources";
+  resources.textContent="🌿 "+s.food+" · 💧 "+s.water;
+
+  button.append(symbol,name,info,resources);
+  button.addEventListener("click",()=>{
+   if(selected.has(s.name)){
+    selected.delete(s.name);
+    arrangement=current?.capacity>=6
+      ?arrangement.map(x=>x===s.name?null:x)
+      :arrangement.filter(x=>x!==s.name);
+   }else if(selected.size<(current?.id==="isole"?8:4)){
+    selected.add(s.name);
+    if(current?.capacity>=6){
+      const position=arrangement.findIndex(
+       (name,i)=>name===null && !blockedPositions().has(i)
+      );
+      if(position>=0)arrangement[position]=s.name;
+     }else{
+      arrangement.push(s.name);
+     }
+   }
+   $("result").textContent="";$("result").className="";
+   render();
+  });
+  $("animals").append(button);
+ }
+
+ if(!puzzleMode&&current?.id==="stiva" && !$("result").textContent){
+  if(selected.size===0){
+   $("bbird").textContent="Cip! Comincia scegliendo quattro animali. Io sorveglio la stiva!";
+  }else if(selected.size<(current?.id==="isole"?8:4)){
+   $("bbird").textContent="Ottimo! Mancano "+(4-selected.size)+" animali. Controlla cibo e acqua!";
+  }else{
+   $("bbird").textContent="Tutti a bordo! Ora usa le frecce per separare le coppie incompatibili, poi premi Salpa!";
+  }
+ }
+ $("check").disabled=selected.size!==(current?.id==="isole"?8:4);
+ if(puzzleMode){
+  $("bbird").textContent="Cip! Usa gli indizi per sistemare i quattro animali.";
+ }
+}
+
+const ECOLOGY_RESEARCH_NOTES={
+  "leone": "I leoni vivono in gruppi sociali e collaborano nella difesa del territorio. Sono grandi predatori degli ecosistemi africani.",
+  "zebra": "Le zebre sono erbivori sociali. Le loro caratteristiche strisce aiutano a distinguere gli individui e possono ostacolare alcuni insetti pungitori.",
+  "elefante": "Gli elefanti modificano l'ambiente quando abbattono alberi, scavano e disperdono semi. Sono importanti ingegneri dell'ecosistema.",
+  "coniglio": "I conigli sono erbivori e possono scavare tane. In molti ecosistemi rappresentano una fonte di cibo per diversi predatori.",
+  "lupo": "I lupi vivono spesso in gruppi familiari e possono cacciare cooperando. La loro presenza influenza le relazioni fra le specie.",
+  "tartaruga": "Il guscio delle tartarughe fa parte del loro scheletro. Le diverse specie sono adattate ad ambienti terrestri, d'acqua dolce o marini.",
+  "volpe": "Le volpi sono animali adattabili. Possono nutrirsi di piccoli vertebrati, insetti e frutti, a seconda della specie e dell'ambiente.",
+  "giraffa": "Il lungo collo permette alla giraffa di raggiungere foglie molto alte. La lingua prensile la aiuta a nutrirsi fra i rami.",
+  "castoro": "I castori costruiscono dighe e rifugi usando legno e fango. Le loro attività creano ambienti umidi utili anche ad altre specie.",
+  "anatra": "Molte anatre hanno zampe palmate che facilitano il nuoto. Specie differenti cercano il cibo in modi diversi, in superficie o sott'acqua."
+};
+
+$("puzzle-start").addEventListener("click",()=>{
+ const topic=$("difficulty").value;
+
+ if(topic==="ricerca"){
+  const dialog=$("suggestions-dialog");
+  const list=$("suggestions-list");
+  list.replaceChildren();
+
+  if(current?.id!=="ultima-scelta"){
+   const animals=species.filter(
+    animal=>selected.has(animal.name)
+   );
+
+   if(!animals.length){
+    $("suggestions-intro").textContent=
+     "🐦 CIP CIP! Seleziona almeno un animale e ti racconterò qualcosa di lui!";
+
+    const item=document.createElement("li");
+    item.textContent=
+     "Puoi fare ricerca gratuitamente, senza perdere punti.";
+    list.append(item);
+   }else{
+    $("suggestions-intro").textContent=
+     "🐦 CIP CIP! Ecco cosa possiamo scoprire "+
+     "sugli animali che hai scelto!";
+
+    for(const animal of animals){
+     const item=document.createElement("li");
+     const heading=document.createElement("strong");
+     heading.textContent=
+      animal.emoji+" "+animal.name.charAt(0).toUpperCase()+
+      animal.name.slice(1);
+
+     const detail=document.createElement("p");
+     detail.textContent=ECOLOGY_RESEARCH_NOTES[animal.name];
+
+     item.append(heading,detail);
+     list.append(item);
+    }
+   }
+  }else{
+   const animal=DARWIN_HISTORICAL_ANIMALS.find(
+    a=>a.id===finalAnimalId
+   );
+
+   if(!animal){
+    $("suggestions-intro").textContent=
+     "🐦 CIP CIP! Scegli un animale del catalogo: "+
+     "ti racconterò qualcosa di interessante!";
+
+    const item=document.createElement("li");
+    item.textContent=
+     "La consultazione scientifica è gratuita "+
+     "e non modifica il punteggio.";
+    list.append(item);
+   }else{
+    $("suggestions-intro").textContent=
+     "🐦 CIP CIP! Scopriamo insieme "+animal.name+"!";
+
+    const status=animal.category==="fossile"
+     ?"Conosciuto attraverso resti fossili"
+     :animal.category==="estinto_storico"
+      ?"Specie estinta"
+      :"Specie vivente";
+
+    const information=[
+     "Nome scientifico: "+animal.scientific,
+     "Area geografica: "+animal.region,
+     "Stato: "+status,
+     "Lo sapevi? "+animal.didactic_note
+    ];
+
+    for(const detail of information){
+     const item=document.createElement("li");
+     item.textContent=detail;
+     list.append(item);
+    }
+   }
+  }
+
+  dialog.showModal();
+  return;
+ }
+
+ const suggestions={
+  facile:[
+   "Scegli quattro specie differenti tra gli animali disponibili.",
+   "Ogni animale occupa un compartimento dell'Arca.",
+   "Usa le frecce per cambiare l'ordine degli animali.",
+   "Premi Salpa! per verificare se la disposizione è valida.",
+   "Completa un capitolo per sbloccare il successivo."
+  ],
+  medio:[
+   "Leone e zebra non possono occupare compartimenti vicini.",
+   "Lupo e coniglio non possono occupare compartimenti vicini.",
+   "Ogni specie consuma risorse: controlla cibo e acqua disponibili.",
+   "I predatori non possono essere più numerosi degli erbivori.",
+   "Leggi attentamente la descrizione della missione: ogni capitolo può avere vincoli particolari."
+  ],
+  difficile:[
+   "Ogni animale indica il proprio consumo di cibo e acqua.",
+   "Le scorte disponibili sono indicate nella scheda del capitolo.",
+   "La somma dei consumi degli animali non deve superare le scorte disponibili.",
+   "Controlla contemporaneamente risorse, predatori, vicinanze e vincoli della missione.",
+   "Se sei bloccato, l'Uccellino Azzurro può sistemare automaticamente l'Arca!"
+  ]
+ };
+ const items=suggestions[topic];
+ if(!items)return;
+
+ const dialog=$("suggestions-dialog");
+ $("suggestions-intro").textContent=
+  "CIP CIP! Ecco i miei consigli sull'argomento selezionato.";
+ const list=$("suggestions-list");
+ list.replaceChildren();
+
+ for(const clue of items){
+  const item=document.createElement("li");
+  item.textContent=clue;
+  list.append(item);
+ }
+
+ dialog.showModal();
+});
+
+$("suggestions-close").addEventListener("click",()=>{
+ $("suggestions-dialog").close();
+});
+
+$("scenario").addEventListener("change",e=>choose(e.target.value));
+$("reset").addEventListener("click",()=>{
+  if(!window.confirm(
+   "Ricominciare dal Capitolo 1? Progressi, record e punteggio totale saranno azzerati."
+  ))return;
+
+  completedChapters.clear();
+  assistedChapters.clear();
+  finalChoiceAwarded=false;
+  try{
+   localStorage.removeItem("ark-final-choice-v1");
+  }catch(error){
+   console.warn("Reset scelta finale non disponibile",error);
+  }
+  for(const id of Object.keys(chapterRecords)){
+   delete chapterRecords[id];
+  }
+
+  unlockedChapter=0;
+  currentChapterScore=0;
+  saveProgress();
+
+  for(const [i,option] of [...$("scenario").options].entries()){
+   option.disabled=i!==0;
+  }
+
+  choose(scenarios[0].id);
+  updateScoreUI();
+ });
+$("next").addEventListener("click",()=>{
+ if($("next").disabled||!completedChapters.has(current?.id))return;
+ if(!scenarios.length)return;
+ const index=scenarios.findIndex(s=>s.id===current?.id);
+ const next=scenarios[index+1];
+ if(next && index+1<=unlockedChapter){
+    choose(next.id);
+   }
+});
+function scoreBreakdown(data){
+  if(!data.valid)return "";
+
+  const chosen=species.filter(s=>selected.has(s.name));
+  const habitats=new Set(chosen.map(s=>s.habitat)).size;
+  const favored=chosen.filter(s=>s.habitat===current.favored).length;
+  const foodLeft=current.food-data.food;
+  const waterLeft=current.water-data.water;
+
+  const rows=[
+    ["Ecosistema sostenibile",40],
+    ["Habitat differenti ("+habitats+")",10*habitats],
+    ["Animali nell'habitat favorito ("+favored+")",10*favored],
+    ["Cibo risparmiato ("+foodLeft+")",5*foodLeft],
+    ["Acqua risparmiata ("+waterLeft+")",5*waterLeft],
+    ["Disposizione sicura",20]
+  ];
+
+  const total=rows.reduce((sum,row)=>sum+row[1],0);
+
+  if(total!==data.score){
+    return "\n🏆 Punteggio: "+data.score;
+  }
+
+  return "\n🏆 Punteggio: "+data.score+
+    "\n"+rows.map(([label,points])=>
+      "• "+label+": +"+points
+    ).join("\n");
+}
+
+$("check").addEventListener("click",async()=>{
+ if(current?.id==="ultima-scelta"){
+  submitFinalInline();
+  return;
+ }
+ $("check").disabled=true;
+ try{
+  const data = puzzleMode
+    ? ArkEngine.checkLevel(puzzleDifficulty, [...arrangement])
+    : ArkEngine.evaluate([...arrangement], current.id);
+  const rawScore=data.valid?data.score:0;
+   const earnedScore=assistedChapters.has(current.id)
+    ?Math.floor(rawScore/2)
+    :rawScore;
+   currentChapterScore=earnedScore;
+   if(data.valid&&!puzzleMode){
+    chapterRecords[current.id]=Math.max(
+     chapterRecords[current.id]||0,
+     earnedScore
+    );
+   }
+   updateScoreUI();
+  $("result").className=data.valid?"success":"failure";
+  if(data.valid&&!puzzleMode){
+   completedChapters.add(current.id);
+    saveProgress();
+    updateChapterProgress();
+   const index=scenarios.findIndex(s=>s.id===current.id);
+   if(index>=0){
+    unlockedChapter=Math.max(unlockedChapter,index+1);
+    for(const [i,option] of [...$("scenario").options].entries()){
+     option.disabled=i>unlockedChapter;
+    }
+    $("next").disabled=false;
+   }
+  }
+  if(!puzzleMode&&current.id==="stiva"){
+   $("bbird").textContent=data.valid
+    ?"CIP CIP! Missione compiuta! L'Arca è pronta per affrontare il Diluvio!"
+    :"Attenzione! Non arrenderti: controlla risorse, predatori e vicinanza degli animali.";
+  }
+  $("result").textContent=puzzleMode
+   ?data.message
+   :data.message+"\n"+(
+    data.valid
+      ?scoreBreakdown(data)+
+       (assistedChapters.has(current.id)
+        ?"\n🐦 Aiuto utilizzato: −50% ("+
+         data.score+" → "+earnedScore+" punti)"
+        :"")+
+       "\n"+data.event:
+    "🐦 L'Uccellino Azzurro consiglia: prova una combinazione con consumi più bassi e maggiore equilibrio."
+   );
+ }catch(e){
+  $("result").className="failure";
+  $("result").textContent="Il motore del gioco non risponde.";
+ }finally{$("check").disabled=selected.size!==(current?.id==="isole"?8:4);}
+});
+
+const DARWIN_HISTORICAL_ANIMALS=[{"id": "armadillo", "name": "Armadillo", "emoji": "🐾", "scientific": "Dasypodidae", "category": "vivente", "region": "Sud America", "didactic_note": "La sua corazza è formata da placche ossee. Darwin studiò anche grandi mammiferi fossili dotati di protezioni simili."}, {"id": "caracara", "name": "Caracara", "emoji": "🦅", "scientific": "Caracara spp.", "category": "vivente", "region": "Sud America", "didactic_note": "È un rapace opportunista: oltre a cacciare può nutrirsi di carogne. Svolge così anche il ruolo di spazzino dell'ecosistema."}, {"id": "cervo-pampas", "name": "Cervo delle pampas", "emoji": "🦌", "scientific": "Ozotoceros bezoarticus", "category": "vivente", "region": "Sud America", "didactic_note": "Vive nelle praterie sudamericane. La trasformazione degli ambienti erbosi può ridurre lo spazio disponibile per questa specie."}, {"id": "cormorano", "name": "Cormorano", "emoji": "🐦", "scientific": "Phalacrocoracidae", "category": "vivente", "region": "Coste e isole", "didactic_note": "Si immerge per catturare pesci. Le sue zampe palmate sono utili per nuotare."}, {"id": "fringuello", "name": "Fringuello delle Galápagos", "emoji": "🐦", "scientific": "Geospiza spp.", "category": "vivente", "region": "Galápagos", "didactic_note": "I fringuelli delle Galápagos sono celebri per i loro becchi adattati a cibi differenti. Ma durante il viaggio del Beagle furono altri piccoli uccelli a richiamare particolarmente l'attenzione di Darwin. Riuscirai a scoprire quali?"}, {"id": "guanaco", "name": "Guanaco", "emoji": "🦙", "scientific": "Lama guanicoe", "category": "vivente", "region": "Patagonia", "didactic_note": "È un camelide selvatico sudamericano, parente del lama. Il suo mantello lo protegge dal clima delle regioni aperte e fredde."}, {"id": "iguana-marina", "name": "Iguana marina", "emoji": "🦎", "scientific": "Amblyrhynchus cristatus", "category": "vivente", "region": "Galápagos", "didactic_note": "È una lucertola capace di cercare alghe in mare. Vive nelle Galápagos ed è un esempio straordinario di adattamento."}, {"id": "iguana-terrestre", "name": "Iguana terrestre", "emoji": "🦎", "scientific": "Conolophus spp.", "category": "vivente", "region": "Galápagos", "didactic_note": "Questa iguana vive sulla terraferma e mangia soprattutto vegetali, compresi in alcuni casi i cactus."}, {"id": "macrauchenia", "name": "Macrauchenia", "emoji": "🦙", "scientific": "Macrauchenia patachonica", "category": "fossile", "region": "Patagonia", "didactic_note": "Era un grande mammifero erbivoro oggi estinto. Darwin ne raccolse resti fossili durante il viaggio del Beagle."}, {"id": "megatherium", "name": "Megatherium", "emoji": "🦣", "scientific": "Megatherium", "category": "fossile", "region": "Sud America", "didactic_note": "Era un gigantesco bradipo terrestre estinto. I suoi fossili mostrano quanto fossero differenti alcuni mammiferi del passato."}, {"id": "mylodon", "name": "Mylodon", "emoji": "🦣", "scientific": "Mylodon darwinii", "category": "fossile", "region": "Sud America", "didactic_note": "Era un bradipo terrestre estinto. I suoi resti aiutano a ricostruire la fauna sudamericana preistorica."}, {"id": "nandu", "name": "Ñandù minore", "emoji": "🐦", "scientific": "Rhea pennata", "category": "vivente", "region": "Patagonia", "didactic_note": "È un grande uccello incapace di volare, ma abile nella corsa. Le differenze fra i nandù sudamericani interessarono Darwin."}, {"id": "pinguino", "name": "Pinguino sudamericano", "emoji": "🐧", "scientific": "Spheniscus spp.", "category": "vivente", "region": "Sud America", "didactic_note": "I pinguini sono uccelli che non volano: usano invece le ali come pinne per nuotare."}, {"id": "tartaruga-gigante", "name": "Tartaruga gigante", "emoji": "🐢", "scientific": "Chelonoidis spp.", "category": "vivente", "region": "Galápagos", "didactic_note": "Le tartarughe giganti delle Galápagos possono vivere molto a lungo. Le popolazioni delle diverse isole presentano differenze importanti."}, {"id": "tordo-imitatore", "name": "Tordo imitatore delle Galápagos", "emoji": "🐦", "scientific": "Mimus spp.", "category": "vivente", "region": "Galápagos", "didactic_note": "🔎 Un indizio dalla storia! Darwin notò che questi uccelli erano differenti da un'isola delle Galápagos all'altra. Questa osservazione contribuì a fargli mettere in discussione l'idea che le specie fossero immutabili. Una piccola differenza può far nascere una grande domanda!"}, {"id": "toxodon", "name": "Toxodon", "emoji": "🐾", "scientific": "Toxodon platensis", "category": "fossile", "region": "Sud America", "didactic_note": "Era un grande mammifero erbivoro estinto. Darwin ne raccolse fossili che suscitarono importanti domande sulla fauna del passato."}, {"id": "tuco-tuco", "name": "Tuco-tuco", "emoji": "🐹", "scientific": "Ctenomys spp.", "category": "vivente", "region": "Sud America", "didactic_note": "È un roditore sudamericano che scava gallerie sotterranee, usando il terreno come rifugio."}, {"id": "viscaccia", "name": "Viscaccia", "emoji": "🐾", "scientific": "Lagostomus maximus", "category": "vivente", "region": "Pampas", "didactic_note": "È un roditore sudamericano che vive in gruppi e utilizza tane scavate nel terreno."}, {"id": "volpe-falkland", "name": "Volpe delle Falkland", "emoji": "🦊", "scientific": "Dusicyon australis", "category": "estinto_storico", "region": "Falkland", "didactic_note": "Questo canide viveva nelle isole Falkland ed è ormai estinto. La sua storia aiuta a riflettere sulla vulnerabilità delle specie insulari."}, {"id": "volpe-darwin", "name": "Volpe di Darwin", "emoji": "🦊", "scientific": "Lycalopex fulvipes", "category": "vivente", "region": "Cile", "didactic_note": "È un piccolo canide selvatico del Cile, raro e minacciato. Proteggere le foreste in cui vive è importante per la sua conservazione."}];
+const FINAL_CHOICE_KEY="ark-final-choice-v1";
+const FINAL_CHOICE_POINTS=350;
+
+const FINAL_CHOICE_TIERS={
+  galapagos:new Set([
+    "iguana-marina",
+    "iguana-terrestre",
+    "tartaruga-gigante",
+    "tordo-imitatore"
+  ]),
+  historical:new Set([
+    "nandu",
+    "macrauchenia",
+    "megatherium",
+    "mylodon",
+    "toxodon",
+    "volpe-falkland"
+  ])
+};
+
+function finalChoicePoints(animalId){
+  const animal=DARWIN_HISTORICAL_ANIMALS.find(
+    a=>a.id===animalId
+  );
+  if(!animal)return 0;
+
+  // Estinti e fossili hanno precedenza sui bonus storici.
+  if(animal.category==="estinto_storico")return 25;
+  if(animal.category==="fossile")return 50;
+
+  if(animal.id==="fringuello")return 350;
+  if(FINAL_CHOICE_TIERS.galapagos.has(animal.id))return 250;
+  if(FINAL_CHOICE_TIERS.historical.has(animal.id))return 200;
+  return 150;
+}
+
+function awardedFinalPoints(){
+  if(!finalChoiceAwarded)return 0;
+  const points=finalChoicePoints(finalAnimalId);
+  return assistedChapters.has("ultima-scelta")
+    ?Math.floor(points/2)
+    :points;
+}
+let finalChoiceAwarded=false;
+
+function restoreFinalChoicePoints(){
+ try{
+  const saved=JSON.parse(
+   localStorage.getItem(FINAL_CHOICE_KEY)||"null"
+  );
+  finalChoiceAwarded=completedChapters.has("ultima-scelta") &&
+    DARWIN_HISTORICAL_ANIMALS.some(
+      a=>a.id===saved?.animalId
+    );
+ }catch(error){
+  finalChoiceAwarded=false;
+ }
+}
+let finalAnimalId=null;
+
+
+function submitFinalInline(){
+ const animal=DARWIN_HISTORICAL_ANIMALS.find(
+  a=>a.id===finalAnimalId
+ );
+
+ const result=$("result");
+
+ if(!animal){
+  result.className="failure";
+  result.textContent="🐦 Scegli prima un animale!";
+  return;
+ }
+
+
+ const note=animal.category==="fossile"
+  ?"Questo animale è conosciuto attraverso i fossili: "
+   +"possiamo conservarne la memoria scientifica."
+  :animal.category==="estinto_storico"
+   ?"Questa specie è estinta: la scelta ci ricorda "
+    +"l'importanza della biodiversità."
+   :"Proteggere questo animale significa anche "
+    +"proteggere il suo ambiente.";
+
+ try{
+  localStorage.setItem(FINAL_CHOICE_KEY,JSON.stringify({
+   animalId:animal.id
+  }));
+ }catch(error){
+  console.warn("Salvataggio non disponibile",error);
+ }
+
+ finalChoiceAwarded=true;
+ const finalPoints=awardedFinalPoints();
+  currentChapterScore=finalPoints;
+ completedChapters.add("ultima-scelta");
+ saveProgress();
+ updateScoreUI();
+ updateChapterProgress();
+
+ $("next").disabled=true;
+ result.className="success";
+ result.textContent=
+  "🐦 CIP CIP! Hai scelto "+animal.name+"!\n"+
+  note+"\n"+
+  "Perché proprio questo? Non esiste una risposta obbligatoria: "
+  +"contano le tue ragioni.\n"+
+  "💙 Hai completato tutte e sei le missioni!\n"+
+  "🏆 +"+finalPoints+" punti"+
+   (assistedChapters.has("ultima-scelta")
+    ?" (Aiuto dell'Uccellino Azzurro: −50%)":"")+
+   " · Punteggio finale: "+
+   totalScore().toLocaleString("it-IT")+" / 1.000";
+
+ $("bbird").textContent=
+  "CIP CIP! Tutte le missioni completate! 💙";
+
+  $("final-complete-score").textContent=
+   "🏆 Punteggio finale: "+
+   totalScore().toLocaleString("it-IT")+
+   " su 1.000";
+
+  const finalDialog=$("final-complete-dialog");
+  if(!finalDialog.open)finalDialog.showModal();
+
+}
+
+$("final-complete-close").addEventListener("click",()=>{
+  $("final-complete-dialog").close();
+});
+
+async function start(){
+ try{
+  ArkEngine.initialize(ARK_GAME_DATA);
+   species=ARK_GAME_DATA.species;
+   scenarios=ARK_GAME_DATA.scenarios;
+   puzzleLevels=ARK_GAME_DATA.levels;
+
+   for(const scenario of scenarios){
+    chapterMaximums[scenario.id]=
+     scenario.id==="ultima-scelta"
+      ?350
+      :calculateMaximum(scenario);
+    console.log(
+     "CHAPTER_MAXIMUM",scenario.id,chapterMaximums[scenario.id]
+    );
+   }
+
+  loadProgress();
+   restoreFinalChoicePoints();
+  for(const s of scenarios){
+   const option=document.createElement("option");
+   option.value=s.id;option.textContent=s.title;
+   option.disabled=scenarios.indexOf(s)>unlockedChapter;
+   $("scenario").append(option);
+  }
+  $("next").disabled=true;
+  choose(scenarios.find(s=>s.id==="stiva")?.id||scenarios[0].id);
+ }catch(e){$("result").textContent="Impossibile caricare il gioco.";}
+}
+start();
+</script>
+</body>
+</html>
