@@ -1,41 +1,41 @@
-# Panoramica architetturale
+# Architecture overview
 
-## Obiettivo
+[English](overview.md) | [Italiano](overview.it.md)
 
-BoardLab separa il dominio dei giochi dagli algoritmi che scelgono le mosse.
+## Objective
 
-Il motore coordina una partita, ma non contiene regole appartenenti a uno
-specifico gioco.
+BoardLab separates the game domain from the algorithms that select moves.
 
-## Responsabilità principali
+The engine coordinates a match but contains no rules specific to any game.
+
+## Main responsibilities
 
 ### Game
 
-Definisce le regole e crea lo stato iniziale di un gioco.
+Defines the rules and creates a game's initial state.
 
 ### GameState
 
-Rappresenta una configurazione completa e valida della partita.
+Represents a complete, valid match configuration.
 
 ### Move
 
-Descrive una possibile azione senza imporre una rappresentazione comune a
-tutti i giochi.
+Describes a possible action without requiring a common representation
+across all games.
 
 ### Player
 
-Identifica uno dei partecipanti alla partita.
+Identifies one of the participants in a match.
 
 ### Strategy
 
-Sceglie una mossa tra quelle legali usando esclusivamente il contratto pubblico
-del gioco.
+Selects a move from the legal moves using only the game's public contract.
 
 ### Match
 
-Coordina turni, strategie, terminazione e risultato della partita.
+Coordinates turns, strategies, termination and the match result.
 
-## Dipendenze
+## Dependencies
 
 ```text
 Match
@@ -51,24 +51,24 @@ Match
         +-- statistiche di ricerca
 ```
 
-## Regole architetturali
+## Architecture rules
 
-1. Il motore non importa implementazioni concrete dei giochi.
-2. Le strategie non conoscono Tre Sigilli o altri giochi specifici.
-3. Uno stato non viene modificato clandestinamente durante una ricerca.
-4. Le statistiche sono risultati espliciti, non variabili globali.
-5. Ottimizzazioni e cache devono preservare il comportamento osservabile.
-6. La CLI utilizza il dominio, ma il dominio non dipende dalla CLI.
+1. The engine does not import concrete game implementations.
+2. Strategies do not know about Tre Sigilli or other specific games.
+3. A state is not silently modified during a search.
+4. Statistics are explicit results, not global variables.
+5. Optimizations and caches must preserve observable behavior.
+6. The CLI uses the domain, but the domain does not depend on the CLI.
 
-## Contratto concettuale minimo
+## Minimum conceptual contract
 
-Un gioco dovrà permettere almeno di:
+A game must at least support:
 
-- ottenere le mosse legali;
-- applicare una mossa;
-- verificare se lo stato è terminale;
-- valutare uno stato dal punto di vista di un giocatore;
-- produrre uno stato indipendente utilizzabile durante la ricerca.
+- retrieving legal moves;
+- applying a move;
+- determining whether a state is terminal;
+- evaluating a state from a player's perspective;
+- producing an independent state suitable for search.
 
-La forma definitiva delle interfacce verrà decisa prima di implementare gli
-algoritmi.
+The final shape of the interfaces will be decided before implementing
+the algorithms.

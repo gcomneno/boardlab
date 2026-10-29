@@ -1,19 +1,21 @@
-# Guida allo sviluppo
+# Development guide
 
-Questa guida permette di preparare e verificare BoardLab partendo da un clone
-pulito del repository.
+[English](development.md) | [Italiano](development.it.md)
 
-## Requisiti
+This guide explains how to prepare and validate BoardLab from a clean
+repository clone.
+
+## Requirements
 
 - Git;
-- Python 3.12 o successivo;
+- Python 3.12 or later;
 - `uv`.
 
-Non sono richieste installazioni globali di Ruff, mypy o pytest.
+Global installations of Ruff, mypy, or pytest are not required.
 
-## Preparazione iniziale
+## Initial setup
 
-Dalla directory in cui si vogliono conservare i progetti:
+From the directory where you want to store your projects:
 
 ```bash
 git clone https://github.com/gcomneno/boardlab.git
@@ -23,93 +25,94 @@ uv sync --group dev
 
 `uv sync`:
 
-1. crea `.venv` quando necessario;
-2. installa BoardLab come package modificabile;
-3. installa gli strumenti di sviluppo;
-4. utilizza le versioni registrate in `uv.lock`.
+1. creates `.venv` when necessary;
+2. installs BoardLab as an editable package;
+3. installs the development tools;
+4. uses the versions recorded in `uv.lock`.
 
-## Verifica completa
+## Complete validation
 
-Eseguire dalla radice del repository:
+Run from the repository root:
 
 ```bash
 scripts/check-repository.sh
 ```
 
-Questo è l'entrypoint canonico della validazione locale ed esegue sia i
-controlli della toolchain Python sia i controlli repository-wide relativi alla
-documentazione e alla pubblicabilità.
+This is the canonical entry point for local validation. It runs both
+the Python toolchain checks and repository-wide checks concerning
+documentation and publishable content.
 
-La validazione comprende almeno:
+Validation includes at least:
 
-- Ruff format;
-- Ruff lint;
-- mypy strict;
+- Ruff formatting;
+- Ruff linting;
+- mypy in strict mode;
 - pytest;
-- validazione della documentazione bilingue;
-- controllo dei contenuti pubblicabili;
-- controllo della sintassi degli script shell;
-- controllo del whitespace Git.
+- bilingual documentation validation;
+- publishable-content checks;
+- shell script syntax checks;
+- Git whitespace checks.
 
-Tutti i controlli devono terminare con successo prima di creare un commit.
+All checks must succeed before creating a commit.
 
-## Formattazione automatica
+## Automatic formatting
 
-Quando Ruff segnala file non formattati:
+When Ruff reports incorrectly formatted files:
 
 ```bash
 uv run ruff format .
 ```
 
-Dopo la formattazione, ripetere la verifica completa.
+Repeat the complete validation after formatting.
 
-## Aggiornamento delle dipendenze
+## Updating dependencies
 
-Per aggiornare intenzionalmente il lock file:
+To intentionally update the lock file:
 
 ```bash
 uv lock --upgrade
 uv sync --group dev
 ```
 
-Il diff di `uv.lock` deve essere revisionato e committato insieme alla modifica
-che richiede l'aggiornamento.
+The `uv.lock` diff must be reviewed and committed together with the
+change requiring the update.
 
-## Aggiunta di una dipendenza di runtime
+## Adding a runtime dependency
 
 ```bash
 uv add nome-pacchetto
 ```
 
-Le dipendenze di runtime devono essere necessarie al funzionamento di BoardLab,
-non soltanto allo sviluppo.
+Runtime dependencies must be required for BoardLab to operate,
+not merely for development.
 
-## Aggiunta di una dipendenza di sviluppo
+## Adding a development dependency
 
 ```bash
 uv add --dev nome-pacchetto
 ```
 
-Gli strumenti di test, linting, typing e manutenzione appartengono al gruppo di
-sviluppo.
+Testing, linting, typing, and maintenance tools belong to the
+development dependency group.
 
-## Controllo prima del commit
+## Pre-commit checks
 
-Eseguire prima la validazione completa:
+First, run the complete validation:
 
 ```bash
 scripts/check-repository.sh
 ```
 
-Poi controllare esplicitamente lo stato Git:
+Then explicitly check Git status:
 
 ```bash
 git diff --check
 git status -sb
 ```
 
-`git diff` non mostra i file non tracciati. Usare sempre anche `git status`
-prima di considerare completo il contenuto di un commit.
+`git diff` does not display untracked files. Always inspect
+`git status` before considering the content of a commit complete.
 
-Prima del commit finale della preparazione didattica è inoltre necessario
-eseguire uno staging audit separato sui soli file intenzionali.
+Before the final commit for educational material preparation,
+a separate staging audit is also required, limited to the
+intended files.
