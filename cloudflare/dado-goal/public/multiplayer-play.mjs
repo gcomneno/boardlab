@@ -209,6 +209,15 @@ $("create").addEventListener("click", () => work(async () => {
 }));
 
 
+$("join").addEventListener("click", () => work(async () => {
+  const { matchId, inviteToken } = decodeInvite(
+    $("invite-code").value
+  );
+  snapshot = await client.join(matchId, inviteToken);
+  lastFace = null;
+  if ($("remember").checked) client.remember();
+}));
+
 $("invite-code").addEventListener("input", render);
 
 let copyResetTimer = null;
