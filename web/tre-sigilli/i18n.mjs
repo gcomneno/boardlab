@@ -13,6 +13,7 @@ export const messages = Object.freeze({
     guidedOn: "Exit guided play",
     guidedFinished: "Game over. Compare the players' territories.",
     guidedWait: "Watch the computer's response.",
+    aiMoveLabel: "Computer move analyzed:",
     guidedPlace: "Place a seal on an empty square. You can ask for a suggestion or play on your own.",
     guidedSlide: "Move one of your seals to an adjacent empty square.",
     analyzing: "Analyzing the position…",
@@ -92,6 +93,7 @@ export const messages = Object.freeze({
     guidedOn: "Esci dalla prova guidata",
     guidedFinished: "Partita conclusa. Confronta i territori dei giocatori.",
     guidedWait: "Osserva la risposta del computer.",
+    aiMoveLabel: "Analisi della mossa del computer:",
     guidedPlace: "Colloca un sigillo in una casella vuota. Puoi chiedere un suggerimento oppure giocare da solo.",
     guidedSlide: "Sposta un tuo sigillo in una casella ortogonalmente adiacente e libera.",
     analyzing: "Analizzo la posizione…",
@@ -172,7 +174,7 @@ export function translate(key) {
 }
 
 export function formatMessage(key, values = {}) {
-  return translate(key).replace(/\{([a-z]+)\}/g, (match, name) =>
+  return translate(key).replace(/\{([a-z][a-zA-Z]*)\}/g, (match, name) =>
     Object.hasOwn(values, name) ? String(values[name]) : match
   );
 }
