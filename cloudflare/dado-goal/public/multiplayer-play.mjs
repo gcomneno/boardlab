@@ -218,6 +218,23 @@ $("join").addEventListener("click", () => work(async () => {
   if ($("remember").checked) client.remember();
 }));
 
+$("roll").addEventListener("click", () => work(async () => {
+  if (!snapshot || !Number.isSafeInteger(snapshot.revision)) {
+    throw new Error("Stato della partita non disponibile.");
+  }
+
+  const requestId = crypto.randomUUID();
+  const result = await client.roll(snapshot.revision, requestId);
+
+  snapshot = {
+    ...snapshot,
+    revision: result.revision,
+    state: result.state,
+    status: result.status,
+  };
+  lastFace = `Giocatore ${client.seat + 1}: ${result.face}`;
+}));
+
 $("invite-code").addEventListener("input", render);
 
 let copyResetTimer = null;
