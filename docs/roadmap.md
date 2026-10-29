@@ -1,50 +1,62 @@
 # Roadmap
 
-## Fase 0 — Motore generico
+[English](roadmap.md) | [Italiano](roadmap.it.md)
 
-Definizione di Game, GameState, Move, Player, Strategy e Match.
+## Phase 0 — Generic engine
 
-## Fase 1 — Tre Sigilli
+Define Game, GameState, Move, Player, Strategy, and Match.
 
-Primo gioco originale e strategia casuale.
+## Phase 1 — Tre Sigilli
 
-## Fase 2 — Minimax
+Introduce the first original game and a random strategy.
 
-Implementazione leggibile, testata e strumentata.
+## Phase 2 — Minimax
 
-## Fase 3 — Alpha-Beta Pruning
+Implement a readable, tested, and instrumented version.
 
-Confronto con Minimax su qualità della mossa, nodi e tempo.
+## Phase 3 — Alpha-Beta Pruning
 
-## Fase 4 — Monte Carlo Tree Search
+Compare Alpha-Beta with Minimax in terms of move quality,
+explored nodes, and execution time.
 
-Studio di selezione, espansione, simulazione e backpropagation.
+## Phase 4 — Monte Carlo Tree Search
 
-## Fase 5 — Scalabilità
+Study selection, expansion, simulation, and backpropagation.
 
-Introduzione di un gioco con spazio degli stati e meccaniche più articolate.
+## Phase 5 — Scalability
 
-## Estensione completata — Benchmark Reversi 6×6
+Introduce a game with a larger state space and more
+elaborate mechanics.
 
-Implementazione di un protocollo riproducibile per confrontare Minimax, Alpha-Beta e MCTS su Reversi 6×6, con harness, test e risultati documentati.
+## Completed extension — Reversi 6×6 benchmarks
 
-Completata tramite PR #7. Questa estensione non coincide con la proposta di distribuzione mobile descritta nella mappa LEARN/BUILD/SHIP.
+Implement a reproducible protocol to compare Minimax,
+Alpha-Beta, and MCTS on Reversi 6×6, including the harness,
+tests, and documented results.
 
-## Stato dell'estensione Android
+Completed through PR #7. This extension is separate from
+the proposed mobile distribution described in the
+LEARN/BUILD/SHIP map.
 
-L'estensione SHIP ha prodotto contratti di parità Python/Kotlin,
-un'implementazione Kotlin del dominio Tre Sigilli, un controller
-indipendente dalla piattaforma e un'interfaccia Jetpack Compose.
-Sono state verificate una partita completa su dispositivo reale,
-le build Android in CI e la produzione di un APK release unsigned.
+## Android extension status
 
-Evidenze: PR #8–#13. Le lezioni architetturali sono state
-documentate tramite PR #14.
+The SHIP extension produced Python/Kotlin parity contracts,
+a Kotlin implementation of the Tre Sigilli domain,
+a platform-independent controller, and a Jetpack Compose
+user interface.
 
-Questi risultati non modificano retroattivamente le fasi della
-roadmap originale e non implicano pubblicazione o readiness produttiva.
-Restano da qualificare test Android automatizzati, firma delle release,
-gestione delle chiavi, ciclo di vita, accessibilità e distribuzione.
+A complete match was verified on a real device, alongside
+Android CI builds and the generation of an unsigned release APK.
 
-Lo studio attivo è tracciato separatamente in
-[Progresso didattico](progress.it.md).
+Evidence: PRs #8–#13. Architecture lessons were documented
+through PR #14.
+
+These achievements do not retroactively change the original
+roadmap phases and do not imply publication or production readiness.
+
+The remaining qualification work includes automated Android
+tests, release signing, key management, lifecycle handling,
+accessibility, and distribution.
+
+Active study is tracked separately in
+[Learning progress](progress.md).
