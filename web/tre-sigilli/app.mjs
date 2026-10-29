@@ -2,6 +2,7 @@ import {
   initial, player, legalMoves, applyMove, territoryScore, outcome
 } from "./engine.mjs";
 import { validateStrategy } from "./strategies.mjs";
+import { analyzeMove } from "./guided-analysis.mjs";
 
 import { initializeLocale, translate, formatMessage, explainAnalysis } from "./i18n.mjs";
 
@@ -26,6 +27,7 @@ let suggestion = null;
 let suggestionRequestId = null;
 let suggestionPosition = null;
 let explanationVisible = false;
+let lastAiAnalysis = null;
 
 function clearSuggestion() {
   suggestion = null;
@@ -93,6 +95,10 @@ function updateGuide() {
   );
 
   if (!active) return;
+
+  $("guided-ai-explanation").textContent = lastAiAnalysis
+    ? `${translate("aiMoveLabel")} ${explainAnalysis(lastAiAnalysis)}`
+    : "";
 
   const finished = legalMoves(state).length === 0;
   const humanTurn = !finished && player(state) === "north";
@@ -273,7 +279,11 @@ function bindWorker(worker) {
           throw new Error("Risposta IA fuori turno");
         }
 
+        const analysis = guidedEnabled
+          ? analyzeMove(state, data.move)
+          : null;
         state = applyMove(state, data.move);
+        lastAiAnalysis = analysis;
         aiPending = false;
 
         if (mode === "ai_vs_ai" && legalMoves(state).length > 0) {
@@ -441,6 +451,7 @@ function tap(cell) {
 
   if (!move) return;
   clearSuggestion();
+  lastAiAnalysis = null;
   state = applyMove(state, move);
   selected = null;
 
@@ -504,6 +515,8 @@ function reset() {
   aiPending = false;
   pendingAiRequest = false;
   clearSuggestion();
+  lastAiAnalysis = null;
+  $("guided-ai-explanation").textContent = "";
   mode = nextMode;
   activeConfig = nextConfig;
   activeNorthConfig = nextNorthConfig;
