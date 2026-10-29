@@ -14,6 +14,7 @@ let aiPending = false;
 let aiTimer = null;
 const AI_DELAY_MS = 700;
 let activeConfig = null;
+let activeNorthConfig = null;
 let aiWorker = null;
 let workerReady = false;
 let workerRequestId = 0;
@@ -159,6 +160,39 @@ function describeStrategy(config) {
   });
 }
 
+function scheduleAiTurn() {
+  if (legalMoves(state).length === 0) {
+    aiPending = false;
+    render();
+    return;
+  }
+
+  aiPending = true;
+  render();
+
+  aiTimer = window.setTimeout(() => {
+    aiTimer = null;
+    if (!aiPending) return;
+
+    pendingAiRequest = true;
+    try {
+      if (mode === "ai_vs_ai") {
+        workerReady = false;
+        aiWorker.postMessage({
+          id: 0,
+          type: "configure",
+          config: player(state) === "north"
+            ? activeNorthConfig : activeConfig
+        });
+      } else {
+        requestAiMove();
+      }
+    } catch (error) {
+      showAiError(error.message);
+    }
+  }, AI_DELAY_MS);
+}
+
 function showAiError(message) {
   $("strategy-error").textContent = formatMessage("aiError", { message });
   aiPending = false;
@@ -182,8 +216,9 @@ function requestAiMove() {
   if (!aiPending || !pendingAiRequest || !workerReady ||
       aiWorker === null) return;
 
-  if (mode !== "ai" || legalMoves(state).length === 0 ||
-      player(state) !== "south") {
+  if ((mode !== "ai" && mode !== "ai_vs_ai") ||
+      legalMoves(state).length === 0 ||
+      (mode === "ai" && player(state) !== "south")) {
     throw new Error("Invalid AI request state");
   }
 
@@ -233,13 +268,19 @@ function bindWorker(worker) {
       if (!aiPending || data.id !== workerRequestId) return;
 
       try {
-        if (mode !== "ai" || player(state) !== "south") {
+        if ((mode !== "ai" && mode !== "ai_vs_ai") ||
+            (mode === "ai" && player(state) !== "south")) {
           throw new Error("Risposta IA fuori turno");
         }
 
         state = applyMove(state, data.move);
         aiPending = false;
-        render();
+
+        if (mode === "ai_vs_ai" && legalMoves(state).length > 0) {
+          scheduleAiTurn();
+        } else {
+          render();
+        }
       } catch (error) {
         showAiError(error.message);
       }
@@ -354,8 +395,9 @@ function render() {
         if (hint.destination === i) cell.classList.add("guided-target");
       }
     }
-    if (targets.has(i) && result === null && !aiPending) cell.classList.add("legal");
-    cell.disabled = aiPending;
+    if (targets.has(i) && result === null && !aiPending &&
+        mode !== "ai_vs_ai") cell.classList.add("legal");
+    cell.disabled = aiPending || mode === "ai_vs_ai";
 
     const occupant = state.cells[i];
     cell.setAttribute("aria-label", formatMessage("cell", {
@@ -379,7 +421,7 @@ function render() {
 
 function tap(cell) {
   const moves = legalMoves(state);
-  if (aiPending || !moves.length ||
+  if (aiPending || !moves.length || mode === "ai_vs_ai" ||
       (mode === "ai" && player(state) !== "north")) return;
 
   let move = null;
@@ -405,19 +447,7 @@ function tap(cell) {
   if (mode === "ai" && legalMoves(state).length > 0) {
     if (player(state) !== "south") throw new Error("Invalid AI turn");
 
-    aiPending = true;
-    render();
-
-    aiTimer = window.setTimeout(() => {
-      aiTimer = null;
-      pendingAiRequest = true;
-
-      try {
-        requestAiMove();
-      } catch (error) {
-        showAiError(error.message);
-      }
-    }, AI_DELAY_MS);
+    scheduleAiTurn();
     return;
   }
 
@@ -425,21 +455,32 @@ function tap(cell) {
 }
 
 function updateStrategyDescription() {
-  $("strategy-active").textContent = activeConfig
-    ? formatMessage("activeAi", {
-        strategy: describeStrategy(activeConfig)
+  $("strategy-active").textContent = mode === "ai_vs_ai"
+    ? formatMessage("activeAiVsAi", {
+        north: describeStrategy(activeNorthConfig),
+        south: describeStrategy(activeConfig)
       })
-    : translate("activeLocal");
+    : activeConfig
+      ? formatMessage("activeAi", {
+          strategy: describeStrategy(activeConfig)
+        })
+      : translate("activeLocal");
 }
 
 function reset() {
   const nextMode = $("mode").value;
   let nextConfig = null;
+  let nextNorthConfig = null;
   let nextWorker = null;
 
   try {
-    if (nextMode === "ai") {
+    if (nextMode === "ai" || nextMode === "ai_vs_ai") {
       nextConfig = selectedConfiguration();
+      if (nextMode === "ai_vs_ai") {
+        nextNorthConfig = validateStrategy({
+          algorithm: $("north-algorithm").value
+        });
+      }
       nextWorker = createGameWorker();
     }
   } catch (error) {
@@ -465,6 +506,7 @@ function reset() {
   clearSuggestion();
   mode = nextMode;
   activeConfig = nextConfig;
+  activeNorthConfig = nextNorthConfig;
   state = initial();
   selected = null;
 
@@ -478,11 +520,15 @@ function reset() {
     aiWorker.postMessage({
       id: 0,
       type: "configure",
-      config: activeConfig
+      config: mode === "ai_vs_ai" ? activeNorthConfig : activeConfig
     });
   }
 
-  render();
+  if (mode === "ai_vs_ai") {
+    scheduleAiTurn();
+  } else {
+    render();
+  }
 }
 
 $("guided-toggle").addEventListener("click", () => {
@@ -504,6 +550,7 @@ $("guided-accept").addEventListener("click", acceptSuggestion);
 $("new").addEventListener("click", reset);
 $("mode").addEventListener("change", () => {
   if ($("mode").value !== "ai") guidedEnabled = false;
+  $("ai-vs-ai-settings").hidden = $("mode").value !== "ai_vs_ai";
   reset();
 });
 $("algorithm").addEventListener("change", showStrategyFields);
@@ -518,4 +565,5 @@ initializeLocale(() => {
   }
 });
 showStrategyFields();
+$("ai-vs-ai-settings").hidden = $("mode").value !== "ai_vs_ai";
 reset();

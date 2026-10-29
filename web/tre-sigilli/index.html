@@ -27,6 +27,7 @@
       <select id="mode">
         <option value="ai">Contro il computer</option>
         <option value="local">Due giocatori</option>
+        <option value="ai_vs_ai">Computer contro computer</option>
       </select>
       <button id="new" type="button">Nuova partita</button>
     </section>
@@ -34,6 +35,20 @@
     <details class="strategy-panel" id="strategy-panel">
       <summary>Configura l'intelligenza artificiale</summary>
       <p id="strategy-help">Scegli l'algoritmo e i parametri, poi premi Nuova partita per applicarli.</p>
+
+      <div id="ai-vs-ai-settings" hidden>
+        <label for="north-algorithm">Strategia Avorio</label>
+        <select id="north-algorithm">
+          <option value="alpha_beta" selected>Alpha-Beta</option>
+          <option value="minimax">Minimax</option>
+          <option value="random">Casuale</option>
+          <option value="mcts">Monte Carlo Tree Search (MCTS)</option>
+        </select>
+        <p id="north-strategy-help">
+          Avorio usa i parametri predefiniti dell'algoritmo.
+          Terracotta usa i parametri configurati qui sotto.
+        </p>
+      </div>
 
       <div class="strategy-fields">
         <label for="algorithm">Algoritmo</label>
