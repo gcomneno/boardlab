@@ -59,7 +59,8 @@
         "tests/README.md"
     ],
     "excluded_documents": [
-        "docs/games/dado-goal/CHANGELOG.md"
+        "docs/games/dado-goal/CHANGELOG.md",
+        "docs/games/tre-sigilli/CHANGELOG.md"
     ],
     "ignored_directories": [
         ".git",
