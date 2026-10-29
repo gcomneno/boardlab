@@ -1,0 +1,76 @@
+name: Arca di Darwin Desktop Release
+
+on:
+  push:
+    tags:
+      - 'arca-di-darwin-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            command: dist:win
+            artifact: windows
+            pattern: '*.exe'
+          - os: macos-latest
+            command: dist:mac
+            artifact: macos
+            pattern: '*.dmg'
+          - os: ubuntu-latest
+            command: dist:linux
+            artifact: linux
+            pattern: '*.AppImage'
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+    defaults:
+      run:
+        working-directory: packaging/arca-di-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run ${{ matrix.command }}
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: arca-${{ matrix.artifact }}
+          path: packaging/arca-di-darwin/release/${{ matrix.pattern }}
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: arca-*
+          path: packages
+          merge-multiple: true
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "$GITHUB_REF_NAME"             packages/*             --draft             --verify-tag             --title "L'Arca di Darwin 1.0.0"             --notes "Gioco educativo offline per Windows, macOS e Linux."

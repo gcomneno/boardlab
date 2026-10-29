@@ -1,0 +1,243 @@
+{
+  "species": [
+    {
+      "name": "leone",
+      "description": "Predatore territoriale",
+      "emoji": "🦁",
+      "food": 3,
+      "water": 2,
+      "habitat": "savana",
+      "role": "predatore"
+    },
+    {
+      "name": "zebra",
+      "description": "Erbivoro di prateria",
+      "emoji": "🦓",
+      "food": 2,
+      "water": 2,
+      "habitat": "savana",
+      "role": "erbivoro"
+    },
+    {
+      "name": "elefante",
+      "description": "Grande ingegnere dell'ecosistema",
+      "emoji": "🐘",
+      "food": 3,
+      "water": 4,
+      "habitat": "savana",
+      "role": "ingegnere"
+    },
+    {
+      "name": "coniglio",
+      "description": "Piccolo erbivoro prolifico",
+      "emoji": "🐇",
+      "food": 1,
+      "water": 1,
+      "habitat": "prateria",
+      "role": "erbivoro"
+    },
+    {
+      "name": "lupo",
+      "description": "Predatore sociale",
+      "emoji": "🐺",
+      "food": 3,
+      "water": 2,
+      "habitat": "foresta",
+      "role": "predatore"
+    },
+    {
+      "name": "tartaruga",
+      "description": "Rettilе resistente",
+      "emoji": "🐢",
+      "food": 1,
+      "water": 1,
+      "habitat": "palude",
+      "role": "resistente"
+    },
+    {
+      "name": "volpe",
+      "description": "Predatore opportunista",
+      "emoji": "🦊",
+      "food": 2,
+      "water": 2,
+      "habitat": "foresta",
+      "role": "predatore"
+    },
+    {
+      "name": "giraffa",
+      "description": "Grande erbivoro della savana",
+      "emoji": "🦒",
+      "food": 3,
+      "water": 3,
+      "habitat": "savana",
+      "role": "erbivoro"
+    },
+    {
+      "name": "castoro",
+      "description": "Ingegnere delle zone umide",
+      "emoji": "🦫",
+      "food": 2,
+      "water": 2,
+      "habitat": "palude",
+      "role": "ingegnere"
+    },
+    {
+      "name": "anatra",
+      "description": "Uccello acquatico onnivoro",
+      "emoji": "🦆",
+      "food": 1,
+      "water": 1,
+      "habitat": "palude",
+      "role": "onnivoro"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "stiva",
+      "title": "Capitolo 1 — La Stiva dell'Arca",
+      "description": "Il Diluvio sta arrivando. Prepara la stiva scegliendo quattro specie in grado di convivere. Gestisci le scorte di cibo e acqua, mantieni l'equilibrio tra gli animali e organizza una disposizione sicura.",
+      "food": 9,
+      "water": 9,
+      "capacity": 4,
+      "favored": "prateria",
+      "event": "L'Arca supera la prima notte di tempesta.",
+      "pigeon": "Cip cip! Ho controllato la stiva! Attenzione alle scorte e ai predatori!",
+      "viable_count": 10
+    },
+    {
+      "id": "diluvio",
+      "title": "Capitolo 2 — L'Allagamento",
+      "description": "La tempesta ha raggiunto l'Arca e il primo compartimento è allagato. Alcune specie sono più adatte di altre ad affrontare queste condizioni. Riorganizza la stiva senza compromettere la sicurezza degli animali.",
+      "food": 9,
+      "water": 9,
+      "capacity": 4,
+      "favored": "palude",
+      "event": "La tempesta è superata. L'Arca continua il viaggio.",
+      "pigeon": "CIP! Il primo compartimento è allagato! Quale animale potrebbe affrontare questa situazione?",
+      "viable_count": 10
+    },
+    {
+      "id": "savana",
+      "title": "Capitolo 3 — La Savana in Siccità",
+      "description": "La stagione secca ha ridotto drasticamente la disponibilità d'acqua. Hai soltanto 6 unità d'acqua per quattro animali. Scegli specie con consumi sostenibili e assicurati che possano convivere. Il compartimento 3 è inaccessibile a causa della siccità.",
+      "food": 9,
+      "water": 6,
+      "capacity": 6,
+      "favored": "savana",
+      "event": "La siccità mette alla prova gli animali più assetati.",
+      "pigeon": "Ho visto acqua a est! Attenzione alle specie che bevono molto.",
+      "viable_count": 10,
+      "blocked_compartments": [
+        3
+      ]
+    },
+    {
+      "id": "foresta",
+      "title": "Capitolo 4 — Il Mosaico Forestale",
+      "description": "La foresta si rigenera formando un mosaico di ambienti. Scegli quattro animali appartenenti a quattro habitat differenti. Rispetta le scorte e separa le specie incompatibili. I compartimenti 3 e 5 devono restare liberi come corridoi ecologici.",
+      "food": 10,
+      "water": 10,
+      "capacity": 6,
+      "favored": "foresta",
+      "event": "Una stagione piovosa favorisce la vegetazione.",
+      "pigeon": "Ho esplorato gli alberi! Qui la biodiversità sarà preziosa.",
+      "viable_count": 10,
+      "blocked_compartments": [
+        3,
+        5
+      ]
+    },
+    {
+      "id": "isole",
+      "title": "Capitolo 5 — L'Arcipelago del Nuovo Mondo",
+      "description": "L'Arca raggiunge l'Arcipelago del Nuovo Mondo. Sul Ponte superiore puoi scegliere otto animali tra dieci specie. Gestisci cibo e acqua, mantieni l'equilibrio ecologico e organizza una disposizione sicura. Una specie adatta agli ambienti acquatici sarà indispensabile.",
+      "food": 15,
+      "water": 15,
+      "capacity": 8,
+      "favored": "palude",
+      "event": "Le maree cambiano gli habitat disponibili.",
+      "pigeon": "Dall'alto vedo tante isole! Servirà una scelta equilibrata.",
+      "viable_count": 5
+    },
+    {
+      "id": "ultima-scelta",
+      "title": "Capitolo 6 — L'Ultima Scelta di Darwin",
+      "description": "Un solo compartimento rimane disponibile. Scegli uno dei venti animali del catalogo storico. Quale salveresti? La scelta appartiene a te: non conosciamo quale animale avrebbe scelto Darwin.",
+      "food": 0,
+      "water": 0,
+      "capacity": 1,
+      "required_animals": 1,
+      "favored": "",
+      "event": "L'ultima scelta appartiene a te.",
+      "bbird": "Cip cip! Un solo posto e venti possibilità. Quale animale sceglierai, e perché?",
+      "viable_count": 20,
+      "mode": "historical-choice",
+      "maximum_score": 350
+    }
+  ],
+  "levels": [
+    {
+      "difficulty": "facile",
+      "animals": [
+        "zebra",
+        "coniglio",
+        "tartaruga",
+        "elefante"
+      ],
+      "clues": [
+        "La zebra occupa il compartimento 1.",
+        "Il coniglio occupa il compartimento 2.",
+        "La tartaruga occupa il compartimento 3."
+      ],
+      "solution": [
+        "zebra",
+        "coniglio",
+        "tartaruga",
+        "elefante"
+      ]
+    },
+    {
+      "difficulty": "medio",
+      "animals": [
+        "zebra",
+        "coniglio",
+        "tartaruga",
+        "elefante"
+      ],
+      "clues": [
+        "La zebra non può stare nel compartimento 1.",
+        "Il coniglio occupa il compartimento 4.",
+        "L'elefante occupa il compartimento 3."
+      ],
+      "solution": [
+        "tartaruga",
+        "zebra",
+        "elefante",
+        "coniglio"
+      ]
+    },
+    {
+      "difficulty": "difficile",
+      "animals": [
+        "zebra",
+        "coniglio",
+        "tartaruga",
+        "elefante"
+      ],
+      "clues": [
+        "La zebra non può stare nel compartimento 1.",
+        "La zebra non può stare nel compartimento 2.",
+        "La zebra non può stare nel compartimento 4.",
+        "Il coniglio non può stare nel compartimento 2.",
+        "Il coniglio non può stare nel compartimento 4.",
+        "La tartaruga non può stare nel compartimento 2."
+      ],
+      "solution": [
+        "coniglio",
+        "elefante",
+        "zebra",
+        "tartaruga"
+      ]
+    }
+  ]
+}
