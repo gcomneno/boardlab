@@ -1,24 +1,26 @@
 # BoardLab
 
-BoardLab è un laboratorio open source per lo studio di motori di gioco,
-algoritmi di ricerca e intelligenza artificiale applicata ai giochi da tavolo.
+[English](README.md) | [Italiano](README.it.md)
 
-Non è una collezione di giochi.
+BoardLab is an open-source laboratory for studying game engines,
+search algorithms, and artificial intelligence applied to board games.
 
-Ogni gioco viene introdotto come esperimento controllato per comprendere,
-implementare e confrontare algoritmi di Computer Science.
+It is not a collection of games.
 
-## Principi
+Each game is introduced as a controlled experiment to understand,
+implement, and compare computer science algorithms.
 
-- il motore non conosce giochi specifici;
-- gli algoritmi dipendono solo da contratti astratti;
-- motore, gioco e strategia restano separati;
-- la CLI precede qualsiasi interfaccia grafica;
-- ogni algoritmo produce statistiche misurabili;
-- la leggibilità viene prima dell'ottimizzazione prematura;
-- ogni componente deve essere comprensibile, testabile e sostituibile.
+## Principles
 
-## Architettura concettuale
+- the engine does not know about specific games;
+- algorithms depend only on abstract contracts;
+- engine, game, and strategy remain separate;
+- the CLI comes before any graphical interface;
+- every algorithm produces measurable statistics;
+- readability takes precedence over premature optimization;
+- every component must be understandable, testable, and replaceable.
+
+## Conceptual architecture
 
 ```text
 Match Runner
@@ -32,23 +34,23 @@ GameState  Evaluator
 
 ## Roadmap
 
-1. motore generico;
-2. gioco originale Tre Sigilli;
-3. strategia casuale;
+1. generic engine;
+2. original game Tre Sigilli;
+3. random strategy;
 4. Minimax;
 5. Alpha-Beta Pruning;
 6. Monte Carlo Tree Search;
-7. giochi ed esperimenti più complessi.
+7. more complex games and experiments.
 
 ## Toolchain
 
-- Python 3.12 o successivo;
-- `uv` per ambiente, dipendenze e lock file;
-- Ruff per formattazione e analisi statica;
-- mypy in modalità strict per i contratti di tipo;
-- pytest per i test automatici.
+- Python 3.12 or later;
+- `uv` for environments, dependencies, and the lock file;
+- Ruff for formatting and static analysis;
+- mypy in strict mode for type contracts;
+- pytest for automated tests.
 
-## Struttura del codice
+## Code structure
 
 ```text
 src/boardlab/
@@ -64,39 +66,45 @@ docs/             architettura, algoritmi e tutorial
 
 ## Learning / Build / Ship
 
-La [mappa di apprendimento e prodotto](docs/learning-product-map.it.md) collega studio, implementazione e possibile pubblicazione mobile.
+The [learning and product map](docs/learning-product-map.md)
+connects study, implementation, and potential mobile publication.
 
-## Percorso didattico
+## Learning path
 
-Il percorso di studio strutturato è disponibile in
-[Sessioni di studio](sessions/README.it.md).
+The structured learning path is available in
+[Study sessions](sessions/README.md).
 
-La preparazione del materiale e lo studio attivo vengono tracciati
-separatamente in [Progresso didattico](docs/progress.it.md).
+Material preparation and active study are tracked separately in
+[Learning progress](docs/progress.md).
 
-## Documentazione
+## Documentation
 
-- [Panoramica architetturale](docs/architecture/overview.md)
-- [ADR 0001 — Python come linguaggio iniziale](docs/architecture/adr/0001-python-toolchain.md)
-- [Guida allo sviluppo](docs/development.md)
+- [Architecture overview](docs/architecture/overview.md)
+- [ADR 0001 — Python as the initial language](docs/architecture/adr/0001-python-toolchain.md)
+- [Development guide](docs/development.md)
 - [Roadmap](docs/roadmap.md)
 
-## Stato
+Some legacy documents linked above are currently available in Italian.
+Their English counterparts are tracked in issue #33.
 
-BoardLab dispone di un motore Python generico, dei giochi Tre Sigilli
-e Reversi 6×6 e delle strategie Random, Minimax, Alpha-Beta e MCTS.
-I benchmark Reversi sono riproducibili e documentati.
+## Status
 
-Per Tre Sigilli sono disponibili contratti di parità Python/Kotlin,
-un controller Kotlin indipendente dalla piattaforma e un'app Android
-Jetpack Compose verificata in una partita completa su dispositivo reale.
-La CI produce APK debug e release unsigned; la firma e la pubblicazione
-non sono state completate.
+BoardLab includes a generic Python engine, the Tre Sigilli and
+Reversi 6×6 games, and Random, Minimax, Alpha-Beta, and MCTS strategies.
+Reversi benchmarks are reproducible and documented.
 
-Lo sviluppo software (BUILD), il progresso didattico (LEARN) e la
-validazione di prodotto (SHIP) sono tracciati separatamente.
-La Sessione 01 è preparata, ma non risulta studiata.
+Tre Sigilli includes Python/Kotlin parity contracts,
+a platform-independent Kotlin controller, and an Android
+Jetpack Compose application verified through a complete match
+on a real device.
 
-Consulta la [roadmap](docs/roadmap.md), la
-[mappa LEARN/BUILD/SHIP](docs/learning-product-map.it.md) e le
-[lezioni architetturali](docs/lessons-learned/README.it.md).
+CI produces debug and unsigned release APKs; signing and
+publication have not been completed.
+
+Software development (BUILD), learning progress (LEARN), and
+product validation (SHIP) are tracked separately.
+Session 01 is prepared but has not yet been studied.
+
+See the [roadmap](docs/roadmap.md),
+[LEARN/BUILD/SHIP map](docs/learning-product-map.md), and
+[architecture lessons](docs/lessons-learned/README.md).
