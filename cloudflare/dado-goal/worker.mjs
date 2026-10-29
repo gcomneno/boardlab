@@ -9,7 +9,7 @@
 import { D1Authority } from "./authority.mjs";
 import { routeMultiplayer } from "./api.mjs";
 import {
-  login, logout, authenticate, sessionDenied,
+  login, guestLogin, logout, authenticate, sessionDenied,
 } from "./session.mjs";
 
 const LOGIN_RATE_SCHEMA = `
@@ -114,11 +114,23 @@ export default {
         return env.ASSETS.fetch(request);
       }
 
-      if (!env.DB || !env.ACCESS_KEY) {
+      // D1 is required for every session; the private key is only
+      // required by the legacy administrator login.
+      if (!env.DB) {
         return error(503, "SERVICE_UNAVAILABLE");
       }
 
+      if (path === "/auth/guest" && request.method === "POST") {
+        if (!(await allowRequest(env.DB, request, "guest", 5))) {
+          return error(429, "RATE_LIMITED");
+        }
+        return guestLogin(env.DB);
+      }
+
       if (path === "/auth/login" && request.method === "POST") {
+        if (!env.ACCESS_KEY) {
+          return error(503, "AUTH_NOT_CONFIGURED");
+        }
         if (!(await allowRequest(env.DB, request, "login", 10))) {
           return error(429, "RATE_LIMITED");
         }

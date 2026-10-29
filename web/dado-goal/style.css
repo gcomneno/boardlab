@@ -90,3 +90,16 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   .panel { padding: 12px; }
   .team strong { font-size: 2.5rem; }
 }
+
+/* Online mode must remain readable against the dark green panel. */
+.online-link {
+  color: #ffe08a;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+.online-link:hover { color: #fff4cc; }
+.online-link:focus-visible {
+  outline: 3px solid #ffe08a;
+  outline-offset: 3px;
+}

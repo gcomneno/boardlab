@@ -3,54 +3,49 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dado Goal — Partita online (laboratorio)</title>
+  <title>Dado Goal! — Partita online</title>
   <link rel="stylesheet" href="./multiplayer-theme.css">
   <script type="module" src="./multiplayer-play.mjs"></script>
 </head>
 <body>
   <main>
-    <h1>⚽ Dado Goal — Sfida tra amici</h1>
-    <section id="auth-panel" aria-labelledby="auth-heading">
-      <h2 id="auth-heading">Accesso</h2>
-      <label>
-        Chiave di accesso
-        <input id="access-key" type="password"
-               autocomplete="current-password" required>
-      </label>
-      <button id="login" type="button">Accedi</button>
-      <button id="logout" type="button" disabled>Esci</button>
-      <p id="auth-status" role="status" aria-live="polite">
-        Accedi per creare o raggiungere una partita.
-      </p>
-    </section>
+    <h1>⚽ Dado Goal!</h1>
     <p>Multiplayer online: due giocatori, una partita
       condivisa in tempo reale.</p>
+    <section id="auth-panel" aria-labelledby="auth-heading">
+      <h2 id="auth-heading">Accesso</h2>
+      <button id="login" type="button">Inizia a giocare</button>
+      <button id="logout" type="button" disabled>Esci</button>
+      <p id="auth-status" role="status" aria-live="polite">
+        Premi «Inizia a giocare», poi crea una partita o inserisci un invito.
+      </p>
+    </section>
 
     <section>
       <h2>Crea una partita</h2>
       <label>
         Mani per squadra
-        <input id="hands" type="number" min="1" max="1000" value="3">
+        <input id="hands" type="number" min="1" max="1000" value="6">
       </label>
       <button id="create" type="button" disabled>Crea partita</button>
       <label>
         <input id="remember" type="checkbox">
         Ricorda questa postazione
       </label>
-      <p>Usa questa opzione soltanto su un dispositivo personale.
+      <p class="game-notes">Usa questa opzione soltanto su un dispositivo personale.
         Le credenziali salvate possono essere accessibili a chi usa
         lo stesso browser.</p>
     </section>
 
     <section>
       <h2>Invita un amico</h2>
-      <p>Condividi soltanto il codice invito con il tuo avversario.</p>
+      <p class="game-notes">Condividi con l’avversario il codice invito della partita.</p>
       <label>
         Codice invito
         <input id="invite-code" type="text" size="60"
                autocomplete="off" spellcheck="false">
       </label>
-      <button id="copy-invite" type="button">Copia codice invito</button>
+      <button id="copy-invite" type="button" disabled>Copia codice invito</button>
       <button id="join" type="button" disabled>Entra nella partita</button>
     </section>
 
@@ -77,12 +72,10 @@
       </div>
     </section>
 
-    <p>Senza consenso le credenziali restano soltanto in memoria.
-      Se scegli di ricordare la postazione, il browser tenterà
-      di recuperarla dopo il refresh verificandola con il server.
-      Questa funzione non protegge da script malevoli o da altri
-      utenti dello stesso dispositivo.</p>
-    <p>Condividi con l’avversario solo il codice invito, mai la chiave di accesso.</p>
+    <footer class="game-footer">
+      <p>© 2026 Giancarlo Cicellyn Comneno · Dado Goal</p>
+      <p>Un progetto GiadaWare · BoardLab</p>
+    </footer>
   </main>
 </body>
 </html>
