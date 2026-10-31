@@ -9,6 +9,7 @@
 import { initialState, validateState } from "./game.mjs";
 import { createMatch, joinMatch } from "./lifecycle-d1.mjs";
 import { rollAuthorized } from "./roll-d1.mjs";
+import { matchStatistics } from "../../web/dado-goal/statistics.mjs";
 
 export class AuthorityError extends Error {
   constructor(message) {
@@ -196,27 +197,38 @@ export class D1Authority {
       throw new AuthorityError("Match expired");
     }
 
-    const latest = await this.db.prepare(`
+    const history = await this.db.prepare(`
       SELECT revision, event_json
       FROM lifecycle_events
       WHERE match_id = ?
-      ORDER BY revision DESC
-      LIMIT 1
-    `).bind(matchId).first();
+      ORDER BY revision
+    `).bind(matchId).all();
 
+    const rollEvents = [];
     let lastRoll = null;
-    if (latest) {
-      const event = JSON.parse(latest.event_json);
-      if (event.type === "roll") {
-        lastRoll = {
-          revision: latest.revision,
-          seat: event.seat,
-          die: event.die,
-          face: event.face,
-        };
-      }
+
+    for (const entry of history.results ?? []) {
+      const event = JSON.parse(entry.event_json);
+      if (event.type !== "roll") continue;
+
+      rollEvents.push({
+        seat: event.seat,
+        die: event.die,
+        face: event.face,
+      });
+
+      lastRoll = {
+        revision: entry.revision,
+        seat: event.seat,
+        die: event.die,
+        face: event.face,
+      };
     }
 
-    return { ...snapshot(row, seat), lastRoll };
+    return {
+      ...snapshot(row, seat),
+      lastRoll,
+      statistics: matchStatistics(rollEvents),
+    };
   }
 }

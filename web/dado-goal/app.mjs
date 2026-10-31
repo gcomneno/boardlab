@@ -1,4 +1,5 @@
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
+import { matchStatistics } from "./statistics.mjs";
 import { DICE_ART } from "./dice-art.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -70,6 +71,9 @@ let state;
 let names = [];
 let colors = [];
 let isRolling = false;
+let rollEvents = [];
+let matchStarted = false;
+let autoRunning = false;
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -104,8 +108,81 @@ function render() {
   byId("guide-pink").classList.toggle("active", state.phase === "pink");
   byId("guide-result").classList.toggle("active", state.phase === "result");
 
+  const [home, away] = matchStatistics(rollEvents);
+  const metrics = [
+    ["Gol", "goals"],
+    ["Tiri in porta", "shots"],
+    ["Cross", "crosses"],
+    ["Passaggi", "passes"],
+    ["Parate", "saves"],
+    ["Pali/traverse", "woodwork"],
+    ["Rigori", "penalties"],
+  ];
+  byId("match-stats").replaceChildren(
+    ...metrics.map(([label, key]) => {
+      const row = document.createElement("div");
+      row.className = "stat-row stat-comparison";
+
+      const values = document.createElement("div");
+      values.className = "stat-values";
+
+      const left = document.createElement("strong");
+      left.textContent = String(home[key]);
+
+      const name = document.createElement("span");
+      name.textContent = label;
+
+      const right = document.createElement("strong");
+      right.textContent = String(away[key]);
+
+      values.append(left, name, right);
+
+      const bars = document.createElement("div");
+      bars.className = "stat-bars";
+      bars.setAttribute("aria-hidden", "true");
+
+      const total = home[key] + away[key];
+
+      for (const [value, color] of [
+        [home[key], colors[0]],
+        [away[key], colors[1]],
+      ]) {
+        const track = document.createElement("div");
+        track.className = "stat-track";
+
+        const fill = document.createElement("div");
+        fill.className = "stat-fill";
+        fill.style.width = total === 0
+          ? "0%"
+          : `${(value / total) * 100}%`;
+        fill.style.backgroundColor = color;
+
+        track.append(fill);
+        bars.append(track);
+      }
+
+      row.append(values, bars);
+      return row;
+    }),
+  );
+  byId("stats-team-0").textContent = names[0];
+  byId("stats-team-1").textContent = names[1];
+
   const finished = state.phase === "finished";
-  byId("roll").disabled = finished || isRolling;
+  const playing = matchStarted && !finished;
+  byId("roll").disabled = !playing || isRolling || autoRunning;
+  byId("auto").disabled = !playing;
+  byId("auto").textContent = autoRunning ? "■ STOP" : "▶ AUTO";
+  byId("auto").setAttribute("aria-pressed", String(autoRunning));
+  byId("new").disabled = isRolling;
+  byId("new").textContent = playing
+    ? "Annulla l'incontro"
+    : "Nuova partita";
+
+  const multiplayer = document.querySelector(".multiplayer-button");
+  multiplayer.classList.toggle("is-disabled", playing);
+  multiplayer.setAttribute("aria-disabled", String(playing));
+  multiplayer.tabIndex = playing ? -1 : 0;
   byId("phase").textContent = finished
     ? "PARTITA TERMINATA"
     : phaseNames[state.phase];
@@ -119,7 +196,7 @@ function render() {
       : `Lancia: ${phaseNames[state.phase]}`;
 }
 
-function start() {
+function start(activate = true) {
   const rawHands = byId("hands").value;
   const n = Number(rawHands);
 
@@ -136,15 +213,19 @@ function start() {
   names = [0, 1].map((i) => byId(`team-${i}`).value.trim() || `Squadra ${i + 1}`);
   colors = [0, 1].map((i) => byId(`color-${i}`).value);
   state = newMatch(n);
+  matchStarted = activate;
+  autoRunning = false;
   isRolling = false;
+  rollEvents = [];
 
   const die = byId("die");
   die.classList.remove("rolling");
   die.textContent = "⚽";
   die.setAttribute("aria-label", "In attesa del primo lancio");
   byId("result").textContent = "Calcio d'inizio!";
-  byId("message").textContent =
-    "Primo turno: squadra 1 (convenzione digitale provvisoria).";
+  byId("message").textContent = activate
+    ? `Calcio d'inizio! Tocca a ${names[0]}.`
+    : "Configura le squadre e avvia una nuova partita.";
   render();
 }
 
@@ -167,16 +248,18 @@ async function animateRoll(phase, player, finalFace) {
 }
 
 async function roll() {
-  if (state.phase === "finished" || isRolling) return;
+  if (!matchStarted || state.phase === "finished" || isRolling) return;
 
   isRolling = true;
   render();
 
   const player = state.player;
-  const face = rollFace(state.phase);
+  const phase = state.phase;
+  const face = rollFace(phase);
 
   await animateRoll(state.phase, player, face);
   state = applyRoll(state, face);
+  rollEvents.push({ seat: player, die: phase, face });
 
   const handEnded = state.phase === "finished" || state.player !== player;
 
@@ -199,11 +282,54 @@ async function roll() {
   }
 
   isRolling = false;
+  if (state.phase === "finished") autoRunning = false;
   render();
 }
 
-byId("new").addEventListener("click", start);
+async function runAuto() {
+  if (autoRunning || !matchStarted || state.phase === "finished" || isRolling) return;
+
+  autoRunning = true;
+  render();
+
+  while (autoRunning && matchStarted && state.phase !== "finished") {
+    await roll();
+    if (!autoRunning || state.phase === "finished") break;
+    await sleep(350);
+  }
+
+  autoRunning = false;
+  render();
+}
+
+byId("auto").addEventListener("click", () => {
+  if (autoRunning) {
+    autoRunning = false;
+    render();
+  } else {
+    void runAuto();
+  }
+});
+
+byId("new").addEventListener("click", () => {
+  if (isRolling) return;
+
+  if (matchStarted && state.phase !== "finished") {
+    if (!window.confirm("L'arbitro decide di annullare l'incontro in corso?")) return;
+    start(false);
+    byId("message").textContent = "Incontro annullato.";
+    return;
+  }
+
+  start(true);
+});
+
+document.querySelector(".multiplayer-button").addEventListener("click", event => {
+  if (matchStarted && state.phase !== "finished") {
+    event.preventDefault();
+  }
+});
 byId("roll").addEventListener("click", () => {
   void roll();
 });
-start();
+start(false);
