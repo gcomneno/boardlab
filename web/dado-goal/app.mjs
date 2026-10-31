@@ -1,6 +1,7 @@
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
 import { matchClock } from "./match-clock.mjs";
+import { describeRoll } from "./commentary.mjs";
 import { DICE_ART } from "./dice-art.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -73,6 +74,8 @@ let names = [];
 let colors = [];
 let isRolling = false;
 let rollEvents = [];
+let commentaryEnabled = true;
+let commentaryText = "Telecronaca pronta per il calcio d’inizio.";
 let matchStarted = false;
 let autoRunning = false;
 
@@ -83,6 +86,16 @@ function sleep(ms) {
 }
 
 function render() {
+  const commentary = byId("commentary-text");
+  commentary.textContent = commentaryEnabled
+    ? commentaryText
+    : "Telecronaca disattivata.";
+  byId("commentary-toggle").textContent = commentaryEnabled
+    ? "🎙️ ON"
+    : "🎙️ OFF";
+  byId("commentary-toggle").setAttribute(
+    "aria-pressed", String(commentaryEnabled)
+  );
   const clock = matchClock(state);
   byId("match-clock").textContent = clock.finished
     ? `FISCHIO FINALE · ${clock.label}`
@@ -223,6 +236,7 @@ function start(activate = true) {
   autoRunning = false;
   isRolling = false;
   rollEvents = [];
+  commentaryText = "Telecronaca pronta per il calcio d’inizio.";
 
   const die = byId("die");
   die.classList.remove("rolling");
@@ -264,8 +278,15 @@ async function roll() {
   const face = rollFace(phase);
 
   await animateRoll(state.phase, player, face);
+  const before = state;
   state = applyRoll(state, face);
   rollEvents.push({ seat: player, die: phase, face });
+  if (commentaryEnabled) {
+    commentaryText = describeRoll(
+      { seat: player, die: phase, face },
+      before, state, names, rollEvents.length - 1
+    );
+  }
 
   const handEnded = state.phase === "finished" || state.player !== player;
 
@@ -307,6 +328,11 @@ async function runAuto() {
   autoRunning = false;
   render();
 }
+
+byId("commentary-toggle").addEventListener("click", () => {
+  commentaryEnabled = !commentaryEnabled;
+  render();
+});
 
 byId("auto").addEventListener("click", () => {
   if (autoRunning) {
