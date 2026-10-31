@@ -1,13 +1,70 @@
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
+import { DICE_ART } from "./dice-art.mjs";
 
 const byId = (id) => document.getElementById(id);
 const phaseNames = {
   team: "Dado squadra",
   pink: "Dado rosa",
-  result: "Dado finale rosso/blu",
+  result: "Dado finale",
 };
 
-const dieFrames = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+const diceFaces = {
+  team: [
+    "Tiro in porta!", "Tiro in porta!",
+    "Passaggio intercettato!", "Passaggio intercettato!",
+    "Cross!", "Passaggio",
+  ],
+  pink: [
+    "Palla sul fondo", "Mezza rovesciata",
+    "Palla alta sulla traversa", "Palla intercettata",
+    "Rovesciata", "Colpo di testa",
+  ],
+  result: [
+    "Respinto!", "GOAL!", "FUORI!",
+    "PALO/TRAVERSA", "RIGORE", "Parato!",
+  ],
+};
+
+function diceKind(phase, player) {
+  return phase === "team"
+    ? (player === 0 ? "yellow" : "blue")
+    : phase === "pink" ? "pink" : "final";
+}
+
+function shade(hex, factor) {
+  const channels = [1, 3, 5].map((i) =>
+    Math.round(parseInt(hex.slice(i, i + 2), 16) * factor),
+  );
+  return "#" + channels.map((n) =>
+    n.toString(16).padStart(2, "0")).join("");
+}
+
+function displayFace(phase, player, index) {
+  const die = byId("die");
+  const kind = diceKind(phase, player);
+  const svg = DICE_ART[kind][index];
+  if (!svg) throw new RangeError("Invalid die face");
+
+  const color = colors[player];
+  die.style.removeProperty("--die-light");
+  die.style.removeProperty("--die-dark");
+  die.style.removeProperty("--die-ink");
+
+  if (phase === "team") {
+    die.style.setProperty("--die-light", color);
+    die.style.setProperty("--die-dark", shade(color, 0.65));
+    die.style.setProperty("--die-ink", shade(color, 0.28));
+  }
+
+  // SVG controllati dal repository, incorporati affinché
+  // ereditino i colori CSS della squadra.
+  die.innerHTML = svg;
+  die.setAttribute(
+    "aria-label",
+    `Dado ${kind}: ${diceFaces[phase][index]}`,
+  );
+}
+
 
 let state;
 let names = [];
@@ -33,6 +90,19 @@ function render() {
       state.phase !== "finished" && state.player === player,
     );
   }
+
+  for (let player = 0; player < 2; player += 1) {
+    const guide = byId(`guide-team-${player}`);
+    guide.textContent = names[player];
+    guide.style.borderLeft = `5px solid ${colors[player]}`;
+    guide.classList.toggle(
+      "active",
+      state.phase === "team" && state.player === player,
+    );
+  }
+
+  byId("guide-pink").classList.toggle("active", state.phase === "pink");
+  byId("guide-result").classList.toggle("active", state.phase === "result");
 
   const finished = state.phase === "finished";
   byId("roll").disabled = finished || isRolling;
@@ -69,25 +139,30 @@ function start() {
   isRolling = false;
 
   const die = byId("die");
-  die.textContent = "🎲";
   die.classList.remove("rolling");
+  die.textContent = "⚽";
+  die.setAttribute("aria-label", "In attesa del primo lancio");
   byId("result").textContent = "Calcio d'inizio!";
   byId("message").textContent =
     "Primo turno: squadra 1 (convenzione digitale provvisoria).";
   render();
 }
 
-async function animateRoll(finalFace) {
+async function animateRoll(phase, player, finalFace) {
   const die = byId("die");
-  die.classList.add("rolling");
+  const finalIndex = diceFaces[phase].indexOf(finalFace);
+  if (finalIndex < 0) throw new RangeError("Unknown die result");
 
-  for (let index = 0; index < 10; index += 1) {
-    die.textContent = dieFrames[index % dieFrames.length];
-    await sleep(70);
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    die.classList.add("rolling");
+    for (let index = 0; index < 10; index += 1) {
+      displayFace(phase, player, index % 6);
+      await sleep(70);
+    }
+    die.classList.remove("rolling");
   }
 
-  die.classList.remove("rolling");
-  die.textContent = "🎲";
+  displayFace(phase, player, finalIndex);
   byId("result").textContent = finalFace;
 }
 
@@ -100,7 +175,7 @@ async function roll() {
   const player = state.player;
   const face = rollFace(state.phase);
 
-  await animateRoll(face);
+  await animateRoll(state.phase, player, face);
   state = applyRoll(state, face);
 
   const handEnded = state.phase === "finished" || state.player !== player;

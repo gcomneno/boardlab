@@ -67,9 +67,15 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .turn { font-size: 1.4rem; font-weight: bold; }
 .die {
   font-size: 4rem;
-  min-height: 1.3em;
+  min-height: 176px;
   display: grid;
   place-items: center;
+}
+.die svg {
+  display: block;
+  width: min(220px, 55vw);
+  height: auto;
+  filter: drop-shadow(5px 9px 5px #0005);
 }
 .die.rolling {
   animation: die-roll 0.14s linear infinite;
@@ -78,6 +84,34 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   0% { transform: scale(1) rotate(0deg); filter: brightness(1); }
   50% { transform: scale(1.08) rotate(3deg); filter: brightness(1.08); }
   100% { transform: scale(1) rotate(-3deg); filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .die.rolling {
+    animation: none;
+  }
+}
+.dice-guide {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
+}
+.dice-guide li {
+  padding: 7px 9px;
+  border: 1px solid #b8d5bc;
+  border-radius: 8px;
+  font-size: .85rem;
+  opacity: .65;
+}
+.dice-guide li.active {
+  opacity: 1;
+  background: #173d2a;
+  border-color: #ffe08a;
+  outline: 2px solid #ffe08a;
 }
 .phase { font-size: .9rem; letter-spacing: .1em; text-transform: uppercase; }
 .result { font-size: 1.7rem; font-weight: 800; min-height: 2.5em; }
