@@ -307,3 +307,30 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 .match-clock.halftime {
   color: #b6f1c8;
 }
+
+/* Dado Goal commentary */
+.match-commentary {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .17);
+}
+.commentary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#commentary-toggle {
+  font: inherit;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#commentary-text {
+  margin: 12px 0 0;
+  font-weight: 600;
+  line-height: 1.5;
+}
