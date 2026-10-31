@@ -1,5 +1,6 @@
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
+import { matchClock } from "./match-clock.mjs";
 import { DICE_ART } from "./dice-art.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -82,6 +83,11 @@ function sleep(ms) {
 }
 
 function render() {
+  const clock = matchClock(state);
+  byId("match-clock").textContent = clock.finished
+    ? `FISCHIO FINALE · ${clock.label}`
+    : `${clock.half}° TEMPO · ${clock.label}`;
+  byId("match-clock").classList.toggle("halftime", clock.halftime);
   for (let player = 0; player < 2; player += 1) {
     byId(`name-${player}`).textContent = names[player];
     byId(`goals-${player}`).textContent = state.goals[player];

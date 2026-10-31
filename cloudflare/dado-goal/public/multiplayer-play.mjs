@@ -2,6 +2,7 @@ import {
   MultiplayerClient,
   MultiplayerAPIError,
 } from "./multiplayer-client.mjs";
+import { matchClock } from "./match-clock.mjs";
 
 const $ = id => document.getElementById(id);
 
@@ -86,11 +87,19 @@ function render() {
     !$("invite-code").value.trim() || busy;
 
   if (!state) {
+    $("match-clock").textContent = "CRONOMETRO · —";
+    $("match-clock").classList.remove("halftime");
     $("match-stats").replaceChildren();
     return;
   }
 
   renderStatistics(snapshot.statistics);
+
+  const clock = matchClock(state);
+  $("match-clock").textContent = clock.finished
+    ? `FISCHIO FINALE · ${clock.label}`
+    : `${clock.half}° TEMPO · ${clock.label}`;
+  $("match-clock").classList.toggle("halftime", clock.halftime);
 
   $("score").textContent =
     `Risultato: ${state.goals[0]} – ${state.goals[1]}`;

@@ -292,3 +292,18 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 .roll-actions #auto {
   min-width: 94px;
 }
+
+
+/* Simulated match clock */
+.match-clock {
+  margin: 0 auto 8px;
+  text-align: center;
+  font-size: .95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  color: #ffe1a1;
+}
+.match-clock.halftime {
+  color: #b6f1c8;
+}

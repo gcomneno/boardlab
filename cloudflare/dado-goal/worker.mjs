@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS dado_login_limits (
 const STATIC = new Set([
   "/multiplayer.html",
   "/multiplayer-play.mjs",
+  "/match-clock.mjs",
   "/multiplayer-client.mjs",
   "/multiplayer-theme.css",
   "/dado-goal-handmade-dice.png",
