@@ -85,7 +85,12 @@ function render() {
   $("copy-invite").disabled =
     !$("invite-code").value.trim() || busy;
 
-  if (!state) return;
+  if (!state) {
+    $("match-stats").replaceChildren();
+    return;
+  }
+
+  renderStatistics(snapshot.statistics);
 
   $("score").textContent =
     `Risultato: ${state.goals[0]} – ${state.goals[1]}`;
@@ -108,6 +113,60 @@ function render() {
     message(
       `Partita attiva — lancio ${Math.max(0, snapshot.revision - 1)}.`
     );
+  }
+}
+
+const statisticsMetrics = [
+  ["Gol", "goals"],
+  ["Tiri in porta", "shots"],
+  ["Cross", "crosses"],
+  ["Passaggi", "passes"],
+  ["Parate", "saves"],
+  ["Pali/traverse", "woodwork"],
+  ["Rigori", "penalties"],
+];
+
+function renderStatistics(statistics) {
+  const container = $("match-stats");
+  container.replaceChildren();
+
+  if (!Array.isArray(statistics) || statistics.length !== 2) return;
+
+  for (const [label, key] of statisticsMetrics) {
+    const home = statistics[0][key];
+    const away = statistics[1][key];
+    const total = home + away;
+
+    const row = document.createElement("div");
+    row.className = "mp-stat-row";
+
+    const values = document.createElement("div");
+    values.className = "mp-stat-values";
+
+    for (const value of [home, label, away]) {
+      const cell = document.createElement("span");
+      cell.textContent = String(value);
+      values.append(cell);
+    }
+
+    const bars = document.createElement("div");
+    bars.className = "mp-stat-bars";
+    bars.setAttribute("aria-hidden", "true");
+
+    for (const [value, side] of [[home, "home"], [away, "away"]]) {
+      const track = document.createElement("div");
+      track.className = `mp-stat-track ${side}`;
+
+      const fill = document.createElement("div");
+      fill.className = "mp-stat-fill";
+      fill.style.width = total === 0 ? "0%" : `${value / total * 100}%`;
+
+      track.append(fill);
+      bars.append(track);
+    }
+
+    row.append(values, bars);
+    container.append(row);
   }
 }
 

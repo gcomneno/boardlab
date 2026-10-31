@@ -17,12 +17,6 @@
       <p>Quattro dadi. Due squadre. Un solo obiettivo: GOAL!</p>
     </header>
 
-    <nav class="panel" aria-label="Modalità di gioco">
-      <p><strong>Modalità classica</strong> · Due giocatori sullo stesso dispositivo.</p>
-      <p><a class="online-link" href="https://dado-goal-multiplayer-beta.giancarlo-cicellyn.workers.dev/multiplayer.html" target="_blank" rel="noopener noreferrer">⚽ Gioca online</a></p>
-      <p>Crea una partita online e condividi il codice invito con un amico. Nessun account richiesto.</p>
-    </nav>
-
     <section class="panel settings" aria-label="Impostazioni partita">
       <label>Squadra 1
         <input id="team-0" type="text" maxlength="24" value="Squadra 1">
@@ -37,9 +31,15 @@
         <input id="color-1" type="color" value="#66a5ef">
       </label>
       <label>Mani per squadra
-        <input id="hands" type="number" min="1" max="1000" step="1" value="10">
+        <input id="hands" type="number" min="1" max="1000" step="1" value="6">
       </label>
-      <button id="new" type="button">Nuova partita</button>
+      <div class="match-actions">
+        <button id="new" type="button">Nuova partita</button>
+        <a class="multiplayer-button"
+           href="https://dado-goal-multiplayer-beta.giancarlo-cicellyn.workers.dev/multiplayer.html"
+           target="_blank" rel="noopener noreferrer"
+           aria-label="Apri Dado Goal Multiplayer in una nuova scheda">Multiplayer</a>
+      </div>
     </section>
 
     <section class="panel" aria-label="Tabellone">
@@ -72,7 +72,20 @@
         <p id="result" class="result" role="status" aria-live="polite">
           La partita può iniziare!
         </p>
-        <button id="roll" type="button">Lancia il dado!</button>
+        <div class="roll-actions">
+          <button id="roll" type="button">Lancia il dado!</button>
+          <button id="auto" type="button" aria-pressed="false">▶ AUTO</button>
+        </div>
+        <section class="match-stats" aria-label="Statistiche partita">
+          <h3>Statistiche della partita</h3>
+          <div class="stat-row stat-header">
+            <strong id="stats-team-0"></strong>
+            <strong>Voce</strong>
+            <strong id="stats-team-1"></strong>
+          </div>
+          <div id="match-stats"></div>
+        </section>
+
       </div>
       <p id="message" class="message" aria-live="polite"></p>
     </section>
