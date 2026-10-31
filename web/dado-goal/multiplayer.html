@@ -10,48 +10,53 @@
 <body>
   <main>
     <h1>⚽ Dado Goal!</h1>
-    <p>Multiplayer online: due giocatori, una partita
+    <label for="language" data-i18n="language">Lingua</label>
+    <select id="language" name="language">
+      <option value="it">Italiano</option>
+      <option value="en">English</option>
+    </select>
+    <p data-i18n="mpSubtitle">Multiplayer online: due giocatori, una partita
       condivisa in tempo reale.</p>
     <section id="auth-panel" aria-labelledby="auth-heading">
-      <h2 id="auth-heading">Accesso</h2>
-      <button id="login" type="button">Inizia a giocare</button>
-      <button id="logout" type="button" disabled>Esci</button>
-      <p id="auth-status" role="status" aria-live="polite">
+      <h2 id="auth-heading" data-i18n="mpAuthHeading">Accesso</h2>
+      <button id="login" type="button" data-i18n="mpLogin">Inizia a giocare</button>
+      <button id="logout" type="button" disabled data-i18n="mpLogout">Esci</button>
+      <p id="auth-status" role="status" aria-live="polite" data-i18n-dynamic="mpAuthPrompt">
         Premi «Inizia a giocare», poi crea una partita o inserisci un invito.
       </p>
     </section>
 
     <section>
-      <h2>Crea una partita</h2>
+      <h2 data-i18n="mpCreateHeading">Crea una partita</h2>
       <label>
-        Mani per squadra
+        <span data-i18n="handsPerTeam">Mani per squadra</span>
         <input id="hands" type="number" min="1" max="1000" value="6">
       </label>
-      <button id="create" type="button" disabled>Crea partita</button>
+      <button id="create" type="button" disabled data-i18n="mpCreate">Crea partita</button>
       <label>
         <input id="remember" type="checkbox">
-        Ricorda questa postazione
+        <span data-i18n="mpRemember">Ricorda questa postazione</span>
       </label>
-      <p class="game-notes">Usa questa opzione soltanto su un dispositivo personale.
+      <p class="game-notes" data-i18n="mpRememberNote">Usa questa opzione soltanto su un dispositivo personale.
         Le credenziali salvate possono essere accessibili a chi usa
         lo stesso browser.</p>
     </section>
 
     <section>
-      <h2>Invita un amico</h2>
-      <p class="game-notes">Condividi con l’avversario il codice invito della partita.</p>
+      <h2 data-i18n="mpInviteHeading">Invita un amico</h2>
+      <p class="game-notes" data-i18n="mpInviteNote">Condividi con l’avversario il codice invito della partita.</p>
       <label>
-        Codice invito
+        <span data-i18n="mpInviteCode">Codice invito</span>
         <input id="invite-code" type="text" size="60"
                autocomplete="off" spellcheck="false">
       </label>
-      <button id="copy-invite" type="button" disabled>Copia codice invito</button>
-      <button id="join" type="button" disabled>Entra nella partita</button>
+      <button id="copy-invite" type="button" disabled data-i18n="mpCopyInvite">Copia codice invito</button>
+      <button id="join" type="button" disabled data-i18n="mpJoin">Entra nella partita</button>
     </section>
 
     <section>
-      <h2>Partita</h2>
-      <p id="status" role="status" aria-live="polite">
+      <h2 data-i18n="mpMatchHeading">Partita</h2>
+      <p id="status" role="status" aria-live="polite" data-i18n-dynamic="mpNoMatch">
         Nessuna partita attiva.
       </p>
       <p id="score">Risultato: —</p>
@@ -60,13 +65,13 @@
       <p id="die">Dado: —</p>
       <p id="last-roll">Ultimo lancio: —</p>
       <div class="match-actions">
-        <button id="roll" type="button" disabled>
+        <button id="roll" type="button" disabled data-i18n="mpRoll">
           Lancia il dado
         </button>
-        <button id="refresh" type="button" disabled>
+        <button id="refresh" type="button" disabled data-i18n="mpRefresh">
           Aggiorna stato
         </button>
-        <button id="leave" type="button" disabled>
+        <button id="leave" type="button" disabled data-i18n="mpLeave">
           Esci
         </button>
       </div>
@@ -74,7 +79,7 @@
 
     <footer class="game-footer">
       <p>© 2026 Giancarlo Cicellyn Comneno · Dado Goal</p>
-      <p>Un progetto GiadaWare · BoardLab</p>
+      <p data-i18n="mpProject">Un progetto GiadaWare · BoardLab</p>
     </footer>
   </main>
 </body>
