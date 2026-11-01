@@ -377,3 +377,25 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 #match-events-empty[hidden] {
   display: none;
 }
+
+/* UX3 side-aware event board */
+.match-events li {
+  box-sizing: border-box;
+  width: 50%;
+}
+
+.match-events li.event-home {
+  margin-right: auto;
+  justify-content: flex-start;
+}
+
+.match-events li.event-away {
+  margin-left: auto;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  text-align: right;
+}
+
+.match-events li.event-away span {
+  overflow-wrap: anywhere;
+}

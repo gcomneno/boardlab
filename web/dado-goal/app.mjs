@@ -1,7 +1,7 @@
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
 import { matchClock } from "./match-clock.mjs";
-import { createRoster } from "./match-roster.mjs";
+import { createRoster, pickScorer } from "./match-roster.mjs";
 import {
   createEventState, evaluateHandEvent
 } from "./match-events.mjs";
@@ -87,6 +87,7 @@ let refereeStates = [];
 let commentaryEnabled = true;
 let lastCommentary = null;
 let lastRefereeEvent = null;
+let lastGoalScorer = null;
 let messageKey = "setupPrompt";
 let messageValues = {};
 
@@ -123,6 +124,7 @@ function render() {
   byId("match-events-list").replaceChildren(
     ...matchEvents.map(event => {
       const item = document.createElement("li");
+      item.classList.add(event.team === 0 ? "event-home" : "event-away");
       const minute = document.createElement("time");
       minute.textContent = `${event.minute}′`;
       minute.className = "event-minute";
@@ -150,6 +152,9 @@ function render() {
           lastCommentary.index,
           getLocale()
         ),
+        lastGoalScorer !== null
+          ? formatMessage("goalScorerCall", { number: lastGoalScorer })
+          : null,
         lastRefereeEvent
           ? describeMatchEvent(lastRefereeEvent, names, getLocale())
           : null
@@ -162,10 +167,11 @@ function render() {
     "aria-pressed", String(commentaryEnabled)
   );
   const clock = matchClock(state);
+  const footballMinute = `${Math.floor(clock.seconds / 60)}′`;
   byId("match-clock").textContent = clock.finished
-    ? formatMessage("finalClock", { time: clock.label })
+    ? formatMessage("finalClock", { time: footballMinute })
     : formatMessage(clock.half === 1 ? "firstHalf" : "secondHalf",
-      { time: clock.label });
+      { time: footballMinute });
   byId("match-clock").classList.toggle("halftime", clock.halftime);
   for (let player = 0; player < 2; player += 1) {
     byId(`name-${player}`).textContent = names[player];
@@ -309,6 +315,7 @@ function start(activate = true) {
   refereeStates = [createEventState(), createEventState()];
   lastCommentary = null;
   lastRefereeEvent = null;
+  lastGoalScorer = null;
 
   const die = byId("die");
   die.classList.remove("rolling");
@@ -356,6 +363,7 @@ async function roll() {
   state = applyRoll(state, face);
   rollEvents.push({ seat: player, die: phase, face });
   lastRefereeEvent = null;
+  lastGoalScorer = null;
   if (commentaryEnabled) {
     lastCommentary = {
       event: { seat: player, die: phase, face },
@@ -373,10 +381,12 @@ async function roll() {
 
     // The score comes exclusively from the dice engine.
     if (state.goals[player] > before.goals[player]) {
+      lastGoalScorer = pickScorer(rosters[player]);
       matchEvents.push({
         type: "goal",
         team: player,
-        minute
+        minute,
+        number: lastGoalScorer
       });
     }
 

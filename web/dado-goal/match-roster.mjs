@@ -55,6 +55,19 @@ export function substitute(roster, random = Math.random) {
   return { out, in: into };
 }
 
+/**
+ * Pick a goalscorer from players currently on the pitch.
+ * The selected shirt number is stored with the goal event.
+ */
+export function pickScorer(roster, random = Math.random) {
+  if (!roster || !Array.isArray(roster.active) ||
+      roster.active.length === 0) {
+    return null;
+  }
+
+  return roster.active[pickIndex(roster.active.length, random)];
+}
+
 export function sendOff(roster, random = Math.random) {
   if (!roster.active.length) return null;
 
