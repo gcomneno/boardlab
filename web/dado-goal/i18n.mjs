@@ -259,7 +259,7 @@ export function formatMessage(key, values = {}) {
 
 /** Update static labels without touching the match state. */
 const bindings = Object.freeze([
-  ['label[for="language"]', "language"],
+  ['label[for="language"] > span', "language"],
   ["header > p:last-child", "subtitle"],
   [".match-stats h3", "statistics"],
   [".stat-header > strong:nth-child(2)", "metric"],
