@@ -20,7 +20,8 @@ h1 { font-size: clamp(2.3rem, 8vw, 4rem); margin: 8px 0; }
 }
 .settings { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; }
 .settings label { display: grid; gap: 7px; flex: 1 1 130px; }
-input {
+input,
+.settings select {
   width: 100%;
   padding: 10px;
   border-radius: 8px;
@@ -67,9 +68,15 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .turn { font-size: 1.4rem; font-weight: bold; }
 .die {
   font-size: 4rem;
-  min-height: 1.3em;
+  min-height: 176px;
   display: grid;
   place-items: center;
+}
+.die svg {
+  display: block;
+  width: min(220px, 55vw);
+  height: auto;
+  filter: drop-shadow(5px 9px 5px #0005);
 }
 .die.rolling {
   animation: die-roll 0.14s linear infinite;
@@ -78,6 +85,34 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   0% { transform: scale(1) rotate(0deg); filter: brightness(1); }
   50% { transform: scale(1.08) rotate(3deg); filter: brightness(1.08); }
   100% { transform: scale(1) rotate(-3deg); filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .die.rolling {
+    animation: none;
+  }
+}
+.dice-guide {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
+}
+.dice-guide li {
+  padding: 7px 9px;
+  border: 1px solid #b8d5bc;
+  border-radius: 8px;
+  font-size: .85rem;
+  opacity: .65;
+}
+.dice-guide li.active {
+  opacity: 1;
+  background: #173d2a;
+  border-color: #ffe08a;
+  outline: 2px solid #ffe08a;
 }
 .phase { font-size: .9rem; letter-spacing: .1em; text-transform: uppercase; }
 .result { font-size: 1.7rem; font-weight: 800; min-height: 2.5em; }
@@ -89,4 +124,288 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   .shell { padding: 12px; }
   .panel { padding: 12px; }
   .team strong { font-size: 2.5rem; }
+}
+
+/* Online mode must remain readable against the dark green panel. */
+.online-link {
+  color: #ffe08a;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+.online-link:hover { color: #fff4cc; }
+.online-link:focus-visible {
+  outline: 3px solid #ffe08a;
+  outline-offset: 3px;
+}
+
+
+.match-stats {
+  margin: 20px auto;
+  max-width: 560px;
+  padding: 12px;
+  border: 1px solid #b8d5bc;
+  border-radius: 10px;
+}
+.match-stats h3 { margin: 0 0 12px; }
+.stat-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,2fr) minmax(0,1fr);
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #ffffff25;
+  font-size: .88rem;
+}
+.stat-row > :first-child,
+.stat-row > :last-child { font-weight: 700; }
+.stat-header { overflow-wrap: anywhere; }
+
+
+/* DG40 compact desktop layout */
+@media (min-width: 700px) {
+  .shell { padding-top: 10px; padding-bottom: 16px; }
+  header { margin-bottom: 10px; }
+  h1 { font-size: 2.5rem; margin: 2px 0; }
+  .panel { padding: 10px 14px; margin: 8px 0; }
+
+  .settings { gap: 8px; }
+  .settings label { gap: 3px; }
+  .settings input { padding: 6px; }
+  .settings input[type="color"] { min-height: 34px; }
+  button { padding: 9px 15px; }
+
+  .team { padding: 5px; border-top-width: 4px; }
+  .team strong { font-size: 2.4rem; }
+  .team small { font-size: .75rem; }
+
+  .pitch {
+    min-height: 0;
+    padding: 27px 12px 28px;
+  }
+  .turn { font-size: 1.1rem; margin: 4px 0; }
+  .die { min-height: 150px; }
+  .die svg { width: 150px; }
+
+  .dice-guide { margin: 5px 0; gap: 5px; }
+  .dice-guide li { padding: 4px 7px; font-size: .78rem; }
+  .phase { margin: 5px 0; font-size: .8rem; }
+  .result {
+    font-size: 1.25rem;
+    min-height: 1.4em;
+    margin: 6px 0 10px;
+  }
+
+  .match-stats {
+    margin: 10px auto 0;
+    padding: 7px 12px;
+  }
+  .match-stats h3 { margin: 0 0 5px; font-size: 1rem; }
+  .stat-row { padding: 2px 0; font-size: .78rem; }
+
+  .message { margin: 8px 0 2px; font-size: 1rem; }
+  footer { margin-top: 10px; }
+}
+
+
+/* Local and multiplayer actions share the settings panel. */
+.match-actions {
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.multiplayer-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 15px;
+  border: 1px solid #ffe08a;
+  border-radius: 12px;
+  color: #ffe08a;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.multiplayer-button:hover { background: #ffffff16; }
+.multiplayer-button:focus-visible {
+  outline: 3px solid #ffe08a;
+  outline-offset: 3px;
+}
+
+
+/* Comparative statistics: two team-colored, independent tracks. */
+.stat-comparison {
+  display: block;
+  padding: 3px 0;
+}
+.stat-values {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: center;
+  gap: 8px;
+  font-size: .8rem;
+}
+.stat-values > :first-child { text-align: left; }
+.stat-values > :nth-child(2) { text-align: center; }
+.stat-values > :last-child { text-align: right; }
+.stat-bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  margin-top: 3px;
+}
+.stat-track {
+  height: 6px;
+  background: #092c24;
+  overflow: hidden;
+}
+.stat-track:first-child {
+  display: flex;
+  justify-content: flex-end;
+}
+.stat-track:last-child {
+  display: flex;
+  justify-content: flex-start;
+}
+.stat-fill {
+  height: 100%;
+  flex: none;
+  border-radius: 2px;
+}
+
+/* DG40 multiplayer lock */
+.multiplayer-button.is-disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Local match controls */
+.roll-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.roll-actions #auto {
+  min-width: 94px;
+}
+
+
+/* Simulated match clock */
+.match-clock {
+  margin: 0 auto 8px;
+  text-align: center;
+  font-size: .95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+  color: #ffe1a1;
+}
+.match-clock.halftime {
+  color: #b6f1c8;
+}
+
+/* Dado Goal commentary */
+.match-commentary {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .17);
+}
+.commentary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#commentary-toggle {
+  font: inherit;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#commentary-text {
+  margin: 12px 0 0;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+
+/* Dado Goal match event register */
+.match-events {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #426650;
+}
+
+.match-events h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.match-events ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.match-events li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid #426650;
+}
+
+.event-minute {
+  flex: 0 0 3rem;
+  color: #c6d5c8;
+  font-variant-numeric: tabular-nums;
+}
+
+#match-events-empty {
+  color: #c6d5c8;
+  margin: 0;
+}
+
+#match-events-empty[hidden] {
+  display: none;
+}
+
+/* UX3 side-aware event board */
+.match-events li {
+  box-sizing: border-box;
+  width: 50%;
+}
+
+.match-events li.event-home {
+  margin-right: auto;
+  justify-content: flex-start;
+}
+
+.match-events li.event-away {
+  margin-left: auto;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  text-align: right;
+}
+
+.match-events li.event-away span {
+  overflow-wrap: anywhere;
+}
+
+/* Dado Goal language layout fix */
+.settings > label[for="language"] {
+  flex: 1 1 100%;
+  max-width: none;
+}
+
+.settings > label[for="language"] select {
+  max-width: 14rem;
 }

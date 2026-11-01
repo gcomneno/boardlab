@@ -1,18 +1,104 @@
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
+import { matchStatistics } from "./statistics.mjs";
+import { matchClock } from "./match-clock.mjs";
+import { createRoster, pickScorer } from "./match-roster.mjs";
+import {
+  createEventState, evaluateHandEvent
+} from "./match-events.mjs";
+import { describeRoll, describeMatchEvent } from "./commentary.mjs";
+import { DICE_ART } from "./dice-art.mjs";
+import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
 
 const byId = (id) => document.getElementById(id);
 const phaseNames = {
-  team: "Dado squadra",
-  pink: "Dado rosa",
-  result: "Dado finale rosso/blu",
+  team: "teamDie",
+  pink: "pinkDie",
+  result: "finalDie",
 };
 
-const dieFrames = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+const phaseName = phase => translate(phaseNames[phase]);
+
+const diceFaces = {
+  team: [
+    "Tiro in porta!", "Tiro in porta!",
+    "Passaggio intercettato!", "Passaggio intercettato!",
+    "Cross!", "Passaggio",
+  ],
+  pink: [
+    "Palla sul fondo", "Mezza rovesciata",
+    "Palla alta sulla traversa", "Palla intercettata",
+    "Rovesciata", "Colpo di testa",
+  ],
+  result: [
+    "Respinto!", "GOAL!", "FUORI!",
+    "PALO/TRAVERSA", "RIGORE", "Parato!",
+  ],
+};
+
+function diceKind(phase, player) {
+  return phase === "team"
+    ? (player === 0 ? "yellow" : "blue")
+    : phase === "pink" ? "pink" : "final";
+}
+
+function shade(hex, factor) {
+  const channels = [1, 3, 5].map((i) =>
+    Math.round(parseInt(hex.slice(i, i + 2), 16) * factor),
+  );
+  return "#" + channels.map((n) =>
+    n.toString(16).padStart(2, "0")).join("");
+}
+
+function displayFace(phase, player, index) {
+  const die = byId("die");
+  const kind = diceKind(phase, player);
+  const svg = DICE_ART[kind][index];
+  if (!svg) throw new RangeError("Invalid die face");
+
+  const color = colors[player];
+  die.style.removeProperty("--die-light");
+  die.style.removeProperty("--die-dark");
+  die.style.removeProperty("--die-ink");
+
+  if (phase === "team") {
+    die.style.setProperty("--die-light", color);
+    die.style.setProperty("--die-dark", shade(color, 0.65));
+    die.style.setProperty("--die-ink", shade(color, 0.28));
+  }
+
+  // SVG controllati dal repository, incorporati affinché
+  // ereditino i colori CSS della squadra.
+  die.innerHTML = svg;
+  die.setAttribute(
+    "aria-label",
+    `Dado ${kind}: ${diceFaces[phase][index]}`,
+  );
+}
+
 
 let state;
 let names = [];
 let colors = [];
 let isRolling = false;
+let rollEvents = [];
+let matchEvents = [];
+let rosters = [];
+let refereeStates = [];
+let commentaryEnabled = true;
+let lastCommentary = null;
+let lastRefereeEvent = null;
+let lastGoalScorer = null;
+let messageKey = "setupPrompt";
+let messageValues = {};
+
+function showMessage(key, values = {}) {
+  messageKey = key;
+  messageValues = values;
+  byId("message").textContent = formatMessage(key, values);
+}
+
+let matchStarted = false;
+let autoRunning = false;
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -21,11 +107,79 @@ function sleep(ms) {
 }
 
 function render() {
+  byId("message").textContent = formatMessage(messageKey, messageValues);
+
+  // Rebuild presentation from canonical events on every locale change.
+  byId("match-events-heading").textContent = translate("eventBoardHeading");
+  byId("match-events-empty").textContent = translate("eventBoardEmpty");
+  byId("match-events-empty").hidden = matchEvents.length > 0;
+
+  const eventKeys = {
+    goal: "eventGoal",
+    yellow: "eventYellow",
+    red: "eventRed",
+    substitution: "eventSubstitution"
+  };
+
+  byId("match-events-list").replaceChildren(
+    ...matchEvents.map(event => {
+      const item = document.createElement("li");
+      item.classList.add(event.team === 0 ? "event-home" : "event-away");
+      const minute = document.createElement("time");
+      minute.textContent = `${event.minute}′`;
+      minute.className = "event-minute";
+
+      const description = document.createElement("span");
+      description.textContent = formatMessage(eventKeys[event.type], {
+        ...event,
+        team: names[event.team]
+      });
+
+      item.append(minute, description);
+      return item;
+    })
+  );
+  const commentary = byId("commentary-text");
+  commentary.textContent = !commentaryEnabled
+    ? translate("commentaryDisabled")
+    : lastCommentary
+      ? [
+        describeRoll(
+          lastCommentary.event,
+          lastCommentary.before,
+          lastCommentary.after,
+          lastCommentary.names,
+          lastCommentary.index,
+          getLocale()
+        ),
+        lastGoalScorer !== null
+          ? formatMessage("goalScorerCall", { number: lastGoalScorer })
+          : null,
+        lastRefereeEvent
+          ? describeMatchEvent(lastRefereeEvent, names, getLocale())
+          : null
+      ].filter(Boolean).join(" ")
+      : translate("commentaryReady");
+  byId("commentary-toggle").textContent = commentaryEnabled
+    ? "🎙️ ON"
+    : "🎙️ OFF";
+  byId("commentary-toggle").setAttribute(
+    "aria-pressed", String(commentaryEnabled)
+  );
+  const clock = matchClock(state);
+  const footballMinute = `${Math.floor(clock.seconds / 60)}′`;
+  byId("match-clock").textContent = clock.finished
+    ? formatMessage("finalClock", { time: footballMinute })
+    : formatMessage(clock.half === 1 ? "firstHalf" : "secondHalf",
+      { time: footballMinute });
+  byId("match-clock").classList.toggle("halftime", clock.halftime);
   for (let player = 0; player < 2; player += 1) {
     byId(`name-${player}`).textContent = names[player];
     byId(`goals-${player}`).textContent = state.goals[player];
     byId(`hands-${player}`).textContent =
-      `${state.hands[player]} / ${state.handsPerTeam} mani`;
+      formatMessage("handsProgress", {
+        done: state.hands[player], total: state.handsPerTeam
+      });
     const panel = byId(`panel-${player}`);
     panel.style.setProperty("--team-color", colors[player]);
     panel.classList.toggle(
@@ -34,22 +188,108 @@ function render() {
     );
   }
 
+  for (let player = 0; player < 2; player += 1) {
+    const guide = byId(`guide-team-${player}`);
+    guide.textContent = names[player];
+    guide.style.borderLeft = `5px solid ${colors[player]}`;
+    guide.classList.toggle(
+      "active",
+      state.phase === "team" && state.player === player,
+    );
+  }
+
+  byId("guide-pink").classList.toggle("active", state.phase === "pink");
+  byId("guide-result").classList.toggle("active", state.phase === "result");
+
+  const [home, away] = matchStatistics(rollEvents);
+  const metrics = [
+    ["goals", "goals"],
+    ["shots", "shots"],
+    ["crosses", "crosses"],
+    ["passes", "passes"],
+    ["saves", "saves"],
+    ["woodwork", "woodwork"],
+    ["penalties", "penalties"],
+  ];
+  byId("match-stats").replaceChildren(
+    ...metrics.map(([label, key]) => {
+      const row = document.createElement("div");
+      row.className = "stat-row stat-comparison";
+
+      const values = document.createElement("div");
+      values.className = "stat-values";
+
+      const left = document.createElement("strong");
+      left.textContent = String(home[key]);
+
+      const name = document.createElement("span");
+      name.textContent = translate(label);
+
+      const right = document.createElement("strong");
+      right.textContent = String(away[key]);
+
+      values.append(left, name, right);
+
+      const bars = document.createElement("div");
+      bars.className = "stat-bars";
+      bars.setAttribute("aria-hidden", "true");
+
+      const total = home[key] + away[key];
+
+      for (const [value, color] of [
+        [home[key], colors[0]],
+        [away[key], colors[1]],
+      ]) {
+        const track = document.createElement("div");
+        track.className = "stat-track";
+
+        const fill = document.createElement("div");
+        fill.className = "stat-fill";
+        fill.style.width = total === 0
+          ? "0%"
+          : `${(value / total) * 100}%`;
+        fill.style.backgroundColor = color;
+
+        track.append(fill);
+        bars.append(track);
+      }
+
+      row.append(values, bars);
+      return row;
+    }),
+  );
+  byId("stats-team-0").textContent = names[0];
+  byId("stats-team-1").textContent = names[1];
+
   const finished = state.phase === "finished";
-  byId("roll").disabled = finished || isRolling;
+  const playing = matchStarted && !finished;
+  byId("roll").disabled = !playing || isRolling || autoRunning;
+  byId("auto").disabled = !playing;
+  byId("auto").textContent = autoRunning ? "■ STOP" : "▶ AUTO";
+  byId("auto").setAttribute("aria-pressed", String(autoRunning));
+  byId("new").disabled = isRolling;
+  byId("new").textContent = translate(
+    playing ? "cancelMatch" : "newGame"
+  );
+
+  const multiplayer = document.querySelector(".multiplayer-button");
+  multiplayer.classList.toggle("is-disabled", playing);
+  multiplayer.setAttribute("aria-disabled", String(playing));
+  multiplayer.tabIndex = playing ? -1 : 0;
   byId("phase").textContent = finished
-    ? "PARTITA TERMINATA"
-    : phaseNames[state.phase];
+    ? translate("matchFinished")
+    : phaseName(state.phase);
   byId("turn").textContent = finished
-    ? "Fischio finale!"
-    : `Tocca a ${names[state.player]}`;
+    ? translate("finalWhistle")
+    : formatMessage("matchTurn", { name: names[state.player] });
   byId("roll").textContent = finished
-    ? "Partita conclusa"
+    ? translate("matchFinished")
     : isRolling
-      ? "Lancio in corso..."
-      : `Lancia: ${phaseNames[state.phase]}`;
+      ? translate("rolling")
+      : formatMessage("rollPhase", { phase: phaseName(state.phase) });
 }
 
-function start() {
+function start(activate = true) {
   const rawHands = byId("hands").value;
   const n = Number(rawHands);
 
@@ -59,76 +299,185 @@ function start() {
     n < 1 ||
     n > 1000
   ) {
-    byId("message").textContent = "Scegli da 1 a 1000 mani per squadra.";
+    showMessage("invalidHands");
     return;
   }
 
   names = [0, 1].map((i) => byId(`team-${i}`).value.trim() || `Squadra ${i + 1}`);
   colors = [0, 1].map((i) => byId(`color-${i}`).value);
   state = newMatch(n);
+  matchStarted = activate;
+  autoRunning = false;
   isRolling = false;
+  rollEvents = [];
+  matchEvents = [];
+  rosters = [createRoster(), createRoster()];
+  refereeStates = [createEventState(), createEventState()];
+  lastCommentary = null;
+  lastRefereeEvent = null;
+  lastGoalScorer = null;
 
   const die = byId("die");
-  die.textContent = "🎲";
   die.classList.remove("rolling");
+  die.textContent = "⚽";
+  die.setAttribute("aria-label", "In attesa del primo lancio");
   byId("result").textContent = "Calcio d'inizio!";
-  byId("message").textContent =
-    "Primo turno: squadra 1 (convenzione digitale provvisoria).";
+  if (activate) {
+    showMessage("kickoffTurn", { name: names[0] });
+  } else {
+    showMessage("setupPrompt");
+  }
   render();
 }
 
-async function animateRoll(finalFace) {
+async function animateRoll(phase, player, finalFace) {
   const die = byId("die");
-  die.classList.add("rolling");
+  const finalIndex = diceFaces[phase].indexOf(finalFace);
+  if (finalIndex < 0) throw new RangeError("Unknown die result");
 
-  for (let index = 0; index < 10; index += 1) {
-    die.textContent = dieFrames[index % dieFrames.length];
-    await sleep(70);
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    die.classList.add("rolling");
+    for (let index = 0; index < 10; index += 1) {
+      displayFace(phase, player, index % 6);
+      await sleep(70);
+    }
+    die.classList.remove("rolling");
   }
 
-  die.classList.remove("rolling");
-  die.textContent = "🎲";
+  displayFace(phase, player, finalIndex);
   byId("result").textContent = finalFace;
 }
 
 async function roll() {
-  if (state.phase === "finished" || isRolling) return;
+  if (!matchStarted || state.phase === "finished" || isRolling) return;
 
   isRolling = true;
   render();
 
   const player = state.player;
-  const face = rollFace(state.phase);
+  const phase = state.phase;
+  const face = rollFace(phase);
 
-  await animateRoll(face);
+  await animateRoll(state.phase, player, face);
+  const before = state;
   state = applyRoll(state, face);
+  rollEvents.push({ seat: player, die: phase, face });
+  lastRefereeEvent = null;
+  lastGoalScorer = null;
+  if (commentaryEnabled) {
+    lastCommentary = {
+      event: { seat: player, die: phase, face },
+      before,
+      after: state,
+      names: [...names],
+      index: rollEvents.length - 1
+    };
+  }
 
   const handEnded = state.phase === "finished" || state.player !== player;
 
   if (handEnded) {
+    const minute = Math.floor(matchClock(state).seconds / 60);
+
+    // The score comes exclusively from the dice engine.
+    if (state.goals[player] > before.goals[player]) {
+      lastGoalScorer = pickScorer(rosters[player]);
+      matchEvents.push({
+        type: "goal",
+        team: player,
+        minute,
+        number: lastGoalScorer
+      });
+    }
+
+    // Only the team completing its hand gets an event opportunity.
+    const refereeEvent = evaluateHandEvent(
+      rosters[player], refereeStates[player], minute
+    );
+
+    if (refereeEvent) {
+      lastRefereeEvent = { ...refereeEvent, team: player };
+      matchEvents.push(lastRefereeEvent);
+    }
+  }
+
+  if (handEnded) {
     const scored = face === "GOAL!";
-    byId("message").textContent = scored
-      ? `⚽ GOAL di ${names[player]}!`
-      : `Fine mano di ${names[player]}.`;
+    showMessage(scored ? "goalBy" : "handEnded", {
+      name: names[player]
+    });
   } else if (face === "Passaggio" || face === "RIGORE") {
-    byId("message").textContent = "Si rilancia lo stesso dado!";
+    showMessage("rollAgain");
   } else {
-    byId("message").textContent = "L'azione continua!";
+    showMessage("actionContinues");
   }
 
   if (state.phase === "finished") {
     const [a, b] = state.goals;
-    byId("message").textContent = a === b
-      ? `Pareggio! ${a} a ${b}.`
-      : `Vince ${names[a > b ? 0 : 1]}! ${a} a ${b}.`;
+    if (a === b) {
+      showMessage("draw", { a, b });
+    } else {
+      showMessage("winner", {
+        name: names[a > b ? 0 : 1], a, b
+      });
+    }
   }
 
   isRolling = false;
+  if (state.phase === "finished") autoRunning = false;
   render();
 }
 
-byId("new").addEventListener("click", start);
+async function runAuto() {
+  if (autoRunning || !matchStarted || state.phase === "finished" || isRolling) return;
+
+  autoRunning = true;
+  render();
+
+  while (autoRunning && matchStarted && state.phase !== "finished") {
+    await roll();
+    if (!autoRunning || state.phase === "finished") break;
+    await sleep(350);
+  }
+
+  autoRunning = false;
+  render();
+}
+
+byId("commentary-toggle").addEventListener("click", () => {
+  commentaryEnabled = !commentaryEnabled;
+  render();
+});
+
+byId("auto").addEventListener("click", () => {
+  if (autoRunning) {
+    autoRunning = false;
+    render();
+  } else {
+    void runAuto();
+  }
+});
+
+byId("new").addEventListener("click", () => {
+  if (isRolling) return;
+
+  if (matchStarted && state.phase !== "finished") {
+    if (!window.confirm(translate("cancelConfirm"))) return;
+    start(false);
+    showMessage("matchCancelled");
+    return;
+  }
+
+  start(true);
+});
+
+document.querySelector(".multiplayer-button").addEventListener("click", event => {
+  if (matchStarted && state.phase !== "finished") {
+    event.preventDefault();
+  }
+});
 byId("roll").addEventListener("click", () => {
   void roll();
 });
-start();
+start(false);
+initializeLocale(render);
