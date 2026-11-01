@@ -5,7 +5,7 @@
  * No network, randomness, audio or external providers.
  */
 
-const lines = {
+const linesIt = {
   "Passaggio": [
     "La squadra fa girare il pallone, cerca uno spiraglio!",
     "Possesso palla, si costruisce con pazienza!",
@@ -64,7 +64,67 @@ const lines = {
   ],
 };
 
-export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Squadra 2"], index = 0) {
+
+const linesEn = {
+  "Passaggio": [
+    "The team moves the ball around, looking for an opening!",
+    "Patient build-up play! They keep possession!",
+  ],
+  "Passaggio intercettato!": [
+    "INTERCEPTED! The attack breaks down!",
+    "The defence reads it perfectly and wins the ball!",
+  ],
+  "Cross!": [
+    "A cross into the box! Here comes the ball!",
+    "Ball into the area! The defence is under pressure!",
+  ],
+  "Tiro in porta!": [
+    "A shot on goal! Here we go!",
+    "There's room to shoot! The strike is coming!",
+  ],
+  "GOAL!": [
+    "GOOOOOAL! The net bulges! The crowd erupts!",
+    "IT'S IN! What an incredible moment!",
+  ],
+  "PALO/TRAVERSA": [
+    "INCREDIBLE! The ball crashes against the woodwork!",
+    "POST OR CROSSBAR! So close to a goal!",
+  ],
+  "Parato!": [
+    "WHAT A SAVE! The keeper keeps them in it!",
+    "A crucial save by the goalkeeper! No goal!",
+  ],
+  "RIGORE": [
+    "Penalty kick! What a tense moment!",
+    "The referee points to the spot! The tension rises!",
+  ],
+  "FUORI!": [
+    "Wide! The ball misses the target!",
+  ],
+  "Respinto!": [
+    "Blocked shot! The defence holds firm!",
+  ],
+  "Palla sul fondo": [
+    "The ball goes out of play. The chance is gone!",
+  ],
+  "Palla alta sulla traversa": [
+    "Over the crossbar! No goal this time!",
+  ],
+  "Palla intercettata": [
+    "Intercepted! The defence stops the move!",
+  ],
+  "Mezza rovesciata": [
+    "A scissor kick! What an acrobatic effort!",
+  ],
+  "Rovesciata": [
+    "BICYCLE KICK! The crowd holds its breath!",
+  ],
+  "Colpo di testa": [
+    "A header! This could be dangerous!",
+  ],
+};
+
+export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Squadra 2"], index = 0, locale = "it") {
   if (!event || !before || !after ||
       ![0, 1].includes(event.seat) ||
       event.seat !== before.player ||
@@ -74,7 +134,7 @@ export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Sq
     throw new RangeError("Invalid commentary input");
   }
 
-  const choices = lines[event.face];
+  const choices = (locale === "it" ? linesIt : linesEn)[event.face];
   if (!choices) throw new RangeError("Unknown commentary event");
 
   const name = teamNames[event.seat];
@@ -82,14 +142,18 @@ export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Sq
 
   if (after.phase === "finished") {
     const [a, b] = after.goals;
-    const ending = a === b
-      ? `Triplice fischio! Pareggio ${a} a ${b}!`
-      : `Triplice fischio! Vince ${teamNames[a > b ? 0 : 1]}! ${a} a ${b}!`;
+    const ending = locale === "it"
+      ? (a === b
+        ? `Triplice fischio! Pareggio ${a} a ${b}!`
+        : `Triplice fischio! Vince ${teamNames[a > b ? 0 : 1]}! ${a} a ${b}!`)
+      : (a === b
+        ? `Final whistle! A ${a}-${b} draw!`
+        : `Final whistle! ${teamNames[a > b ? 0 : 1]} win! ${a}-${b}!`);
     return `${phrase} ${ending}`;
   }
 
   if (event.face === "GOAL!" && after.goals[event.seat] > before.goals[event.seat]) {
-    return `${phrase} Segna ${name}!`;
+    return locale === "it" ? `${phrase} Segna ${name}!` : `${phrase} ${name} scores!`;
   }
 
   return `${name}: ${phrase}`;

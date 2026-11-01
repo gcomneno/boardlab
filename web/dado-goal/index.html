@@ -18,19 +18,25 @@
     </header>
 
     <section class="panel settings" aria-label="Impostazioni partita">
-      <label>Squadra 1
+      <label for="language"><span data-i18n="language">Lingua</span>
+        <select id="language" name="language">
+          <option value="it">Italiano</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <label><span data-i18n-team="1">Squadra 1</span>
         <input id="team-0" type="text" maxlength="24" value="Squadra 1">
       </label>
-      <label>Colore
+      <label><span data-i18n="color">Colore</span>
         <input id="color-0" type="color" value="#e9bd48">
       </label>
-      <label>Squadra 2
+      <label><span data-i18n-team="2">Squadra 2</span>
         <input id="team-1" type="text" maxlength="24" value="Squadra 2">
       </label>
-      <label>Colore
+      <label><span data-i18n="color">Colore</span>
         <input id="color-1" type="color" value="#66a5ef">
       </label>
-      <label>Mani per squadra
+      <label><span data-i18n="handsPerTeam">Mani per squadra</span>
         <input id="hands" type="number" min="1" max="1000" step="1" value="6">
       </label>
       <div class="match-actions">

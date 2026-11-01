@@ -3,13 +3,16 @@ import { matchStatistics } from "./statistics.mjs";
 import { matchClock } from "./match-clock.mjs";
 import { describeRoll } from "./commentary.mjs";
 import { DICE_ART } from "./dice-art.mjs";
+import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
 
 const byId = (id) => document.getElementById(id);
 const phaseNames = {
-  team: "Dado squadra",
-  pink: "Dado rosa",
-  result: "Dado finale",
+  team: "teamDie",
+  pink: "pinkDie",
+  result: "finalDie",
 };
+
+const phaseName = phase => translate(phaseNames[phase]);
 
 const diceFaces = {
   team: [
@@ -75,7 +78,16 @@ let colors = [];
 let isRolling = false;
 let rollEvents = [];
 let commentaryEnabled = true;
-let commentaryText = "Telecronaca pronta per il calcio d’inizio.";
+let lastCommentary = null;
+let messageKey = "setupPrompt";
+let messageValues = {};
+
+function showMessage(key, values = {}) {
+  messageKey = key;
+  messageValues = values;
+  byId("message").textContent = formatMessage(key, values);
+}
+
 let matchStarted = false;
 let autoRunning = false;
 
@@ -86,10 +98,20 @@ function sleep(ms) {
 }
 
 function render() {
+  byId("message").textContent = formatMessage(messageKey, messageValues);
   const commentary = byId("commentary-text");
-  commentary.textContent = commentaryEnabled
-    ? commentaryText
-    : "Telecronaca disattivata.";
+  commentary.textContent = !commentaryEnabled
+    ? translate("commentaryDisabled")
+    : lastCommentary
+      ? describeRoll(
+        lastCommentary.event,
+        lastCommentary.before,
+        lastCommentary.after,
+        lastCommentary.names,
+        lastCommentary.index,
+        getLocale()
+      )
+      : translate("commentaryReady");
   byId("commentary-toggle").textContent = commentaryEnabled
     ? "🎙️ ON"
     : "🎙️ OFF";
@@ -98,14 +120,17 @@ function render() {
   );
   const clock = matchClock(state);
   byId("match-clock").textContent = clock.finished
-    ? `FISCHIO FINALE · ${clock.label}`
-    : `${clock.half}° TEMPO · ${clock.label}`;
+    ? formatMessage("finalClock", { time: clock.label })
+    : formatMessage(clock.half === 1 ? "firstHalf" : "secondHalf",
+      { time: clock.label });
   byId("match-clock").classList.toggle("halftime", clock.halftime);
   for (let player = 0; player < 2; player += 1) {
     byId(`name-${player}`).textContent = names[player];
     byId(`goals-${player}`).textContent = state.goals[player];
     byId(`hands-${player}`).textContent =
-      `${state.hands[player]} / ${state.handsPerTeam} mani`;
+      formatMessage("handsProgress", {
+        done: state.hands[player], total: state.handsPerTeam
+      });
     const panel = byId(`panel-${player}`);
     panel.style.setProperty("--team-color", colors[player]);
     panel.classList.toggle(
@@ -129,13 +154,13 @@ function render() {
 
   const [home, away] = matchStatistics(rollEvents);
   const metrics = [
-    ["Gol", "goals"],
-    ["Tiri in porta", "shots"],
-    ["Cross", "crosses"],
-    ["Passaggi", "passes"],
-    ["Parate", "saves"],
-    ["Pali/traverse", "woodwork"],
-    ["Rigori", "penalties"],
+    ["goals", "goals"],
+    ["shots", "shots"],
+    ["crosses", "crosses"],
+    ["passes", "passes"],
+    ["saves", "saves"],
+    ["woodwork", "woodwork"],
+    ["penalties", "penalties"],
   ];
   byId("match-stats").replaceChildren(
     ...metrics.map(([label, key]) => {
@@ -149,7 +174,7 @@ function render() {
       left.textContent = String(home[key]);
 
       const name = document.createElement("span");
-      name.textContent = label;
+      name.textContent = translate(label);
 
       const right = document.createElement("strong");
       right.textContent = String(away[key]);
@@ -194,25 +219,25 @@ function render() {
   byId("auto").textContent = autoRunning ? "■ STOP" : "▶ AUTO";
   byId("auto").setAttribute("aria-pressed", String(autoRunning));
   byId("new").disabled = isRolling;
-  byId("new").textContent = playing
-    ? "Annulla l'incontro"
-    : "Nuova partita";
+  byId("new").textContent = translate(
+    playing ? "cancelMatch" : "newGame"
+  );
 
   const multiplayer = document.querySelector(".multiplayer-button");
   multiplayer.classList.toggle("is-disabled", playing);
   multiplayer.setAttribute("aria-disabled", String(playing));
   multiplayer.tabIndex = playing ? -1 : 0;
   byId("phase").textContent = finished
-    ? "PARTITA TERMINATA"
-    : phaseNames[state.phase];
+    ? translate("matchFinished")
+    : phaseName(state.phase);
   byId("turn").textContent = finished
-    ? "Fischio finale!"
-    : `Tocca a ${names[state.player]}`;
+    ? translate("finalWhistle")
+    : formatMessage("matchTurn", { name: names[state.player] });
   byId("roll").textContent = finished
-    ? "Partita conclusa"
+    ? translate("matchFinished")
     : isRolling
-      ? "Lancio in corso..."
-      : `Lancia: ${phaseNames[state.phase]}`;
+      ? translate("rolling")
+      : formatMessage("rollPhase", { phase: phaseName(state.phase) });
 }
 
 function start(activate = true) {
@@ -225,7 +250,7 @@ function start(activate = true) {
     n < 1 ||
     n > 1000
   ) {
-    byId("message").textContent = "Scegli da 1 a 1000 mani per squadra.";
+    showMessage("invalidHands");
     return;
   }
 
@@ -236,16 +261,18 @@ function start(activate = true) {
   autoRunning = false;
   isRolling = false;
   rollEvents = [];
-  commentaryText = "Telecronaca pronta per il calcio d’inizio.";
+  lastCommentary = null;
 
   const die = byId("die");
   die.classList.remove("rolling");
   die.textContent = "⚽";
   die.setAttribute("aria-label", "In attesa del primo lancio");
   byId("result").textContent = "Calcio d'inizio!";
-  byId("message").textContent = activate
-    ? `Calcio d'inizio! Tocca a ${names[0]}.`
-    : "Configura le squadre e avvia una nuova partita.";
+  if (activate) {
+    showMessage("kickoffTurn", { name: names[0] });
+  } else {
+    showMessage("setupPrompt");
+  }
   render();
 }
 
@@ -282,30 +309,37 @@ async function roll() {
   state = applyRoll(state, face);
   rollEvents.push({ seat: player, die: phase, face });
   if (commentaryEnabled) {
-    commentaryText = describeRoll(
-      { seat: player, die: phase, face },
-      before, state, names, rollEvents.length - 1
-    );
+    lastCommentary = {
+      event: { seat: player, die: phase, face },
+      before,
+      after: state,
+      names: [...names],
+      index: rollEvents.length - 1
+    };
   }
 
   const handEnded = state.phase === "finished" || state.player !== player;
 
   if (handEnded) {
     const scored = face === "GOAL!";
-    byId("message").textContent = scored
-      ? `⚽ GOAL di ${names[player]}!`
-      : `Fine mano di ${names[player]}.`;
+    showMessage(scored ? "goalBy" : "handEnded", {
+      name: names[player]
+    });
   } else if (face === "Passaggio" || face === "RIGORE") {
-    byId("message").textContent = "Si rilancia lo stesso dado!";
+    showMessage("rollAgain");
   } else {
-    byId("message").textContent = "L'azione continua!";
+    showMessage("actionContinues");
   }
 
   if (state.phase === "finished") {
     const [a, b] = state.goals;
-    byId("message").textContent = a === b
-      ? `Pareggio! ${a} a ${b}.`
-      : `Vince ${names[a > b ? 0 : 1]}! ${a} a ${b}.`;
+    if (a === b) {
+      showMessage("draw", { a, b });
+    } else {
+      showMessage("winner", {
+        name: names[a > b ? 0 : 1], a, b
+      });
+    }
   }
 
   isRolling = false;
@@ -347,9 +381,9 @@ byId("new").addEventListener("click", () => {
   if (isRolling) return;
 
   if (matchStarted && state.phase !== "finished") {
-    if (!window.confirm("L'arbitro decide di annullare l'incontro in corso?")) return;
+    if (!window.confirm(translate("cancelConfirm"))) return;
     start(false);
-    byId("message").textContent = "Incontro annullato.";
+    showMessage("matchCancelled");
     return;
   }
 
@@ -365,3 +399,4 @@ byId("roll").addEventListener("click", () => {
   void roll();
 });
 start(false);
+initializeLocale(render);

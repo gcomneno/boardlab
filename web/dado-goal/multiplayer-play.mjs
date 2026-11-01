@@ -3,6 +3,12 @@ import {
   MultiplayerAPIError,
 } from "./multiplayer-client.mjs";
 
+import {
+  initializeMultiplayerLocale,
+  translate,
+  formatMessage,
+} from "./i18n.mjs";
+
 const $ = id => document.getElementById(id);
 
 // One user-facing invitation; two independent server credentials.
@@ -47,27 +53,58 @@ const client = new MultiplayerClient({
 });
 
 let snapshot = null;
-let lastFace = null;
+let lastFace = null; // { player, face } — canonical face unchanged
 let busy = false;
 let polling = false;
 
 const dice = {
-  team: "Dado squadra",
-  pink: "Dado rosa",
-  result: "Dado finale",
+  team: "mpTeamDie",
+  pink: "mpPinkDie",
+  result: "mpFinalDie",
 };
+
+let statusNotice = null;
 
 function message(value) {
   $("status").textContent = value;
 }
 
-function errorMessage(error) {
+function showNotice(key, values = {}) {
+  statusNotice = { key, values };
+  message(formatMessage(key, values));
+}
+
+const localErrors = Object.freeze({
+  "Codice invito non valido.": "mpInvalidInvite",
+  "Accesso non disponibile. Riprova più tardi.": "mpLoginUnavailable",
+  "Impossibile terminare la sessione.": "mpLogoutFailed",
+  "Numero di mani non valido": "mpInvalidHands",
+  "Stato della partita non disponibile.": "mpStateUnavailable"
+});
+
+function showError(error) {
   if (error instanceof MultiplayerAPIError) {
-    return `Errore server: ${error.code} (${error.status})`;
+    showNotice("mpServerError", {
+      code: error.code,
+      status: error.status
+    });
+  } else if (error instanceof Error) {
+    const key = localErrors[error.message];
+    if (key) showNotice(key);
+    else {
+      // Unknown technical errors retain their original diagnostic text.
+      statusNotice = { raw: error.message };
+      message(error.message);
+    }
+  } else {
+    showNotice("mpUnknownError");
   }
-  return error instanceof Error
-    ? error.message
-    : "Errore sconosciuto";
+}
+
+function restoreNotice() {
+  if (!statusNotice) return;
+  if ("raw" in statusNotice) message(statusNotice.raw);
+  else message(formatMessage(statusNotice.key, statusNotice.values));
 }
 
 function render() {
@@ -85,29 +122,54 @@ function render() {
   $("copy-invite").disabled =
     !$("invite-code").value.trim() || busy;
 
-  if (!state) return;
+  if (!state) {
+    restoreNotice();
+    $("score").textContent = formatMessage("mpScore", {
+      home: "—", away: "—"
+    });
+    $("hands-done").textContent = formatMessage("mpHands", {
+      home: "—", away: "—", total: "—"
+    });
+    $("turn").textContent = formatMessage("mpTurn", {
+      player: "—", detail: "—"
+    });
+    $("die").textContent = formatMessage("mpDie", { die: "—" });
+    $("last-roll").textContent = formatMessage("mpLastRoll", { face: "—" });
+    return;
+  }
 
-  $("score").textContent =
-    `Risultato: ${state.goals[0]} – ${state.goals[1]}`;
-  $("hands-done").textContent =
-    `Mani: ${state.hands[0]} – ${state.hands[1]} / ${state.handsPerTeam}`;
+  $("score").textContent = formatMessage("mpScore", {
+    home: state.goals[0], away: state.goals[1]
+  });
+  $("hands-done").textContent = formatMessage("mpHands", {
+    home: state.hands[0], away: state.hands[1],
+    total: state.handsPerTeam
+  });
   $("turn").textContent = status === "completed"
-    ? "Fischio finale!"
-    : `Giocatore ${state.player + 1} — ` +
-      (myTurn ? "tocca a te" : "attendi l'avversario");
-  $("die").textContent =
-    `Dado: ${dice[state.phase] ?? state.phase}`;
-  $("last-roll").textContent =
-    `Ultimo lancio: ${lastFace ?? "—"}`;
+    ? translate("mpFinalWhistle")
+    : formatMessage("mpTurn", {
+      player: state.player + 1,
+      detail: translate(myTurn ? "mpYourTurn" : "mpWaitTurn")
+    });
+  $("die").textContent = formatMessage("mpDie", {
+    die: dice[state.phase] ? translate(dice[state.phase]) : state.phase
+  });
+  $("last-roll").textContent = formatMessage("mpLastRoll", {
+    face: lastFace
+      ? formatMessage("mpPlayerFace", lastFace)
+      : "—"
+  });
 
-  if (status === "completed") {
-    message("Partita conclusa.");
+  if (statusNotice) {
+    restoreNotice();
+  } else if (status === "completed") {
+    message(translate("mpCompleted"));
   } else if (status === "waiting") {
-    message("Partita creata: in attesa dell'amico.");
+    message(translate("mpWaiting"));
   } else {
-    message(
-      `Partita attiva — lancio ${Math.max(0, snapshot.revision - 1)}.`
-    );
+    message(formatMessage("mpActive", {
+      number: Math.max(0, snapshot.revision - 1)
+    }));
   }
 }
 
@@ -118,8 +180,9 @@ async function work(operation) {
 
   try {
     await operation();
+    statusNotice = null;
   } catch (error) {
-    message(errorMessage(error));
+    showError(error);
   } finally {
     busy = false;
     render();
@@ -135,13 +198,15 @@ async function synchronize() {
     if (!snapshot || next.revision >= snapshot.revision) {
       snapshot = next;
       if (next.lastRoll) {
-        lastFace =
-          `Giocatore ${next.lastRoll.seat + 1}: ${next.lastRoll.face}`;
+        lastFace = {
+          player: next.lastRoll.seat + 1,
+          face: next.lastRoll.face
+        };
       }
       render();
     }
   } catch (error) {
-    message(errorMessage(error));
+    showError(error);
   } finally {
     polling = false;
   }
@@ -163,7 +228,8 @@ $("login").addEventListener("click", () => work(async () => {
 
   csrfToken = result.csrfToken;
   authenticated = true;
-  $("auth-status").textContent = "Accesso effettuato.";
+  $("auth-status").dataset.i18nDynamic = "mpAuthSuccess";
+  $("auth-status").textContent = translate("mpAuthSuccess");
   $("login").disabled = true;
   $("logout").disabled = false;
   render();
@@ -187,7 +253,8 @@ $("logout").addEventListener("click", () => work(async () => {
   snapshot = null;
   lastFace = null;
   $("invite-code").value = "";
-  $("auth-status").textContent = "Sessione terminata.";
+  $("auth-status").dataset.i18nDynamic = "mpAuthEnded";
+  $("auth-status").textContent = translate("mpAuthEnded");
   $("login").disabled = false;
   $("logout").disabled = true;
   render();
@@ -232,7 +299,10 @@ $("roll").addEventListener("click", () => work(async () => {
     state: result.state,
     status: result.status,
   };
-  lastFace = `Giocatore ${client.seat + 1}: ${result.face}`;
+  lastFace = {
+    player: client.seat + 1,
+    face: result.face
+  };
 }));
 
 $("invite-code").addEventListener("input", render);
@@ -251,21 +321,24 @@ $("copy-invite").addEventListener("click", async () => {
   }
 
   button.classList.remove("copy-success");
-  button.textContent = "Copia codice invito";
+  button.dataset.i18n = "mpCopyInvite";
+  button.textContent = translate("mpCopyInvite");
 
   try {
     await navigator.clipboard.writeText(code);
-    button.textContent = "✓ Copiato!";
+    button.dataset.i18n = "mpCopied";
+    button.textContent = translate("mpCopied");
     button.classList.add("copy-success");
 
     copyResetTimer = setTimeout(() => {
-      button.textContent = "Copia codice invito";
+      button.dataset.i18n = "mpCopyInvite";
+  button.textContent = translate("mpCopyInvite");
       button.classList.remove("copy-success");
       copyResetTimer = null;
       render();
     }, 1300);
   } catch {
-    message("Impossibile copiare: seleziona il codice e copialo manualmente.");
+    showNotice("mpCopyFailed");
   }
 });
 
@@ -276,7 +349,7 @@ $("leave").addEventListener("click", () => {
   lastFace = null;
   $("invite-code").value = "";
   $("remember").checked = false;
-  message("Postazione dimenticata e sessione locale abbandonata.");
+  showNotice("mpLeft");
   render();
 });
 
@@ -285,7 +358,7 @@ $("remember").addEventListener("change", () => {
     try {
       client.forget();
     } catch (error) {
-      message(errorMessage(error));
+      showError(error);
     }
     return;
   }
@@ -295,7 +368,7 @@ $("remember").addEventListener("change", () => {
       client.remember();
     } catch (error) {
       $("remember").checked = false;
-      message(errorMessage(error));
+      showError(error);
     }
   }
 });
@@ -306,16 +379,26 @@ async function recoverOnLoad() {
     if (!restored) return;
     snapshot = restored;
     lastFace = restored.lastRoll
-      ? `Giocatore ${restored.lastRoll.seat + 1}: ${restored.lastRoll.face}`
+      ? {
+        player: restored.lastRoll.seat + 1,
+        face: restored.lastRoll.face
+      }
       : null;
     $("remember").checked = true;
     $("invite-code").value = "";
     render();
   } catch (error) {
-    message(errorMessage(error));
+    showError(error);
   }
 }
 
+initializeMultiplayerLocale(() => {
+  for (const element of document.querySelectorAll("[data-i18n-dynamic]")) {
+    element.textContent = translate(element.dataset.i18nDynamic);
+  }
+  render();
+  restoreNotice();
+});
 void recoverOnLoad();
 
 window.setInterval(() => {
