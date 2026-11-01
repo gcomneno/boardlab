@@ -5,7 +5,9 @@ body {
   margin: 0;
   min-height: 100vh;
   color: #fff7ec;
-  background: #10110e url('./dado-goal-handmade-dice.png') calc(50% + 120px) 50% / cover fixed no-repeat;
+  background: repeating-linear-gradient(
+    0deg, #215b38 0, #215b38 52px, #286943 52px, #286943 104px
+  );
   line-height: 1.5;
 }
 body::before {
@@ -38,7 +40,6 @@ button:disabled { opacity: .42; cursor: not-allowed; }
 #status { font-weight: 700; color: #b6f1c8; }
 #score { font-size: 1.5rem; font-weight: 900; color: #fff0c5; }
 @media (max-width: 640px) {
-  body { background-attachment: scroll; background-position: center top; }
   main { width: calc(100% - 1rem); padding: 1rem; margin: .5rem auto; }
 }
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; } }
@@ -154,4 +155,22 @@ label > input[type="checkbox"] {
 }
 .match-clock.halftime {
   color: #b6f1c8;
+}
+
+/* M2C: canonical illustrated die, before the future 3D renderer. */
+.mp-die {
+  min-height: 176px;
+  display: grid;
+  place-items: center;
+  font-size: 4rem;
+}
+.mp-die svg {
+  display: block;
+  width: min(220px, 55vw);
+  height: auto;
+  filter: drop-shadow(5px 9px 5px #0005);
+}
+@media (max-width: 480px) {
+  .mp-die { min-height: 150px; }
+  .mp-die svg { width: 150px; }
 }
