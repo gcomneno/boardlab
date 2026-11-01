@@ -1,7 +1,11 @@
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
 import { matchClock } from "./match-clock.mjs";
-import { describeRoll } from "./commentary.mjs";
+import { createRoster } from "./match-roster.mjs";
+import {
+  createEventState, evaluateHandEvent
+} from "./match-events.mjs";
+import { describeRoll, describeMatchEvent } from "./commentary.mjs";
 import { DICE_ART } from "./dice-art.mjs";
 import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
 
@@ -77,8 +81,12 @@ let names = [];
 let colors = [];
 let isRolling = false;
 let rollEvents = [];
+let matchEvents = [];
+let rosters = [];
+let refereeStates = [];
 let commentaryEnabled = true;
 let lastCommentary = null;
+let lastRefereeEvent = null;
 let messageKey = "setupPrompt";
 let messageValues = {};
 
@@ -99,18 +107,53 @@ function sleep(ms) {
 
 function render() {
   byId("message").textContent = formatMessage(messageKey, messageValues);
+
+  // Rebuild presentation from canonical events on every locale change.
+  byId("match-events-heading").textContent = translate("eventBoardHeading");
+  byId("match-events-empty").textContent = translate("eventBoardEmpty");
+  byId("match-events-empty").hidden = matchEvents.length > 0;
+
+  const eventKeys = {
+    goal: "eventGoal",
+    yellow: "eventYellow",
+    red: "eventRed",
+    substitution: "eventSubstitution"
+  };
+
+  byId("match-events-list").replaceChildren(
+    ...matchEvents.map(event => {
+      const item = document.createElement("li");
+      const minute = document.createElement("time");
+      minute.textContent = `${event.minute}′`;
+      minute.className = "event-minute";
+
+      const description = document.createElement("span");
+      description.textContent = formatMessage(eventKeys[event.type], {
+        ...event,
+        team: names[event.team]
+      });
+
+      item.append(minute, description);
+      return item;
+    })
+  );
   const commentary = byId("commentary-text");
   commentary.textContent = !commentaryEnabled
     ? translate("commentaryDisabled")
     : lastCommentary
-      ? describeRoll(
-        lastCommentary.event,
-        lastCommentary.before,
-        lastCommentary.after,
-        lastCommentary.names,
-        lastCommentary.index,
-        getLocale()
-      )
+      ? [
+        describeRoll(
+          lastCommentary.event,
+          lastCommentary.before,
+          lastCommentary.after,
+          lastCommentary.names,
+          lastCommentary.index,
+          getLocale()
+        ),
+        lastRefereeEvent
+          ? describeMatchEvent(lastRefereeEvent, names, getLocale())
+          : null
+      ].filter(Boolean).join(" ")
       : translate("commentaryReady");
   byId("commentary-toggle").textContent = commentaryEnabled
     ? "🎙️ ON"
@@ -261,7 +304,11 @@ function start(activate = true) {
   autoRunning = false;
   isRolling = false;
   rollEvents = [];
+  matchEvents = [];
+  rosters = [createRoster(), createRoster()];
+  refereeStates = [createEventState(), createEventState()];
   lastCommentary = null;
+  lastRefereeEvent = null;
 
   const die = byId("die");
   die.classList.remove("rolling");
@@ -308,6 +355,7 @@ async function roll() {
   const before = state;
   state = applyRoll(state, face);
   rollEvents.push({ seat: player, die: phase, face });
+  lastRefereeEvent = null;
   if (commentaryEnabled) {
     lastCommentary = {
       event: { seat: player, die: phase, face },
@@ -319,6 +367,29 @@ async function roll() {
   }
 
   const handEnded = state.phase === "finished" || state.player !== player;
+
+  if (handEnded) {
+    const minute = Math.floor(matchClock(state).seconds / 60);
+
+    // The score comes exclusively from the dice engine.
+    if (state.goals[player] > before.goals[player]) {
+      matchEvents.push({
+        type: "goal",
+        team: player,
+        minute
+      });
+    }
+
+    // Only the team completing its hand gets an event opportunity.
+    const refereeEvent = evaluateHandEvent(
+      rosters[player], refereeStates[player], minute
+    );
+
+    if (refereeEvent) {
+      lastRefereeEvent = { ...refereeEvent, team: player };
+      matchEvents.push(lastRefereeEvent);
+    }
+  }
 
   if (handEnded) {
     const scored = face === "GOAL!";

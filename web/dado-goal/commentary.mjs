@@ -158,3 +158,44 @@ export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Sq
 
   return `${name}: ${phrase}`;
 }
+
+/**
+ * Describe a referee event without modifying the original roll commentary.
+ * All text is derived from event data, so changing locale is reversible.
+ */
+export function describeMatchEvent(event, teamNames, locale = "it") {
+  if (!event || !["yellow", "red", "substitution"].includes(event.type) ||
+      ![0, 1].includes(event.team) ||
+      !Array.isArray(teamNames) || teamNames.length !== 2 ||
+      !teamNames.every(name => typeof name === "string") ||
+      !Number.isInteger(event.minute) ||
+      event.minute < 0 || event.minute > 90) {
+    throw new RangeError("Invalid referee commentary input");
+  }
+
+  const name = teamNames[event.team];
+  const minute = event.minute;
+
+  if (event.type === "substitution") {
+    if (!Number.isInteger(event.out) || !Number.isInteger(event.in)) {
+      throw new RangeError("Invalid substitution numbers");
+    }
+    return locale === "it"
+      ? `${minute}′ Cambio per ${name}! Esce il numero ${event.out}, entra il numero ${event.in}.`
+      : `${minute}′ Substitution for ${name}! Number ${event.out} off, number ${event.in} on.`;
+  }
+
+  if (!Number.isInteger(event.number)) {
+    throw new RangeError("Invalid shirt number");
+  }
+
+  if (event.type === "yellow") {
+    return locale === "it"
+      ? `${minute}′ Cartellino giallo! Ammonito il numero ${event.number} di ${name}.`
+      : `${minute}′ Yellow card! Number ${event.number} of ${name} is booked.`;
+  }
+
+  return locale === "it"
+    ? `${minute}′ Cartellino rosso! Espulso il numero ${event.number} di ${name}!`
+    : `${minute}′ Red card! Number ${event.number} of ${name} is sent off!`;
+}

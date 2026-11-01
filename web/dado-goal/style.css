@@ -335,3 +335,45 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   font-weight: 600;
   line-height: 1.5;
 }
+
+
+/* Dado Goal match event register */
+.match-events {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #426650;
+}
+
+.match-events h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.match-events ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.match-events li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid #426650;
+}
+
+.event-minute {
+  flex: 0 0 3rem;
+  color: #c6d5c8;
+  font-variant-numeric: tabular-nums;
+}
+
+#match-events-empty {
+  color: #c6d5c8;
+  margin: 0;
+}
+
+#match-events-empty[hidden] {
+  display: none;
+}

@@ -9,6 +9,12 @@ export const supportedLocales = Object.freeze(["en", "it"]);
 
 export const messages = Object.freeze({
   en: Object.freeze({
+    eventBoardHeading: "📋 Match events",
+    eventBoardEmpty: "No events recorded.",
+    eventGoal: "⚽ GOAL! — {team}",
+    eventYellow: "🟨 Yellow card · #{number} — {team}",
+    eventRed: "🟥 Red card · #{number} — {team}",
+    eventSubstitution: "🔄 {team}: off #{out}, on #{in}",
     mpTitle: "Dado Goal! — Online match",
     mpSubtitle: "Online multiplayer: two players, one shared match in real time.",
     mpAuthHeading: "Sign in",
@@ -121,6 +127,12 @@ export const messages = Object.freeze({
     matchCancelled: "Match cancelled."
   }),
   it: Object.freeze({
+    eventBoardHeading: "📋 Cronaca della partita",
+    eventBoardEmpty: "Nessun evento registrato.",
+    eventGoal: "⚽ GOAL! — {team}",
+    eventYellow: "🟨 Ammonito il n° {number} — {team}",
+    eventRed: "🟥 Espulso il n° {number} — {team}",
+    eventSubstitution: "🔄 {team}: esce {out}, entra {in}",
     mpTitle: "Dado Goal! — Partita online",
     mpSubtitle: "Multiplayer online: due giocatori, una partita condivisa in tempo reale.",
     mpAuthHeading: "Accesso",
@@ -299,7 +311,7 @@ export function applyLocale() {
 
   for (const [selector, key] of [
     [".settings", "settings"],
-    ['section[aria-label="Tabellone"]', "scoreboard"],
+    ['section.panel:has(> .scoreboard)', "scoreboard"],
     [".play", "pitch"],
     ["#die", "currentDie"],
     [".dice-guide", "diceSequence"],
