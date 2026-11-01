@@ -399,3 +399,13 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 .match-events li.event-away span {
   overflow-wrap: anywhere;
 }
+
+/* Dado Goal language layout fix */
+.settings > label[for="language"] {
+  flex: 1 1 100%;
+  max-width: none;
+}
+
+.settings > label[for="language"] select {
+  max-width: 14rem;
+}
