@@ -3,6 +3,7 @@ import {
   MultiplayerAPIError,
 } from "./multiplayer-client.mjs";
 import { matchClock } from "./match-clock.mjs";
+import { DICE_ART } from "./dice-art.mjs";
 
 const $ = id => document.getElementById(id);
 
@@ -58,6 +59,49 @@ const dice = {
   result: "Dado finale",
 };
 
+const diceFaces = {
+  team: [
+    "Tiro in porta!", "Tiro in porta!",
+    "Passaggio intercettato!", "Passaggio intercettato!",
+    "Cross!", "Passaggio",
+  ],
+  pink: [
+    "Palla sul fondo", "Mezza rovesciata",
+    "Palla alta sulla traversa", "Palla intercettata",
+    "Rovesciata", "Colpo di testa",
+  ],
+  result: [
+    "Respinto!", "GOAL!", "FUORI!",
+    "PALO/TRAVERSA", "RIGORE", "Parato!",
+  ],
+};
+
+function renderDie(lastRoll, phase) {
+  const element = $("die");
+
+  if (!lastRoll) {
+    element.textContent = "🎲";
+    element.setAttribute("aria-label", dice[phase] ?? "Dado corrente");
+    return;
+  }
+
+  const { seat, die, face } = lastRoll;
+  const kind = die === "team"
+    ? (seat === 0 ? "yellow" : "blue")
+    : die === "pink" ? "pink" : "final";
+  const index = diceFaces[die]?.indexOf(face) ?? -1;
+  const svg = index >= 0 ? DICE_ART[kind]?.[index] : null;
+
+  if (!svg) {
+    element.textContent = face ?? "🎲";
+    element.setAttribute("aria-label", "Ultimo lancio");
+    return;
+  }
+
+  element.innerHTML = svg;
+  element.setAttribute("aria-label", `Dado ${kind}: ${face}`);
+}
+
 function message(value) {
   $("status").textContent = value;
 }
@@ -111,8 +155,7 @@ function render() {
     ? "Fischio finale!"
     : `Giocatore ${state.player + 1} — ` +
       (myTurn ? "tocca a te" : "attendi l'avversario");
-  $("die").textContent =
-    `Dado: ${dice[state.phase] ?? state.phase}`;
+  renderDie(snapshot.lastRoll, state.phase);
   $("last-roll").textContent =
     `Ultimo lancio: ${lastFace ?? "—"}`;
 
