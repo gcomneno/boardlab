@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createRoster, substitute, sendOff } from "./match-roster.mjs";
+import { createRoster, substitute, sendOff, pickScorer } from "./match-roster.mjs";
 
 test("11 starters and 9 substitutes have unique shirt numbers", () => {
   const roster = createRoster(() => 0.5);
@@ -44,4 +44,34 @@ test("sent-off players cannot return through substitutions", () => {
 test("random input is validated", () => {
   assert.throws(() => createRoster(() => 1), RangeError);
   assert.throws(() => createRoster(() => -0.1), RangeError);
+});
+
+test("goalscorer belongs to the active lineup", () => {
+  const roster = createRoster(() => 0.5);
+  const number = pickScorer(roster, () => 0.25);
+
+  assert.ok(roster.active.includes(number));
+  assert.ok(!roster.bench.includes(number));
+});
+
+test("substituted and expelled players cannot score", () => {
+  const roster = createRoster(() => 0.5);
+  const change = substitute(roster, () => 0);
+  const expelled = sendOff(roster, () => 0);
+
+  for (let index = 0; index < 50; index += 1) {
+    const number = pickScorer(roster, () => index / 50);
+    assert.ok(roster.active.includes(number));
+    assert.notEqual(number, change.out);
+    assert.notEqual(number, expelled);
+  }
+});
+
+test("scorer selection is deterministic and validates random input", () => {
+  const roster = createRoster(() => 0.5);
+
+  assert.equal(pickScorer(roster, () => 0),
+    pickScorer(roster, () => 0));
+  assert.throws(() => pickScorer(roster, () => 1), RangeError);
+  assert.equal(pickScorer({ active: [] }, () => 0), null);
 });
