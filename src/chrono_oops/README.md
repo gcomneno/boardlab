@@ -1,5 +1,7 @@
 # ChronoOops! — A Deterministic C11 Time-Travel Laboratory
 
+[English](README.md) | [Italiano](README.it.md)
+
 ChronoOops! is an experimental cooperative, turn-based game in
 GiadaWare BoardLab.
 

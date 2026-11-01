@@ -1,276 +1,277 @@
-# ChronoOops! — Missione 001
+# ChronoOops! — Mission 001
 
-## Il ponte che non c'era. Poi c'era. Poi era un'anatra.
+[English](mission-001.md) | [Italiano](mission-001.it.md)
 
-- **Progetto:** GiadaWare BoardLab
-- **Documento:** Game Design Specification M001
-- **Versione:** 1.0
-- **Stato:** baseline progettuale; validazione software non eseguita
-- **Titolo del gioco:** provvisorio
+## The Bridge That Wasn't There. Then It Was. Then It Was a Duck.
 
-## 1. Identità
+- **Project:** GiadaWare BoardLab
+- **Document:** Game Design Specification M001
+- **Version:** 1.0
+- **Status:** design baseline; software validation not performed
+- **Game title:** provisional
 
-ChronoOops! è un RPG tattico cooperativo a turni, ambientato in una
-cronologia unica e modificabile.
+## 1. Identity
 
-Due protagonisti operano in epoche differenti dello stesso mondo.
-Le loro decisioni modificano eventi, ambienti e oggetti, producendo
-conseguenze causali osservabili.
+ChronoOops! is a cooperative, turn-based tactical RPG set in a
+single mutable timeline.
 
-Il gioco integra strategia, fantascienza umoristica, paradossi logici
-e didattica algoritmica.
+Two protagonists operate in different eras of the same world.
+Their decisions change events, environments, and objects, producing
+observable causal consequences.
 
-**Principio guida:** il mondo può diventare assurdo, ma le regole
-che lo governano devono essere rigorose.
+The game combines strategy, humorous science fiction, logical
+paradoxes, and algorithmic education.
 
-## 2. Cooperazione
+**Guiding principle:** the world may become absurd, but the rules
+governing it must be rigorous.
 
-Configurazioni previste:
+## 2. Cooperation
 
-- Due giocatori umani.
-- Un giocatore umano e un compagno controllato dall'IA.
+Supported configurations:
 
-Le regole del mondo sono identiche in entrambe.
+- Two human players.
+- One human player and an AI-controlled companion.
 
-- **A — 1985:** modifica decisioni e cause storiche.
-- **B — 2025:** osserva conseguenze, ricava informazioni e interviene
-  sul proprio presente.
+World rules are identical in both configurations.
 
-I turni sono alternati: A → B → A → B.
+- **A — 1985:** changes historical decisions and causes.
+- **B — 2025:** observes consequences, gathers information, and acts
+  in the present.
 
-Entrambi perseguono un obiettivo comune. Le differenti possibilità
-causali sono parte della strategia cooperativa.
+Turns alternate: A → B → A → B.
 
-## 3. Leggi del tempo
+Both players pursue a shared objective. Their different causal
+capabilities form part of the cooperative strategy.
 
-**L1 — Cronologia unica.** Una sola linea temporale modificabile,
-senza universi paralleli.
+## 3. Laws of Time
 
-**L2 — Causalità esplicita.** Gli effetti dipendono da cause
-individuabili.
+**L1 — Single timeline.** One mutable timeline, without
+parallel universes.
 
-**L3 — Conservazione delle azioni anticipate.** Le azioni prese
-in prestito dal futuro generano debiti da restituire.
-Questa meccanica non è attiva nella missione pilota.
+**L2 — Explicit causality.** Effects depend on identifiable causes.
 
-**L4 — Determinismo.** Uguali condizioni iniziali e decisioni
-producono uguali risultati.
+**L3 — Conservation of anticipated actions.** Actions borrowed
+from the future generate debts that must be repaid.
+This mechanic is not active in the pilot mission.
 
-**L5 — Coerenza.** Le incompatibilità causali sono trattate
-secondo regole esplicite, non con effetti arbitrari.
+**L4 — Determinism.** Identical initial conditions and decisions
+produce identical results.
 
-**L6 — Propagazione immediata.** Alla fine di ogni turno il mondo
-viene aggiornato prima che il personaggio successivo agisca.
+**L5 — Consistency.** Causal incompatibilities follow explicit
+rules rather than arbitrary effects.
 
-**L7 — Persistenza geografica.** Il personaggio conserva le proprie
-coordinate mentre l'ambiente viene ricostruito.
+**L6 — Immediate propagation.** At the end of every turn, the world
+is updated before the next character acts.
 
-**L8 — Evoluzione degli oggetti.** Gli oggetti possono conservarsi,
-cambiare stato o tecnologia, essere sostituiti funzionalmente
-oppure scomparire. L'equivalenza funzionale non è garantita.
+**L7 — Geographic persistence.** A character retains their
+coordinates while the environment is reconstructed.
+
+**L8 — Object evolution.** Objects may persist, change state or
+technology, undergo functional replacement, or disappear.
+Functional equivalence is not guaranteed.
 
 ## 4. Scenario
 
-**Luogo:** Sottosopra, cittadina immaginaria.
+**Location:** Sottosopra, a fictional town.
 
-Nel 2025 una capsula scientifica è custodita nella Torre
-dell'Orologio, oltre il fiume.
+In 2025, a scientific capsule is stored in the Clock Tower
+across the river.
 
-La torre sarà demolita alla scadenza della missione.
-Il ponte è stato abbattuto a causa del deterioramento dei supporti.
+The tower will be demolished at the mission deadline.
+The bridge was demolished after its supports deteriorated.
 
-B deve recuperare la capsula.
-A può modificare nel 1985 il progetto del collegamento fluviale.
+B must recover the capsule.
+A can modify the river-crossing design in 1985.
 
-I protagonisti comunicano attraverso il **Cronofono**.
+The protagonists communicate through the **Chronophone**.
 
-### Obiettivi
+### Objectives
 
-- **Obbligatorio:** recuperare la capsula entro il turno 8.
-- **Facoltativo:** ottenere il Registro delle Maree.
+- **Mandatory:** recover the capsule by turn 8.
+- **Optional:** obtain the Tide Register.
 
-## 5. Regole operative
+## 5. Operational Rules
 
-- Ogni turno concede **2 punti azione (PA)**.
-- Le azioni elencate nei percorsi costano **1 PA** ciascuna.
-- Gli spostamenti tra luoghi logici collegati costano **1 PA**.
-- Le interazioni richiedono la presenza nel luogo pertinente.
-- La comunicazione tramite Cronofono è gratuita.
-- La consultazione della Lente del Tempo è gratuita.
-- La comunicazione non modifica direttamente il mondo.
-- Le trasformazioni causali vengono applicate alla fine del turno.
-- Il limite della missione è di **8 turni complessivi**, non 8 per giocatore.
+- Each turn grants **2 action points (AP)**.
+- Actions listed in the routes cost **1 AP** each.
+- Moving between connected logical locations costs **1 AP**.
+- Interactions require presence at the relevant location.
+- Chronophone communication is free.
+- Consulting the Time Lens is free.
+- Communication does not directly change the world.
+- Causal transformations apply at the end of the turn.
+- The mission limit is **8 total turns**, not 8 per player.
 
-La mappa è inizialmente astratta; non esiste ancora una griglia
-geografica implementata.
+The map is initially abstract; no geographical grid
+has been implemented yet.
 
-## 6. Stato iniziale
+## 6. Initial State
 
-**A — 1985:** presso il municipio, adiacente all'archivio.
-Dispone dei progetti alternativi ma ignora la causa del cedimento.
+**A — 1985:** at the town hall, adjacent to the archive.
+A has alternative designs but does not know why the bridge failed.
 
-**B — 2025:** sulla riva occidentale, presso i resti del ponte.
-Può analizzarli, ma non raggiungere direttamente la torre.
+**B — 2025:** on the western bank, near the bridge remains.
+B can investigate them but cannot reach the tower directly.
 
-**Mondo:** ponte assente; macchina alternativa assente;
-capsula conservata nella torre.
+**World:** bridge absent; alternative vehicle absent;
+capsule stored in the tower.
 
-B può scoprire il difetto manifestatosi nel futuro.
-A può modificare il progetto nel passato.
+B can discover the defect observed in the future.
+A can change the design in the past.
 
-## 7. Percorso A — Ponte corretto
+## 7. Route A — Corrected Bridge
 
-| Turno | Giocatore | Azione 1 | Azione 2 |
+| Turn | Player | Action 1 | Action 2 |
 |---|---|---|---|
-| 1 | A | Raggiunge l'archivio | Consulta il progetto |
-| 2 | B | Esamina i resti | Identifica il difetto |
-| 3 | A | Seleziona la correzione | Approva il progetto |
-| 4 | B | Attraversa il ponte | Raggiunge la torre |
-| 5 | A | Verifica il progetto | Nessuna |
-| 6 | B | Accede alla torre | Recupera la capsula |
+| 1 | A | Reaches the archive | Examines the design |
+| 2 | B | Examines the remains | Identifies the defect |
+| 3 | A | Selects the correction | Approves the design |
+| 4 | B | Crosses the bridge | Reaches the tower |
+| 5 | A | Verifies the design | None |
+| 6 | B | Enters the tower | Recovers the capsule |
 
-Al turno 2 B comunica gratuitamente il difetto ad A.
-Al termine del turno 3 il mondo del 2025 viene aggiornato.
+On turn 2, B communicates the defect to A for free.
+At the end of turn 3, the 2025 world is updated.
 
-**Risultato nominale:** vittoria al turno 6.
+**Nominal result:** victory on turn 6.
 
-**Vantaggio:** due turni di margine.
+**Advantage:** two spare turns.
 
-**Svantaggio:** il Registro delle Maree non viene acquisito.
+**Disadvantage:** the Tide Register is not acquired.
 
-**Regola di scenario:** il progetto corretto elimina il difetto
-che avrebbe causato la demolizione del ponte.
+**Scenario rule:** the corrected design eliminates the defect
+that would have led to demolition of the bridge.
 
-## 8. Percorso B — Papera a Pendolo
+## 8. Route B — Pendulum Duck
 
-Una macchina fluviale a forma di anatra impiega contrappesi
-e un sistema meccanico di propulsione.
+A duck-shaped river vehicle uses counterweights and
+a mechanical propulsion system.
 
-| Turno | Giocatore | Azione 1 | Azione 2 |
+| Turn | Player | Action 1 | Action 2 |
 |---|---|---|---|
-| 1 | A | Raggiunge l'archivio | Consulta i progetti alternativi |
-| 2 | B | Esamina i resti | Rileva le condizioni del fiume |
-| 3 | A | Seleziona la Papera | Approva la costruzione |
-| 4 | B | Esamina la macchina | Prepara il meccanismo |
-| 5 | A | Consulta il manuale storico | Aggiorna la taratura |
-| 6 | B | Avvia la macchina | Attraversa il fiume |
-| 7 | A | Verifica l'intervento | Nessuna |
-| 8 | B | Accede alla torre | Recupera la capsula |
+| 1 | A | Reaches the archive | Examines alternative designs |
+| 2 | B | Examines the remains | Surveys river conditions |
+| 3 | A | Selects the Duck | Approves construction |
+| 4 | B | Examines the vehicle | Prepares the mechanism |
+| 5 | A | Consults the historical manual | Updates calibration |
+| 6 | B | Starts the vehicle | Crosses the river |
+| 7 | A | Verifies the intervention | None |
+| 8 | B | Enters the tower | Recovers the capsule |
 
-B comunica gratuitamente i dati del fiume ad A.
-Il mondo viene aggiornato dopo i turni 3 e 5.
+B communicates the river data to A for free.
+The world is updated after turns 3 and 5.
 
-Durante l'attraversamento il registratore di bordo acquisisce
-automaticamente il **Registro delle Maree**, senza costi in PA.
+During the crossing, the onboard recorder automatically acquires
+the **Tide Register**, without any AP cost.
 
-**Risultato nominale:** vittoria al turno 8, con obiettivo facoltativo.
+**Nominal result:** victory on turn 8, including the optional objective.
 
-**Vantaggio:** acquisizione del Registro delle Maree.
+**Advantage:** acquisition of the Tide Register.
 
-**Svantaggio:** nessun turno residuo.
+**Disadvantage:** no spare turns.
 
-**Regola di scenario:** la nuova taratura non invalida la
-preparazione del meccanismo già compiuta da B.
+**Scenario rule:** the new calibration does not invalidate
+the mechanism preparation already completed by B.
 
-## 9. Confronto strategico
+## 9. Strategic Comparison
 
-| Criterio | Ponte corretto | Papera a Pendolo |
+| Criterion | Corrected Bridge | Pendulum Duck |
 |---|---|---|
-| Turni | 6 | 8 |
-| Capsula | Recuperata | Recuperata |
-| Registro delle Maree | No | Sì |
-| Turni residui | 2 | 0 |
-| Cooperazione | Necessaria | Necessaria |
-| Tema didattico | Grafo causale | Pianificazione multi-obiettivo |
+| Turns | 6 | 8 |
+| Capsule | Recovered | Recovered |
+| Tide Register | No | Yes |
+| Spare turns | 2 | 0 |
+| Cooperation | Required | Required |
+| Educational theme | Causal graph | Multi-objective planning |
 
-Nessuna strategia è universalmente migliore:
-il confronto dipende dagli obiettivi.
+Neither strategy is universally better:
+the comparison depends on the objectives.
 
-## 10. Vittoria, sconfitta e blocchi
+## 10. Victory, Defeat, and Deadlocks
 
-- **Vittoria:** capsula acquisita entro il turno 8.
-- **Vittoria con bonus:** capsula e Registro delle Maree acquisiti.
-- **Sconfitta:** capsula non acquisita alla fine del turno 8.
-- **Blocco:** un piano può rendere l'obiettivo irraggiungibile;
-  il motore dovrà riconoscerlo e spiegarlo.
+- **Victory:** capsule acquired by turn 8.
+- **Bonus victory:** capsule and Tide Register acquired.
+- **Defeat:** capsule not acquired by the end of turn 8.
+- **Deadlock:** a plan may make the objective unreachable;
+  the engine must recognize and explain it.
 
-## 11. Lente del Tempo
+## 11. Time Lens
 
-La Lente non modifica direttamente lo stato di gioco.
+The Lens does not directly modify game state.
 
-Deve rendere osservabili:
+It must make the following observable:
 
-1. Decisione o evento iniziale.
-2. Dipendenze causali interessate.
-3. Stato del mondo prima e dopo la modifica.
-4. Cambiamenti di oggetti, luoghi e azioni disponibili.
-5. Vincoli soddisfatti o violati.
-6. Confronto tra strategie, quando disponibile.
+1. Initial decision or event.
+2. Affected causal dependencies.
+3. World state before and after the change.
+4. Changes to objects, locations, and available actions.
+5. Satisfied or violated constraints.
+6. Comparison between strategies, when available.
 
-Modalità:
+Modes:
 
-- **Avventura:** spiegazioni facoltative.
-- **Apprendista:** ragionamento guidato.
-- **Ricercatore:** confronto di scenari e ipotesi.
+- **Adventure:** optional explanations.
+- **Apprentice:** guided reasoning.
+- **Researcher:** comparison of scenarios and hypotheses.
 
-Le spiegazioni devono derivare dalle transizioni effettivamente
-calcolate dal motore, mai da giustificazioni inventate.
+Explanations must derive from transitions actually calculated
+by the engine, never from invented justifications.
 
-## 12. Modello algoritmico candidato
+## 12. Candidate Algorithmic Model
 
-- **Causal Graph:** dipendenze tra eventi e stati.
-- **Timeline Recalculation:** propagazione delle modifiche.
-- **State Transition Engine:** turni, posizioni, oggetti e risorse.
-- **Constraint Validator:** prerequisiti, PA e condizioni di vittoria.
-- **Planning / Search:** ricerca di sequenze alternative.
-- **Explainability Layer:** tracce verificabili.
-- **Companion AI:** azioni motivate, senza conoscenze privilegiate.
+- **Causal Graph:** dependencies between events and states.
+- **Timeline Recalculation:** propagation of changes.
+- **State Transition Engine:** turns, positions, objects, and resources.
+- **Constraint Validator:** prerequisites, AP, and victory conditions.
+- **Planning / Search:** exploration of alternative sequences.
+- **Explainability Layer:** verifiable traces.
+- **Companion AI:** reasoned actions without privileged knowledge.
 
-Tecniche candidate: grafi orientati, ordinamento topologico
-quando applicabile, propagazione incrementale, ricerca negli stati,
-CSP, backtracking, A*, Dijkstra e Utility AI.
+Candidate techniques include directed graphs, topological sorting
+where applicable, incremental propagation, state-space search,
+CSP, backtracking, A*, Dijkstra, and Utility AI.
 
-Non tutte appartengono alla prima implementazione.
+Not all of these belong in the initial implementation.
 
-## 13. Contratto di verifica futura
+## 13. Future Verification Contract
 
-Il motore dovrà controllare:
+The engine must verify:
 
-- Alternanza A/B.
-- Massimo 2 PA per turno.
-- Informazioni disponibili solo quando acquisite o comunicate.
-- Propagazione causale prima del turno successivo.
-- Presenza del ponte solo dopo la modifica pertinente.
-- Presenza della Papera solo dopo l'approvazione.
-- Validità della preparazione dopo la taratura.
-- Vittoria nominale dei due percorsi ai turni 6 e 8.
-- Acquisizione del Registro alle condizioni previste.
-- Riproducibilità deterministica degli stati.
-- Corrispondenza fra transizioni e spiegazioni della Lente.
+- A/B turn alternation.
+- Maximum 2 AP per turn.
+- Information available only after acquisition or communication.
+- Causal propagation before the next turn.
+- Bridge presence only after the relevant modification.
+- Duck presence only after approval.
+- Preparation validity after calibration.
+- Nominal victory on turns 6 and 8 for the respective routes.
+- Tide Register acquisition under the specified conditions.
+- Deterministic reproducibility of states.
+- Correspondence between transitions and Lens explanations.
 
-## 14. Esclusioni del pilota
+## 14. Pilot Exclusions
 
-Non sono ancora previsti:
+The following are not yet included:
 
-- Combattimento tattico.
-- Progressione dei personaggi e inventario completo.
-- Debiti di azioni future effettivamente giocabili.
-- Mappe spaziali complete.
-- Multiplayer di rete.
-- IA del compagno implementata.
-- Generazione procedurale.
+- Tactical combat.
+- Character progression and full inventory.
+- Playable debts of future actions.
+- Complete spatial maps.
+- Network multiplayer.
+- Implemented companion AI.
+- Procedural generation.
 
-Questa missione è un **vertical slice concettuale della
-cooperazione causale**, non l'intero RPG.
+This mission is a **conceptual vertical slice of causal
+cooperation**, not the complete RPG.
 
-## 15. Qualificazione
+## 15. Qualification
 
-- **DESIGN_GATE:** PASS — contratto progettuale esplicito.
-- **PAPER_FEASIBILITY:** PASS — sequenze nominali di 6 e 8 turni.
+- **DESIGN_GATE:** PASS — explicit design contract.
+- **PAPER_FEASIBILITY:** PASS — nominal sequences of 6 and 8 turns.
 - **STRATEGY_BALANCE:** PROVISIONAL.
 - **ENGINE_VALIDATION:** NOT_RUN.
 - **IMPLEMENTATION:** NOT_STARTED.
 - **PUBLICATION:** NOT_STARTED.
 
-La verifica software e il valore concreto del Registro delle Maree
-restano attività successive.
+Software verification and the concrete value of the Tide Register
+remain future activities.
