@@ -89,10 +89,12 @@ function render() {
   if (!state) {
     $("match-clock").textContent = "CRONOMETRO · —";
     $("match-clock").classList.remove("halftime");
+    $("match-events").replaceChildren();
     $("match-stats").replaceChildren();
     return;
   }
 
+  renderMatchEvents(snapshot.rollEvents);
   renderStatistics(snapshot.statistics);
 
   const clock = matchClock(state);
@@ -122,6 +124,22 @@ function render() {
     message(
       `Partita attiva — lancio ${Math.max(0, snapshot.revision - 1)}.`
     );
+  }
+}
+
+function renderMatchEvents(rollEvents) {
+  const container = $("match-events");
+  container.replaceChildren();
+
+  if (!Array.isArray(rollEvents)) return;
+
+  for (const event of rollEvents) {
+    if (!event?.goal) continue;
+
+    const item = document.createElement("li");
+    item.textContent =
+      `${event.goal.minute}' — GOAL! Giocatore ${event.goal.team + 1}`;
+    container.append(item);
   }
 }
 
@@ -294,13 +312,13 @@ $("roll").addEventListener("click", () => work(async () => {
   const requestId = crypto.randomUUID();
   const result = await client.roll(snapshot.revision, requestId);
 
-  snapshot = {
-    ...snapshot,
-    revision: result.revision,
-    state: result.state,
-    status: result.status,
-  };
   lastFace = `Giocatore ${client.seat + 1}: ${result.face}`;
+
+  const next = await client.snapshot();
+  if (next.revision < result.revision) {
+    throw new Error("Snapshot autorevole non aggiornato.");
+  }
+  snapshot = next;
 }));
 
 $("invite-code").addEventListener("input", render);
