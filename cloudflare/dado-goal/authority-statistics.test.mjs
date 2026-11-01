@@ -81,3 +81,80 @@ test("authenticated D1 snapshot aggregates rolls, excludes joins and preserves l
   });
   assert.equal(calls.length, 2);
 });
+
+test("M2D: snapshot JSON preserves yellow-card numbers", async () => {
+  const roster = {
+    active: [7, 11],
+    bench: [23],
+    departed: [],
+    sentOff: [],
+    substitutions: 0,
+  };
+  const history = [
+    {
+      revision: 1,
+      event_json: JSON.stringify({
+        type: "joined",
+        rosters: [roster, structuredClone(roster)],
+      }),
+    },
+    {
+      revision: 2,
+      event_json: JSON.stringify({
+        type: "roll",
+        seat: 0,
+        die: "result",
+        face: "Parato!",
+        matchEvent: {
+          type: "yellow", team: 0, minute: 15, number: 7,
+        },
+      }),
+    },
+  ];
+
+  const db = {
+    batch: async () => [],
+    prepare(sql) {
+      return {
+        bind() {
+          return {
+            async first() {
+              if (sql.includes("FROM lifecycle_matches")) {
+                return {
+                  revision: 2,
+                  status: "active",
+                  state_json: JSON.stringify(initialState(6)),
+                  expires_at: Math.floor(Date.now() / 1000) + 3600,
+                };
+              }
+              throw new Error("Unexpected first()");
+            },
+            async all() {
+              if (sql.includes("FROM lifecycle_events")) {
+                return { results: history };
+              }
+              throw new Error("Unexpected all()");
+            },
+          };
+        },
+      };
+    },
+  };
+
+  const authority = new D1Authority(db);
+  authority.seat = async () => 0;
+
+  const result = await authority.snapshot("match-m2d", "test-token");
+  const serialized = JSON.parse(JSON.stringify(result));
+
+  assert.deepEqual(serialized.matchEventContext.refereeStates, [
+    { yellowed: [7] },
+    { yellowed: [] },
+  ]);
+  assert.deepEqual(serialized.matchEventContext.rosters[0], roster);
+  assert.deepEqual(serialized.matchEventContext.rosters[1], roster);
+  assert.deepEqual(serialized.rollEvents[0].matchEvent, {
+    type: "yellow", team: 0, minute: 15, number: 7,
+  });
+  assert.deepEqual(JSON.parse(history[0].event_json).rosters[0], roster);
+});

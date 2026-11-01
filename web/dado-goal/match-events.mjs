@@ -5,18 +5,8 @@
  */
 import { substitute, sendOff } from "./match-roster.mjs";
 
-export function eventProbabilities(minute) {
-  if (!Number.isFinite(minute) || minute < 0 || minute > 90) {
-    throw new RangeError("Invalid match minute");
-  }
-
-  return {
-    yellow: 0.02,
-    red: 0.002,
-    substitution: minute <= 60 ? 0.002
-      : minute <= 75 ? 0.02 : 0.08,
-  };
-}
+import { eventProbabilities } from "./event-probabilities.mjs";
+export { eventProbabilities } from "./event-probabilities.mjs";
 
 function randomValue(random) {
   const value = random();

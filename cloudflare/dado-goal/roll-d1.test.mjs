@@ -3,8 +3,11 @@ import assert from "node:assert/strict";
 import { rollAuthorized } from "./roll-d1.mjs";
 import { initialState, applyRoll, FACES } from "./game.mjs";
 import { matchClock } from "./public/match-clock.mjs";
+import { createRoster } from "../../web/dado-goal/match-roster.mjs";
+import { replayMatchEvents } from "./match-events-replay.mjs";
 
-function fakeD1(state, seat) {
+
+function fakeD1(state, seat, initialRosters = null) {
   const row = {
     revision: 0,
     status: "active",
@@ -12,7 +15,9 @@ function fakeD1(state, seat) {
     updated_at: 100,
     expires_at: 10000,
   };
-  const events = [];
+  const events = initialRosters
+    ? [{ type: "joined", rosters: initialRosters }]
+    : [];
   const receipts = new Map();
   let batches = 0;
 
@@ -26,6 +31,15 @@ function fakeD1(state, seat) {
             async first() {
               assert.match(sql, /FROM lifecycle_receipts/);
               return receipts.get(JSON.stringify(args)) ?? null;
+            },
+            async all() {
+              assert.match(sql, /FROM lifecycle_events/);
+              return {
+                results: events.map((event, index) => ({
+                  revision: index + 1,
+                  event_json: JSON.stringify(event),
+                })),
+              };
             },
           };
         },
@@ -88,6 +102,10 @@ function fakeD1(state, seat) {
     now: () => 200,
     seat: async () => seat,
     match: async () => ({ ...row }),
+    matchHistory: async () => events.map((event, index) => ({
+      revision: index + 1,
+      event_json: JSON.stringify(event),
+    })),
   };
 
   return {
@@ -164,6 +182,65 @@ test("M2A: authoritative goal, durable event and idempotent replay", async () =>
     assert.equal(d1.events.length, 1);
     assert.equal(d1.batches, 1);
   } finally {
+    if (originalCrypto === undefined) {
+      delete globalThis.crypto;
+    } else {
+      Object.defineProperty(globalThis, "crypto", {
+        configurable: true,
+        value: originalCrypto,
+      });
+    }
+  }
+});
+
+test("M2D: yellow card persists once and replays after retry", async () => {
+  let state = initialState(5);
+  state = applyRoll(state, "Tiro in porta!");
+  state = applyRoll(state, "Mezza rovesciata");
+  assert.equal(state.phase, "result");
+
+  const seat = state.player;
+  const rosters = [createRoster(() => 0.5), createRoster(() => 0.5)];
+  const d1 = fakeD1(state, seat, rosters);
+  const originalCrypto = globalThis.crypto;
+  const originalRandom = Math.random;
+
+  try {
+    Math.random = () => 0;
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        getRandomValues(bytes) {
+          bytes.fill(1);
+          return bytes;
+        },
+      },
+    });
+
+    const first = await rollAuthorized(
+      d1.authority, "match-1", "seat-token", "m2d-yellow", 0
+    );
+
+    assert.equal(first.duplicate, false);
+    assert.equal(d1.events.length, 2);
+    const event = d1.events[1].matchEvent;
+    assert.equal(event.type, "yellow");
+    assert.equal(event.team, seat);
+    assert.ok(rosters[seat].active.includes(event.number));
+
+    const context = replayMatchEvents(
+      d1.events.map(event => ({ event_json: JSON.stringify(event) }))
+    );
+    assert.ok(context.refereeStates[seat].yellowed.has(event.number));
+
+    const retry = await rollAuthorized(
+      d1.authority, "match-1", "seat-token", "m2d-yellow", 0
+    );
+    assert.equal(retry.duplicate, true);
+    assert.equal(d1.events.length, 2);
+    assert.equal(d1.batches, 1);
+  } finally {
+    Math.random = originalRandom;
     if (originalCrypto === undefined) {
       delete globalThis.crypto;
     } else {

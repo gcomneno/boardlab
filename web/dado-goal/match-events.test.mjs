@@ -6,12 +6,12 @@ import {
 } from "./match-events.mjs";
 
 test("substitution frequency follows match-minute bands", () => {
-  assert.equal(eventProbabilities(0).substitution, 0.002);
-  assert.equal(eventProbabilities(60).substitution, 0.002);
-  assert.equal(eventProbabilities(61).substitution, 0.02);
-  assert.equal(eventProbabilities(75).substitution, 0.02);
-  assert.equal(eventProbabilities(76).substitution, 0.08);
-  assert.equal(eventProbabilities(90).substitution, 0.08);
+  assert.equal(eventProbabilities(0).substitution, 0.02);
+  assert.equal(eventProbabilities(60).substitution, 0.02);
+  assert.equal(eventProbabilities(61).substitution, 0.08);
+  assert.equal(eventProbabilities(75).substitution, 0.08);
+  assert.equal(eventProbabilities(76).substitution, 0.20);
+  assert.equal(eventProbabilities(90).substitution, 0.20);
   assert.equal(eventProbabilities(90).yellow, 0.02);
   assert.equal(eventProbabilities(90).red, 0.002);
 });
