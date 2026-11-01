@@ -12,6 +12,7 @@
         "docs/architecture/boardlab-i18n-contract.md",
         "docs/architecture/overview.md",
         "docs/development.md",
+        "docs/games/chrono-oops/mission-001.md",
         "docs/games/dado-goal.md",
         "docs/games/reversi.md",
         "docs/games/tre-sigilli.md",
@@ -39,7 +40,8 @@
         "sessions/session-01-modeling-a-board-game/units/unit-04-terminal-states-and-outcome.md",
         "sessions/session-01-modeling-a-board-game/units/unit-05-player-and-strategy.md",
         "sessions/session-01-modeling-a-board-game/units/unit-06-match-coordination.md",
-        "sources/README.md"
+        "sources/README.md",
+        "src/chrono_oops/README.md"
     ],
     "legacy_unpaired_documents": [
         "benchmarks/README.md",
