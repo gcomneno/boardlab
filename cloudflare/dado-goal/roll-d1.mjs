@@ -9,6 +9,8 @@
 import { FACES, applyRoll, validateState } from "./game.mjs";
 import { matchClock } from "./public/match-clock.mjs";
 import { commitRoll } from "./atomic.mjs";
+import { replayMatchEvents } from "./match-events-replay.mjs";
+import { evaluateCompletedHand } from "./match-events-authority.mjs";
 
 function randomFace(phase) {
   const faces = FACES[phase];
@@ -73,6 +75,18 @@ export async function rollAuthorized(
         minute: Math.floor(matchClock(next).seconds / 60) }
     : null;
 
+  // Only completed hands can produce narrative events.
+  // Historical matches without initial rosters remain compatible.
+  let matchEvent = null;
+  if (next.hands[seat] === state.hands[seat] + 1 &&
+      typeof authority.matchHistory === "function") {
+    const history = await authority.matchHistory(matchId);
+    const context = replayMatchEvents(history);
+    if (context) {
+      matchEvent = evaluateCompletedHand(state, next, context);
+    }
+  }
+
   const status = next.phase === "finished" ? "completed" : "active";
   const completedTTL = authority.completedTTL ?? 86400;
   const ttl = status === "completed" ? completedTTL : authority.activeTTL;
@@ -98,7 +112,8 @@ export async function rollAuthorized(
     expiresAt: updatedAt + ttl,
     completedAt: status === "completed" ? updatedAt : null,
     eventJson: JSON.stringify({ type: "roll", seat, die: phase, face,
-      ...(goal ? { goal } : {}) }),
+      ...(goal ? { goal } : {}),
+      ...(matchEvent ? { matchEvent } : {}) }),
     seat,
     requestId,
     responseJson: JSON.stringify(response),

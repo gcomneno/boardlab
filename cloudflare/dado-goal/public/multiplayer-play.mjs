@@ -177,12 +177,38 @@ function renderMatchEvents(rollEvents) {
   if (!Array.isArray(rollEvents)) return;
 
   for (const event of rollEvents) {
-    if (!event?.goal) continue;
+    const entries = [];
 
-    const item = document.createElement("li");
-    item.textContent =
-      `${event.goal.minute}' — GOAL! Giocatore ${event.goal.team + 1}`;
-    container.append(item);
+    if (event?.goal) {
+      entries.push(
+        `${event.goal.minute}' — GOAL! Giocatore ${event.goal.team + 1}`
+      );
+    }
+
+    const change = event?.matchEvent;
+    if (change && (change.team === 0 || change.team === 1)) {
+      const team = `Giocatore ${change.team + 1}`;
+
+      if (change.type === "yellow") {
+        entries.push(
+          `${change.minute}' — 🟨 Ammonizione: ${team}, numero ${change.number}`
+        );
+      } else if (change.type === "red") {
+        entries.push(
+          `${change.minute}' — 🟥 Espulsione: ${team}, numero ${change.number}`
+        );
+      } else if (change.type === "substitution") {
+        entries.push(
+          `${change.minute}' — 🔄 Cambio ${team}: esce ${change.out}, entra ${change.in}`
+        );
+      }
+    }
+
+    for (const description of entries) {
+      const item = document.createElement("li");
+      item.textContent = description;
+      container.append(item);
+    }
   }
 }
 

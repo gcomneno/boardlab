@@ -1,3 +1,4 @@
+import { createMatchEventContext } from "./match-events-authority.mjs";
 /**
  * Server-side multiplayer authority backed by Cloudflare D1.
  *
@@ -10,6 +11,7 @@ import { initialState, validateState } from "./game.mjs";
 import { createMatch, joinMatch } from "./lifecycle-d1.mjs";
 import { rollAuthorized } from "./roll-d1.mjs";
 import { matchStatistics } from "../../web/dado-goal/statistics.mjs";
+import { replayMatchEvents } from "./match-events-replay.mjs";
 
 export class AuthorityError extends Error {
   constructor(message) {
@@ -163,7 +165,14 @@ export class D1Authority {
     const now = this.now();
     const guestToken = token();
 
+    // Generated once; persisted only if the atomic join succeeds.
+    const initialRosters = createMatchEventContext().rosters;
+
     const result = await joinMatch(this.db, {
+      eventJson: JSON.stringify({
+        type: "joined",
+        rosters: initialRosters,
+      }),
       matchId,
       inviteDigest: await digest(inviteToken),
       guestDigest: await digest(guestToken),
@@ -189,6 +198,17 @@ export class D1Authority {
     );
   }
 
+  async matchHistory(matchId) {
+    const history = await this.db.prepare(`
+      SELECT revision, event_json
+      FROM lifecycle_events
+      WHERE match_id = ?
+      ORDER BY revision
+    `).bind(matchId).all();
+
+    return history.results ?? [];
+  }
+
   async snapshot(matchId, seatToken) {
     const seat = await this.seat(matchId, seatToken);
     const row = await this.match(matchId);
@@ -197,17 +217,12 @@ export class D1Authority {
       throw new AuthorityError("Match expired");
     }
 
-    const history = await this.db.prepare(`
-      SELECT revision, event_json
-      FROM lifecycle_events
-      WHERE match_id = ?
-      ORDER BY revision
-    `).bind(matchId).all();
+    const history = await this.matchHistory(matchId);
 
     const rollEvents = [];
     let lastRoll = null;
 
-    for (const entry of history.results ?? []) {
+    for (const entry of history) {
       const event = JSON.parse(entry.event_json);
       if (event.type !== "roll") continue;
 
@@ -217,6 +232,7 @@ export class D1Authority {
         die: event.die,
         face: event.face,
         ...(event.goal ? { goal: event.goal } : {}),
+        ...(event.matchEvent ? { matchEvent: event.matchEvent } : {}),
       });
 
       lastRoll = {
@@ -231,6 +247,16 @@ export class D1Authority {
       ...snapshot(row, seat),
       lastRoll,
       rollEvents,
+      matchEventContext: (() => {
+        const context = replayMatchEvents(history);
+        if (!context) return null;
+        return {
+          rosters: context.rosters,
+          refereeStates: context.refereeStates.map(state => ({
+            yellowed: [...state.yellowed],
+          })),
+        };
+      })(),
       statistics: matchStatistics(rollEvents),
     };
   }

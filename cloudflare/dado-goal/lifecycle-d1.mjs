@@ -80,6 +80,18 @@ export async function createMatch(db, input) {
  *
  * A losing request cannot create a guest seat or event.
  */
+function isValidJoinEvent(eventJson) {
+  try {
+    const event = JSON.parse(eventJson);
+    return event !== null &&
+      typeof event === "object" &&
+      !Array.isArray(event) &&
+      event.type === "joined";
+  } catch {
+    return false;
+  }
+}
+
 export async function joinMatch(db, input) {
   const {
     matchId,
@@ -87,6 +99,7 @@ export async function joinMatch(db, input) {
     guestDigest,
     now,
     expiresAt,
+    eventJson = '{"type":"joined"}',
   } = input;
 
   if (
@@ -95,7 +108,9 @@ export async function joinMatch(db, input) {
     !guestDigest ||
     !Number.isSafeInteger(now) ||
     !Number.isSafeInteger(expiresAt) ||
-    expiresAt <= now
+    expiresAt <= now ||
+    typeof eventJson !== "string" ||
+    !isValidJoinEvent(eventJson)
   ) {
     throw new TypeError("Invalid join input");
   }
@@ -129,9 +144,9 @@ export async function joinMatch(db, input) {
     db.prepare(`
       INSERT INTO lifecycle_events
         (match_id, revision, event_json)
-      SELECT ?, 1, '{"type":"joined"}'
+      SELECT ?, 1, ?
       WHERE changes() = 1
-    `).bind(matchId),
+    `).bind(matchId, eventJson),
   ]), 3);
 
   if (changes.every(value => value === 0)) {
