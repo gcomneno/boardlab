@@ -7,6 +7,7 @@
  */
 
 import { FACES, applyRoll, validateState } from "./game.mjs";
+import { matchClock } from "./public/match-clock.mjs";
 import { commitRoll } from "./atomic.mjs";
 
 function randomFace(phase) {
@@ -67,6 +68,10 @@ export async function rollAuthorized(
   const phase = state.phase;
   const face = randomFace(phase);
   const next = applyRoll(state, face);
+  const goal = next.goals[seat] > state.goals[seat]
+    ? { type: "goal", team: seat,
+        minute: Math.floor(matchClock(next).seconds / 60) }
+    : null;
 
   const status = next.phase === "finished" ? "completed" : "active";
   const completedTTL = authority.completedTTL ?? 86400;
@@ -92,7 +97,8 @@ export async function rollAuthorized(
     updatedAt,
     expiresAt: updatedAt + ttl,
     completedAt: status === "completed" ? updatedAt : null,
-    eventJson: JSON.stringify({ type: "roll", seat, die: phase, face }),
+    eventJson: JSON.stringify({ type: "roll", seat, die: phase, face,
+      ...(goal ? { goal } : {}) }),
     seat,
     requestId,
     responseJson: JSON.stringify(response),

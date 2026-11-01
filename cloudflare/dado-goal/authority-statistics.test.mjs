@@ -34,7 +34,7 @@ test("authenticated D1 snapshot aggregates rolls, excludes joins and preserves l
                     { revision: 2, event_json: '{"type":"roll","seat":0,"die":"team","face":"Passaggio"}' },
                     { revision: 3, event_json: '{"type":"roll","seat":0,"die":"result","face":"Parato!"}' },
                     { revision: 4, event_json: '{"type":"roll","seat":1,"die":"team","face":"Cross!"}' },
-                    { revision: 5, event_json: '{"type":"roll","seat":1,"die":"result","face":"GOAL!"}' },
+                    { revision: 5, event_json: '{"type":"roll","seat":1,"die":"result","face":"GOAL!","goal":{"type":"goal","team":1,"minute":15}}' },
                   ],
                 };
               }
@@ -61,6 +61,13 @@ test("authenticated D1 snapshot aggregates rolls, excludes joins and preserves l
   const result = await authority.snapshot("match-1", token);
 
   assert.equal(result.seat, 0);
+  assert.deepEqual(result.rollEvents, [
+    { revision: 2, seat: 0, die: "team", face: "Passaggio" },
+    { revision: 3, seat: 0, die: "result", face: "Parato!" },
+    { revision: 4, seat: 1, die: "team", face: "Cross!" },
+    { revision: 5, seat: 1, die: "result", face: "GOAL!",
+      goal: { type: "goal", team: 1, minute: 15 } },
+  ]);
   assert.equal(result.statistics[0].passes, 1);
   assert.equal(result.statistics[0].saves, 0);
   assert.equal(result.statistics[1].saves, 1);

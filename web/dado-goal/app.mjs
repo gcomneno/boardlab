@@ -109,6 +109,9 @@ function sleep(ms) {
 function render() {
   byId("message").textContent = formatMessage(messageKey, messageValues);
 
+  // Keep events recorded, but hide their narrative when commentary is OFF.
+  byId("match-events-list").closest(".match-events").hidden = !commentaryEnabled;
+
   // Rebuild presentation from canonical events on every locale change.
   byId("match-events-heading").textContent = translate("eventBoardHeading");
   byId("match-events-empty").textContent = translate("eventBoardEmpty");

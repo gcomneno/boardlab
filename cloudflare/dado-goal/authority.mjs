@@ -212,9 +212,11 @@ export class D1Authority {
       if (event.type !== "roll") continue;
 
       rollEvents.push({
+        revision: entry.revision,
         seat: event.seat,
         die: event.die,
         face: event.face,
+        ...(event.goal ? { goal: event.goal } : {}),
       });
 
       lastRoll = {
@@ -228,6 +230,7 @@ export class D1Authority {
     return {
       ...snapshot(row, seat),
       lastRoll,
+      rollEvents,
       statistics: matchStatistics(rollEvents),
     };
   }
