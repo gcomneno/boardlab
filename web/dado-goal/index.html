@@ -36,6 +36,24 @@
       <label><span data-i18n="color">Colore</span>
         <input id="color-1" type="color" value="#66a5ef">
       </label>
+      <fieldset id="catalogue-management">
+        <legend>Squadre reali (opzionale)</legend>
+        <label>Catalogo JSON
+          <input id="catalogue-file" type="file" accept="application/json,.json">
+        </label>
+        <label>Squadra reale 1
+          <select id="catalogue-team-0" disabled>
+            <option value="">Partita rapida</option>
+          </select>
+        </label>
+        <label>Squadra reale 2
+          <select id="catalogue-team-1" disabled>
+            <option value="">Partita rapida</option>
+          </select>
+        </label>
+        <p id="catalogue-status" role="status"></p>
+      </fieldset>
+
       <label><span data-i18n="handsPerTeam">Mani per squadra</span>
         <input id="hands" type="number" min="1" max="1000" step="1" value="6">
       </label>
