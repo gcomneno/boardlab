@@ -2,6 +2,8 @@ import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
 import { matchClock } from "./match-clock.mjs";
 import { createRoster, pickScorer } from "./match-roster.mjs";
+import { importCatalogueJson } from "./catalogue-json.mjs";
+import { createMatchRoster } from "./catalogue-roster.mjs";
 import {
   createEventState, evaluateHandEvent
 } from "./match-events.mjs";
@@ -292,6 +294,40 @@ function render() {
       : formatMessage("rollPhase", { phase: phaseName(state.phase) });
 }
 
+let footballCatalogue = null;
+
+function catalogueTeam(selectId) {
+  if (!footballCatalogue) return null;
+
+  const value = byId(selectId).value;
+  if (value === "") return null;
+
+  return footballCatalogue.teams.find(
+    (team) => team.providerTeamId === value
+  ) ?? null;
+}
+
+function renderCatalogueTeams() {
+  for (let seat = 0; seat < 2; seat += 1) {
+    const select = byId(`catalogue-team-${seat}`);
+    select.replaceChildren(new Option("Partita rapida", ""));
+
+    for (const team of footballCatalogue?.teams ?? []) {
+      select.append(new Option(team.name, team.providerTeamId));
+    }
+
+    select.disabled = !footballCatalogue;
+  }
+}
+
+async function loadCatalogueFile(file) {
+  const source = await file.text();
+  footballCatalogue = importCatalogueJson(source);
+  renderCatalogueTeams();
+  byId("catalogue-status").textContent =
+    `${footballCatalogue.teams.length} squadre importate`;
+}
+
 function start(activate = true) {
   const rawHands = byId("hands").value;
   const n = Number(rawHands);
@@ -306,7 +342,15 @@ function start(activate = true) {
     return;
   }
 
-  names = [0, 1].map((i) => byId(`team-${i}`).value.trim() || `Squadra ${i + 1}`);
+  const selectedTeams = [0, 1].map(
+    (i) => catalogueTeam(`catalogue-team-${i}`)
+  );
+
+  names = [0, 1].map((i) =>
+    selectedTeams[i]?.name ||
+    byId(`team-${i}`).value.trim() ||
+    `Squadra ${i + 1}`
+  );
   colors = [0, 1].map((i) => byId(`color-${i}`).value);
   state = newMatch(n);
   matchStarted = activate;
@@ -314,7 +358,9 @@ function start(activate = true) {
   isRolling = false;
   rollEvents = [];
   matchEvents = [];
-  rosters = [createRoster(), createRoster()];
+  rosters = selectedTeams.map((team) =>
+    createMatchRoster({ team })
+  );
   refereeStates = [createEventState(), createEventState()];
   lastCommentary = null;
   lastRefereeEvent = null;
@@ -482,5 +528,18 @@ document.querySelector(".multiplayer-button").addEventListener("click", event =>
 byId("roll").addEventListener("click", () => {
   void roll();
 });
+byId("catalogue-file").addEventListener("change", async (event) => {
+  const [file] = event.target.files;
+  if (!file) return;
+
+  try {
+    await loadCatalogueFile(file);
+  } catch {
+    footballCatalogue = null;
+    renderCatalogueTeams();
+    byId("catalogue-status").textContent = "Catalogo non valido";
+  }
+});
+
 start(false);
 initializeLocale(render);
