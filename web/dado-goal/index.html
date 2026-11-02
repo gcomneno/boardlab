@@ -61,6 +61,19 @@
           <button id="management-clear" type="button">Cancella gestione</button>
         </div>
         <p id="management-status" role="status"></p>
+        <details id="ratings-management">
+          <summary>Valutazioni manuali giocatori</summary>
+          <label>Giocatore
+            <select id="ratings-player" disabled>
+              <option value="">Seleziona una squadra reale</option>
+            </select>
+          </label>
+          <div id="ratings-fields"></div>
+          <button id="ratings-save" type="button" disabled>
+            Salva valutazione
+          </button>
+          <p id="ratings-status" role="status"></p>
+        </details>
       </fieldset>
 
       <label><span data-i18n="handsPerTeam">Mani per squadra</span>

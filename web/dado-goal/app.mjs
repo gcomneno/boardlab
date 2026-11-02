@@ -6,6 +6,11 @@ import { importCatalogueJson } from "./catalogue-json.mjs";
 import { createMatchRoster } from "./catalogue-roster.mjs";
 import { createMatchRecord } from "./team-history.mjs";
 import {
+  createPlayerRatings,
+  RATING_FIELDS,
+  RATING_LEVELS,
+} from "./player-ratings.mjs";
+import {
   clearManagement,
   createManagementDocument,
   exportManagementJson,
@@ -388,6 +393,113 @@ function catalogueTeam(selectId) {
   ) ?? null;
 }
 
+function ratingPlayerKey(team, player) {
+  return `${team.providerTeamId}:${player.providerPlayerId}`;
+}
+
+function ratingEntry(key) {
+  return managementState.ratings.find(entry => entry.key === key) ?? null;
+}
+
+function renderRatingPlayers() {
+  const select = byId("ratings-player");
+  select.replaceChildren();
+
+  const teams = [0, 1]
+    .map(i => catalogueTeam(`catalogue-team-${i}`))
+    .filter(Boolean);
+
+  if (teams.length === 0) {
+    select.append(new Option("Seleziona una squadra reale", ""));
+    select.disabled = true;
+    byId("ratings-save").disabled = true;
+    byId("ratings-fields").replaceChildren();
+    return;
+  }
+
+  select.append(new Option("Seleziona giocatore", ""));
+
+  for (const team of teams) {
+    for (const player of team.players) {
+      const key = ratingPlayerKey(team, player);
+      select.append(new Option(
+        `${team.name} · ${player.name}`,
+        key
+      ));
+    }
+  }
+
+  select.disabled = false;
+  renderRatingFields();
+}
+
+function renderRatingFields() {
+  const key = byId("ratings-player").value;
+  const container = byId("ratings-fields");
+  container.replaceChildren();
+  byId("ratings-save").disabled = !key;
+
+  if (!key) return;
+
+  const saved = ratingEntry(key);
+  const ratings = createPlayerRatings(saved?.ratings);
+
+  for (const field of RATING_FIELDS) {
+    const label = document.createElement("label");
+    label.textContent = field;
+
+    const select = document.createElement("select");
+    select.dataset.ratingField = field;
+
+    for (const level of RATING_LEVELS) {
+      select.append(new Option(level, level));
+    }
+
+    select.value = ratings[field];
+    label.append(select);
+    container.append(label);
+  }
+}
+
+function saveCurrentRating() {
+  const key = byId("ratings-player").value;
+  if (!key) return;
+
+  const [teamId, playerId] = key.split(":");
+  const team = footballCatalogue?.teams.find(
+    candidate => candidate.providerTeamId === teamId
+  );
+  const player = team?.players.find(
+    candidate => candidate.providerPlayerId === playerId
+  );
+  if (!team || !player) return;
+
+  const values = {};
+  for (const select of document.querySelectorAll("[data-rating-field]")) {
+    values[select.dataset.ratingField] = select.value;
+  }
+
+  const entry = {
+    key,
+    providerTeamId: team.providerTeamId,
+    providerPlayerId: player.providerPlayerId,
+    playerName: player.name,
+    ratings: createPlayerRatings(values),
+  };
+
+  const ratings = managementState.ratings.filter(item => item.key !== key);
+  const nextState = createManagementDocument({
+    ratings: [...ratings, entry],
+    matches: managementState.matches,
+  });
+
+  saveManagement(window.localStorage, nextState);
+  managementState = nextState;
+  byId("ratings-status").textContent =
+    `Valutazione salvata per ${player.name}`;
+  renderManagementStatus();
+}
+
 function renderCatalogueTeams() {
   for (let seat = 0; seat < 2; seat += 1) {
     const select = byId(`catalogue-team-${seat}`);
@@ -399,6 +511,8 @@ function renderCatalogueTeams() {
 
     select.disabled = !footballCatalogue;
   }
+
+  renderRatingPlayers();
 }
 
 async function loadCatalogueFile(file) {
@@ -616,6 +730,11 @@ document.querySelector(".multiplayer-button").addEventListener("click", event =>
 byId("roll").addEventListener("click", () => {
   void roll();
 });
+byId("catalogue-team-0").addEventListener("change", renderRatingPlayers);
+byId("catalogue-team-1").addEventListener("change", renderRatingPlayers);
+byId("ratings-player").addEventListener("change", renderRatingFields);
+byId("ratings-save").addEventListener("click", saveCurrentRating);
+
 byId("management-export").addEventListener("click", () => {
   downloadManagementJson();
 });
@@ -629,6 +748,7 @@ byId("management-import").addEventListener("change", async (event) => {
     saveManagement(window.localStorage, imported);
     managementState = imported;
     renderManagementStatus();
+    renderRatingPlayers();
   } catch {
     byId("management-status").textContent = "Dati gestione non validi";
   }
@@ -643,6 +763,7 @@ byId("management-clear").addEventListener("click", () => {
     clearManagement(window.localStorage);
     managementState = createManagementDocument();
     renderManagementStatus();
+    renderRatingPlayers();
   } catch {
     byId("management-status").textContent =
       "Impossibile cancellare i dati locali";
