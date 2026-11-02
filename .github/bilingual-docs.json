@@ -50,6 +50,7 @@
         "docs/architecture/adr/0001-python-toolchain.md",
         "docs/architecture/adr/0002-android-parity.md",
         "docs/games/dado-goal/browser-session-recovery.md",
+        "docs/games/dado-goal/issue-29-team-management-contract.md",
         "docs/games/dado-goal/multiplayer-durable-authority.md",
         "docs/games/dado-goal/multiplayer-http-api.md",
         "docs/games/dado-goal/multiplayer-lifecycle-v4.md",

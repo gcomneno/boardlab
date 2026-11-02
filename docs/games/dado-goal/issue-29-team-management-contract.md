@@ -155,3 +155,6 @@ Any future gameplay effects require a separate contract and approval.
 - No league or cup management in the initial MVP.
 
 Implementation requires separate approval.
+## Official names and localization
+
+Official team and player names MUST NOT be translated. Preserve provider-supplied names and stable identifiers across locales. Localization applies only to interface labels, descriptions, and messages; it MUST NOT alter catalogue identities or roster references.
