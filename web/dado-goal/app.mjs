@@ -4,6 +4,20 @@ import { matchClock } from "./match-clock.mjs";
 import { createRoster, pickScorer } from "./match-roster.mjs";
 import { importCatalogueJson } from "./catalogue-json.mjs";
 import { createMatchRoster } from "./catalogue-roster.mjs";
+import { createMatchRecord } from "./team-history.mjs";
+import {
+  createPlayerRatings,
+  RATING_FIELDS,
+  RATING_LEVELS,
+} from "./player-ratings.mjs";
+import {
+  clearManagement,
+  createManagementDocument,
+  exportManagementJson,
+  importManagementJson,
+  loadManagement,
+  saveManagement,
+} from "./team-management-store.mjs";
 import {
   enrichMatchEvent,
   eventDisplayValues,
@@ -299,6 +313,74 @@ function render() {
 }
 
 let footballCatalogue = null;
+let selectedMatchTeams = [null, null];
+let managementState = createManagementDocument();
+let matchRecorded = false;
+
+try {
+  managementState = loadManagement(window.localStorage);
+} catch {
+  managementState = createManagementDocument();
+}
+
+function renderManagementStatus() {
+  byId("management-status").textContent =
+    `${managementState.matches.length} partite archiviate localmente`;
+}
+
+function downloadManagementJson() {
+  const blob = new Blob(
+    [exportManagementJson(managementState)],
+    { type: "application/json" }
+  );
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "dado-goal-management.json";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function recordCompletedMatch() {
+  if (matchRecorded || state.phase !== "finished") return;
+
+  // Management history is opt-in: at least one imported real team
+  // must have been selected for this match.
+  if (!selectedMatchTeams.some(Boolean)) return;
+
+  const teamSnapshot = (team, seat) => team ?? {
+    provider: "local",
+    providerTeamId: `local-${seat}`,
+    name: names[seat],
+    players: [],
+  };
+
+  const record = createMatchRecord({
+    matchId: crypto.randomUUID(),
+    playedAt: new Date().toISOString(),
+    home: teamSnapshot(selectedMatchTeams[0], 0),
+    away: teamSnapshot(selectedMatchTeams[1], 1),
+    homeGoals: state.goals[0],
+    awayGoals: state.goals[1],
+    events: matchEvents,
+    statistics: matchStatistics(rollEvents),
+    ratings: [],
+  });
+
+  const nextState = createManagementDocument({
+    ratings: managementState.ratings,
+    matches: [...managementState.matches, record],
+  });
+
+  try {
+    saveManagement(window.localStorage, nextState);
+    managementState = nextState;
+    matchRecorded = true;
+  } catch {
+    // Local persistence failure must never affect gameplay.
+  }
+}
+
 
 function catalogueTeam(selectId) {
   if (!footballCatalogue) return null;
@@ -309,6 +391,113 @@ function catalogueTeam(selectId) {
   return footballCatalogue.teams.find(
     (team) => team.providerTeamId === value
   ) ?? null;
+}
+
+function ratingPlayerKey(team, player) {
+  return `${team.providerTeamId}:${player.providerPlayerId}`;
+}
+
+function ratingEntry(key) {
+  return managementState.ratings.find(entry => entry.key === key) ?? null;
+}
+
+function renderRatingPlayers() {
+  const select = byId("ratings-player");
+  select.replaceChildren();
+
+  const teams = [0, 1]
+    .map(i => catalogueTeam(`catalogue-team-${i}`))
+    .filter(Boolean);
+
+  if (teams.length === 0) {
+    select.append(new Option("Seleziona una squadra reale", ""));
+    select.disabled = true;
+    byId("ratings-save").disabled = true;
+    byId("ratings-fields").replaceChildren();
+    return;
+  }
+
+  select.append(new Option("Seleziona giocatore", ""));
+
+  for (const team of teams) {
+    for (const player of team.players) {
+      const key = ratingPlayerKey(team, player);
+      select.append(new Option(
+        `${team.name} · ${player.name}`,
+        key
+      ));
+    }
+  }
+
+  select.disabled = false;
+  renderRatingFields();
+}
+
+function renderRatingFields() {
+  const key = byId("ratings-player").value;
+  const container = byId("ratings-fields");
+  container.replaceChildren();
+  byId("ratings-save").disabled = !key;
+
+  if (!key) return;
+
+  const saved = ratingEntry(key);
+  const ratings = createPlayerRatings(saved?.ratings);
+
+  for (const field of RATING_FIELDS) {
+    const label = document.createElement("label");
+    label.textContent = field;
+
+    const select = document.createElement("select");
+    select.dataset.ratingField = field;
+
+    for (const level of RATING_LEVELS) {
+      select.append(new Option(level, level));
+    }
+
+    select.value = ratings[field];
+    label.append(select);
+    container.append(label);
+  }
+}
+
+function saveCurrentRating() {
+  const key = byId("ratings-player").value;
+  if (!key) return;
+
+  const [teamId, playerId] = key.split(":");
+  const team = footballCatalogue?.teams.find(
+    candidate => candidate.providerTeamId === teamId
+  );
+  const player = team?.players.find(
+    candidate => candidate.providerPlayerId === playerId
+  );
+  if (!team || !player) return;
+
+  const values = {};
+  for (const select of document.querySelectorAll("[data-rating-field]")) {
+    values[select.dataset.ratingField] = select.value;
+  }
+
+  const entry = {
+    key,
+    providerTeamId: team.providerTeamId,
+    providerPlayerId: player.providerPlayerId,
+    playerName: player.name,
+    ratings: createPlayerRatings(values),
+  };
+
+  const ratings = managementState.ratings.filter(item => item.key !== key);
+  const nextState = createManagementDocument({
+    ratings: [...ratings, entry],
+    matches: managementState.matches,
+  });
+
+  saveManagement(window.localStorage, nextState);
+  managementState = nextState;
+  byId("ratings-status").textContent =
+    `Valutazione salvata per ${player.name}`;
+  renderManagementStatus();
 }
 
 function renderCatalogueTeams() {
@@ -322,6 +511,8 @@ function renderCatalogueTeams() {
 
     select.disabled = !footballCatalogue;
   }
+
+  renderRatingPlayers();
 }
 
 async function loadCatalogueFile(file) {
@@ -349,6 +540,9 @@ function start(activate = true) {
   const selectedTeams = [0, 1].map(
     (i) => catalogueTeam(`catalogue-team-${i}`)
   );
+
+  selectedMatchTeams = selectedTeams;
+  matchRecorded = false;
 
   names = [0, 1].map((i) =>
     selectedTeams[i]?.name ||
@@ -469,6 +663,7 @@ async function roll() {
   }
 
   if (state.phase === "finished") {
+    recordCompletedMatch();
     const [a, b] = state.goals;
     if (a === b) {
       showMessage("draw", { a, b });
@@ -535,6 +730,46 @@ document.querySelector(".multiplayer-button").addEventListener("click", event =>
 byId("roll").addEventListener("click", () => {
   void roll();
 });
+byId("catalogue-team-0").addEventListener("change", renderRatingPlayers);
+byId("catalogue-team-1").addEventListener("change", renderRatingPlayers);
+byId("ratings-player").addEventListener("change", renderRatingFields);
+byId("ratings-save").addEventListener("click", saveCurrentRating);
+
+byId("management-export").addEventListener("click", () => {
+  downloadManagementJson();
+});
+
+byId("management-import").addEventListener("change", async (event) => {
+  const [file] = event.target.files;
+  if (!file) return;
+
+  try {
+    const imported = importManagementJson(await file.text());
+    saveManagement(window.localStorage, imported);
+    managementState = imported;
+    renderManagementStatus();
+    renderRatingPlayers();
+  } catch {
+    byId("management-status").textContent = "Dati gestione non validi";
+  }
+
+  event.target.value = "";
+});
+
+byId("management-clear").addEventListener("click", () => {
+  if (!window.confirm("Cancellare tutti i dati di gestione locali?")) return;
+
+  try {
+    clearManagement(window.localStorage);
+    managementState = createManagementDocument();
+    renderManagementStatus();
+    renderRatingPlayers();
+  } catch {
+    byId("management-status").textContent =
+      "Impossibile cancellare i dati locali";
+  }
+});
+
 byId("catalogue-file").addEventListener("change", async (event) => {
   const [file] = event.target.files;
   if (!file) return;
@@ -548,5 +783,6 @@ byId("catalogue-file").addEventListener("change", async (event) => {
   }
 });
 
+renderManagementStatus();
 start(false);
 initializeLocale(render);
