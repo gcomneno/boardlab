@@ -52,6 +52,15 @@
           </select>
         </label>
         <p id="catalogue-status" role="status"></p>
+        <div class="management-actions">
+          <button id="management-export" type="button">Esporta gestione</button>
+          <label>Importa gestione
+            <input id="management-import" type="file"
+                   accept="application/json,.json">
+          </label>
+          <button id="management-clear" type="button">Cancella gestione</button>
+        </div>
+        <p id="management-status" role="status"></p>
       </fieldset>
 
       <label><span data-i18n="handsPerTeam">Mani per squadra</span>
