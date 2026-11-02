@@ -5,6 +5,10 @@ import { createRoster, pickScorer } from "./match-roster.mjs";
 import { importCatalogueJson } from "./catalogue-json.mjs";
 import { createMatchRoster } from "./catalogue-roster.mjs";
 import {
+  enrichMatchEvent,
+  eventDisplayValues,
+} from "./match-player-identity.mjs";
+import {
   createEventState, evaluateHandEvent
 } from "./match-events.mjs";
 import { describeRoll, describeMatchEvent } from "./commentary.mjs";
@@ -136,7 +140,7 @@ function render() {
 
       const description = document.createElement("span");
       description.textContent = formatMessage(eventKeys[event.type], {
-        ...event,
+        ...eventDisplayValues(event),
         team: names[event.team]
       });
 
@@ -431,12 +435,12 @@ async function roll() {
     // The score comes exclusively from the dice engine.
     if (state.goals[player] > before.goals[player]) {
       lastGoalScorer = pickScorer(rosters[player]);
-      matchEvents.push({
+      matchEvents.push(enrichMatchEvent(rosters[player], {
         type: "goal",
         team: player,
         minute,
         number: lastGoalScorer
-      });
+      }));
     }
 
     // Only the team completing its hand gets an event opportunity.
@@ -445,7 +449,10 @@ async function roll() {
     );
 
     if (refereeEvent) {
-      lastRefereeEvent = { ...refereeEvent, team: player };
+      lastRefereeEvent = enrichMatchEvent(
+        rosters[player],
+        { ...refereeEvent, team: player }
+      );
       matchEvents.push(lastRefereeEvent);
     }
   }
