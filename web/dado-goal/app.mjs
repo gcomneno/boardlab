@@ -523,6 +523,30 @@ async function loadCatalogueFile(file) {
     `${footballCatalogue.teams.length} squadre importate`;
 }
 
+async function loadLiveCatalogue() {
+  const competition = byId("catalogue-competition").value.trim();
+  const season = byId("catalogue-season").value.trim();
+
+  if (!/^\d+$/.test(competition) || !/^\d{4}$/.test(season)) {
+    throw new TypeError("invalid catalogue query");
+  }
+
+  const parameters = new URLSearchParams({ competition, season });
+  const response = await fetch(
+    `https://dado-goal-multiplayer-beta.giancarlo-cicellyn.workers.dev/api/football/catalogue?${parameters}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(`catalogue HTTP ${response.status}`);
+  }
+
+  const source = await response.text();
+  footballCatalogue = importCatalogueJson(source);
+  renderCatalogueTeams();
+  byId("catalogue-status").textContent =
+    `${footballCatalogue.teams.length} squadre caricate`;
+}
+
 function start(activate = true) {
   const rawHands = byId("hands").value;
   const n = Number(rawHands);
@@ -767,6 +791,23 @@ byId("management-clear").addEventListener("click", () => {
   } catch {
     byId("management-status").textContent =
       "Impossibile cancellare i dati locali";
+  }
+});
+
+byId("catalogue-live-load").addEventListener("click", async () => {
+  const button = byId("catalogue-live-load");
+  button.disabled = true;
+  byId("catalogue-status").textContent = "Caricamento catalogo…";
+
+  try {
+    await loadLiveCatalogue();
+  } catch {
+    footballCatalogue = null;
+    renderCatalogueTeams();
+    byId("catalogue-status").textContent =
+      "Catalogo non disponibile";
+  } finally {
+    button.disabled = false;
   }
 });
 

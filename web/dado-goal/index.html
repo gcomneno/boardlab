@@ -38,6 +38,17 @@
       </label>
       <fieldset id="catalogue-management">
         <legend>Squadre reali (opzionale)</legend>
+        <div class="management-actions">
+          <label>Campionato
+            <input id="catalogue-competition" type="number" min="1"
+                   inputmode="numeric" placeholder="ID">
+          </label>
+          <label>Stagione
+            <input id="catalogue-season" type="number" min="2000" max="2100"
+                   inputmode="numeric" placeholder="AAAA">
+          </label>
+          <button id="catalogue-live-load" type="button">Carica catalogo</button>
+        </div>
         <label>Catalogo JSON
           <input id="catalogue-file" type="file" accept="application/json,.json">
         </label>

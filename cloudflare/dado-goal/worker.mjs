@@ -8,6 +8,7 @@
 
 import { D1Authority } from "./authority.mjs";
 import { routeMultiplayer } from "./api.mjs";
+import { footballCatalogue } from "./football-catalogue.mjs";
 import {
   login, guestLogin, logout, authenticate, sessionDenied,
 } from "./session.mjs";
@@ -102,11 +103,15 @@ function boundaryValid(request) {
 export default {
   async fetch(request, env) {
     try {
-      if (!boundaryValid(request)) {
+      const url = new URL(request.url);
+      const catalogueCrossOrigin =
+        request.method === "GET" &&
+        url.pathname === "/api/football/catalogue" &&
+        request.headers.get("Origin") === "https://gcomneno.github.io";
+
+      if (!boundaryValid(request) && !catalogueCrossOrigin) {
         return error(403, "BOUNDARY_DENIED");
       }
-
-      const url = new URL(request.url);
       const path = url.pathname;
 
       if (request.method === "GET" && STATIC.has(path)) {
@@ -120,6 +125,16 @@ export default {
       // required by the legacy administrator login.
       if (!env.DB) {
         return error(503, "SERVICE_UNAVAILABLE");
+      }
+
+      if (
+        path === "/api/football/catalogue" &&
+        request.method === "GET"
+      ) {
+        if (!(await allowRequest(env.DB, request, "football-catalogue", 10))) {
+          return error(429, "RATE_LIMITED");
+        }
+        return footballCatalogue(request, env);
       }
 
       if (path === "/auth/guest" && request.method === "POST") {
