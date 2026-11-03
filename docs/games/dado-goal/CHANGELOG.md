@@ -7,6 +7,25 @@ Format: https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Added — Optional team management and real football catalogue (#29)
+
+- Added a replaceable real-football catalogue provider architecture.
+- Added real team and player identities while preserving the original
+  quick-match `createRoster()` fallback.
+- Added optional team selection and match-local roster mapping without
+  changing dice mechanics, scoring or match probabilities.
+- Added descriptive manual player ratings, simulated match history,
+  statistics and versioned local JSON import/export.
+- Added explicit API-Football ingestion tooling with provider-side pacing.
+- Persisted normalized catalogue snapshots in Cloudflare D1 so normal
+  gameplay does not call the external football provider.
+- Qualified the Serie A 2024 snapshot with 20 teams and 652 players.
+- Qualified the public catalogue endpoint with HTTP 200 and restricted
+  CORS access from the canonical GitHub Pages origin.
+- Preserved official provider team/player names and identifiers unchanged.
+- Kept standings, seasons, cups and reports outside the initial MVP.
+
+
 ### Added — Handmade dice visual identity (#28)
 
 - Integrated a generated illustration inspired by the four

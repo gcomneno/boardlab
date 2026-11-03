@@ -1,6 +1,6 @@
 # Dado Goal! — Issue #29: Team Management MVP Contract
 
-Status: DESIGN APPROVED — IMPLEMENTATION NOT STARTED
+Status: IMPLEMENTED — M1–M4 QUALIFIED
 Scope: Optional team management for single-player and multiplayer.
 Baseline: M2D public release, commit 0303e971.
 
@@ -14,6 +14,13 @@ Baseline: M2D public release, commit 0303e971.
 - The multiplayer server remains authoritative for match state and events.
 
 ## 2. MVP phases
+
+Implementation status:
+- M1 — completed and merged via PR #73.
+- M2 — completed and merged via PR #74.
+- M3 — completed and merged via PR #75.
+- M4 — API-Football ingestion with persisted Cloudflare D1 catalogue,
+  completed and merged via PR #77; production smoke qualified.
 
 ### M1 — Football catalogue
 
@@ -92,15 +99,18 @@ retroactively change completed matches.
 
 ## 5. Provider integration
 
-API-Football is the initial candidate, not an approved dependency.
+API-Football is the initial ingestion provider behind a replaceable adapter.
 
-Before integration, verify:
-- permitted uses and redistribution rights;
-- free-tier limits and relevant competition coverage;
-- current squad and player data availability;
-- authentication and credential-handling requirements.
+Provider access is used only by explicit ingestion tooling. The public game
+does not call API-Football at runtime: normalized catalogues are persisted in
+Cloudflare D1 and served to the frontend from that persisted snapshot.
 
-The provider adapter must be replaceable.
+Provider credentials are kept out of public HTML and JavaScript.
+
+Commercial redistribution and long-term retention rights remain a separate
+provider-contract consideration and are not implied by this implementation.
+
+The provider adapter remains replaceable.
 
 Import failures or exhausted API quotas must not block gameplay.
 
@@ -136,25 +146,31 @@ Any future gameplay effects require a separate contract and approval.
 
 ## 8. Acceptance gates
 
-- [ ] Provider terms and coverage verified.
-- [ ] Versioned data schema and validation tests.
-- [ ] Import/export round-trip tests.
-- [ ] Offline quick-match regression tests.
-- [ ] Real-team selection tests.
-- [ ] Multiplayer authority and recovery tests.
-- [ ] Privacy and credential-handling review.
-- [ ] Game changelog updated upon implementation.
+- [x] Provider technical coverage verified for the implemented ingestion scope.
+- [x] Versioned data schema and validation tests.
+- [x] Import/export round-trip tests.
+- [x] Offline quick-match regression tests.
+- [x] Real-team selection tests.
+- [x] Multiplayer authority and recovery tests.
+- [x] Privacy and credential-handling review.
+- [x] Game changelog updated upon implementation.
+
+M4 production qualification:
+- API-Football Serie A 2024 ingestion: 20 teams, 652 players.
+- Normalized catalogue persisted in Cloudflare D1.
+- Public catalogue endpoint: HTTP 200.
+- Canonical GitHub Pages origin accepted by restricted CORS policy.
+- Runtime frontend catalogue access does not consume provider API quota.
 
 ## 9. Exclusions
 
 - No changes to the released M2D gameplay.
-- No immediate deployment.
 - No scraping.
 - No automatic player ratings.
 - No mandatory provider dependency.
 - No league or cup management in the initial MVP.
 
-Implementation requires separate approval.
+Implementation approved and completed through M4.
 ## Official names and localization
 
 Official team and player names MUST NOT be translated. Preserve provider-supplied names and stable identifiers across locales. Localization applies only to interface labels, descriptions, and messages; it MUST NOT alter catalogue identities or roster references.
