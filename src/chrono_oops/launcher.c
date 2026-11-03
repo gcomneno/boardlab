@@ -5,6 +5,7 @@
 int chrono_m001_run(void);
 int chrono_m002_run(void);
 int chrono_m003_run(void);
+int chrono_m004_run(void);
 
 static int read_selection(void)
 {
@@ -21,7 +22,7 @@ static int read_selection(void)
 
     if (errno != 0 || end == buffer ||
         (*end != '\n' && *end != '\0') ||
-        selection < 0 || selection > 3) {
+        selection < 0 || selection > 4) {
         return -1;
     }
 
@@ -38,6 +39,7 @@ int main(void)
         puts(" 1. Missione 001 — La capsula perduta");
         puts(" 2. Missione 002 — Il prestito di domani");
         puts(" 3. Missione 003 — Il messaggio che non doveva arrivare");
+        puts(" 4. Missione 004 — Due eventi, una sola causa");
         puts(" 0. Esci");
         printf("\nScelta: ");
         fflush(stdout);
@@ -50,7 +52,7 @@ int main(void)
         }
 
         if (selection == -1) {
-            puts("Scelta non valida. Inserisci 0, 1, 2 oppure 3.");
+            puts("Scelta non valida. Inserisci un numero da 0 a 4.");
             continue;
         }
 
@@ -59,8 +61,10 @@ int main(void)
             result = chrono_m001_run();
         } else if (selection == 2) {
             result = chrono_m002_run();
-        } else {
+        } else if (selection == 3) {
             result = chrono_m003_run();
+        } else {
+            result = chrono_m004_run();
         }
 
         if (result != 0) {
