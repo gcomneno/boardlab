@@ -302,7 +302,7 @@ static int read_choice(long *choice)
     return 1;
 }
 
-int main(void)
+int chrono_m001_run(void)
 {
     ChronoState state;
     chrono_init(&state);
@@ -392,3 +392,10 @@ int main(void)
 
     return 0;
 }
+
+#ifndef CHRONO_UNIFIED_CLI
+int main(void)
+{
+    return chrono_m001_run();
+}
+#endif
