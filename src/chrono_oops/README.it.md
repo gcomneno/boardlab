@@ -14,8 +14,24 @@ Due personaggi vivono in anni differenti della stessa linea temporale modificabi
 Gli eventi immaginari del gioco possono essere assurdi. Le sue regole
 computazionali devono rimanere esplicite, deterministiche e verificabili.
 
-Questa directory contiene il primo *motore di simulazione* giocabile
-della Missione 001, non un RPG completo né un gioco con interfaccia grafica.
+Questa directory contiene una campagna CLI giocabile di cinque missioni,
+basata su motori deterministici C11. Le sezioni didattiche seguenti
+approfondiscono in particolare il motore della Missione 001.
+Non è presente un'interfaccia grafica.
+
+## Campagna CLI — Missioni 001–005
+
+Le cinque missioni sono disponibili nella campagna da terminale.
+Le specifiche progettuali sono consultabili qui:
+
+- [Missione 001 — Il ponte che non c'era. Poi c'era. Poi era un'anatra.](../../docs/games/chrono-oops/mission-001.it.md)
+- [Missione 002 — Il prestito di domani](../../docs/games/chrono-oops/mission-002.it.md)
+- [Missione 003 — Il messaggio che non doveva arrivare](../../docs/games/chrono-oops/mission-003.it.md)
+- [Missione 004 — Due eventi, una sola causa](../../docs/games/chrono-oops/mission-004.it.md)
+- [Missione 005 — Il minuto che non è mai esistito](../../docs/games/chrono-oops/mission-005.it.md)
+
+Le sezioni numerate di questo README restano dedicate soprattutto
+all'analisi didattica della Missione 001.
 
 ## 1. Obiettivi didattici
 
