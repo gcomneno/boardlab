@@ -19,10 +19,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
+        include:
+          - os: ubuntu-latest
+            platform: linux-x64
+            executable: build/chrono-oops/chrono-oops
+            launch: ./chrono-oops
+          - os: windows-latest
+            platform: windows-x64
+            executable: build/chrono-oops/Release/chrono-oops.exe
+            launch: .\\chrono-oops.exe
+          - os: macos-latest
+            platform: macos-arm64
+            executable: build/chrono-oops/chrono-oops
+            launch: ./chrono-oops
 
     steps:
       - name: Checkout
@@ -42,3 +51,39 @@ jobs:
           ctest --test-dir build/chrono-oops
           --build-config Release
           --output-on-failure
+
+      - name: Stage native executable and instructions
+        shell: pwsh
+        run: |
+          $stage = "dist/chrono-oops-${{ matrix.platform }}"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item "${{ matrix.executable }}" "$stage/"
+          Copy-Item "src/chrono_oops/README.it.md" "$stage/"
+          Copy-Item "src/chrono_oops/README.md" "$stage/"
+          @(
+            "ChronoOops! - Five-mission campaign"
+            "Platform: ${{ matrix.platform }}"
+            ""
+            "Extract this ZIP before running."
+            "Open a terminal in the extracted folder."
+            "Run: ${{ matrix.launch }}"
+            ""
+            "No external runtime dependencies are bundled."
+          ) | Set-Content -Encoding utf8 "$stage/RUN.txt"
+
+          $archive = "dist/chrono-oops-${{ matrix.platform }}.zip"
+          Push-Location dist
+          cmake -E tar cf "chrono-oops-${{ matrix.platform }}.zip" --format=zip "chrono-oops-${{ matrix.platform }}"
+          $archiveStatus = $LASTEXITCODE
+          Pop-Location
+          if ($archiveStatus -ne 0) { throw "ZIP creation failed" }
+
+          if (!(Test-Path $archive)) { throw "Missing ZIP archive" }
+
+      - name: Store ZIP as CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrono-oops-${{ matrix.platform }}
+          path: dist/chrono-oops-${{ matrix.platform }}.zip
+          if-no-files-found: error
+          retention-days: 7
