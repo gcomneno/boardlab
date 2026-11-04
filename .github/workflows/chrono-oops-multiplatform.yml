@@ -1,0 +1,44 @@
+name: ChronoOops Multiplatform
+
+on:
+  pull_request:
+    paths:
+      - 'src/chrono_oops/**'
+      - '.github/workflows/chrono-oops-multiplatform.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: C11 / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Release
+        run: >
+          cmake -S src/chrono_oops
+          -B build/chrono-oops
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build CLI and tests
+        run: cmake --build build/chrono-oops --config Release --parallel 2
+
+      - name: Run all five C11 tests
+        run: >
+          ctest --test-dir build/chrono-oops
+          --build-config Release
+          --output-on-failure
