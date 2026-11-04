@@ -14,8 +14,24 @@ Two characters inhabit different years of the same mutable timeline:
 The game's fictional events can be absurd. Its computational rules
 must remain explicit, deterministic, and testable.
 
-This directory contains the first playable *simulation engine* for
-Mission 001, not a complete RPG or graphical game.
+This directory contains a playable five-mission CLI campaign
+implemented with deterministic C11 engines. The following learning
+sections focus primarily on the Mission 001 engine.
+There is no graphical interface.
+
+## CLI campaign — Missions 001–005
+
+All five missions are available in the terminal campaign.
+Their design specifications are linked below:
+
+- [Mission 001 — The bridge that wasn't there, then was, then was a duck.](../../docs/games/chrono-oops/mission-001.md)
+- [Mission 002 — Tomorrow's loan](../../docs/games/chrono-oops/mission-002.md)
+- [Mission 003 — The message that should not have arrived](../../docs/games/chrono-oops/mission-003.md)
+- [Mission 004 — Two events, one cause](../../docs/games/chrono-oops/mission-004.md)
+- [Mission 005 — The minute that never existed](../../docs/games/chrono-oops/mission-005.md)
+
+The numbered sections below retain their original educational
+focus on Mission 001.
 
 ## 1. Learning objectives
 
