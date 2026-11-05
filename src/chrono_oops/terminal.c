@@ -1,3 +1,4 @@
+#include "input.h"
 #include "chrono.h"
 
 #include <stdio.h>
@@ -285,20 +286,15 @@ static void show_menu(const ChronoState *state)
 
 static int read_choice(long *choice)
 {
-    char line[64];
-    char *end;
+    ChronoInputResult result = chrono_input_read(stdin, choice, 1);
 
-    if (!fgets(line, sizeof(line), stdin)) {
+    if (result == CHRONO_INPUT_EOF)
         return 0;
-    }
-    if (line[0] == 'q' || line[0] == 'Q') {
+    if (result == CHRONO_INPUT_QUIT)
         return -1;
-    }
-
-    *choice = strtol(line, &end, 10);
-    if (end == line || (*end != '\n' && *end != '\0')) {
+    if (result == CHRONO_INPUT_INVALID)
         return 2;
-    }
+
     return 1;
 }
 
