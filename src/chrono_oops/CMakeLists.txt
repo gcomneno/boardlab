@@ -18,6 +18,7 @@ endfunction()
 
 add_executable(chrono-oops
     launcher.c
+    input.c
     chrono.c
     mission002.c
     mission003.c
@@ -43,6 +44,11 @@ function(chrono_test_assertions target)
         target_compile_options(${target} PRIVATE -UNDEBUG)
     endif()
 endfunction()
+
+add_executable(chrono-test-input input.c test_input.c)
+chrono_warnings(chrono-test-input)
+chrono_test_assertions(chrono-test-input)
+add_test(NAME chrono-input COMMAND chrono-test-input)
 
 add_executable(chrono-test-001 chrono.c test_chrono.c)
 chrono_warnings(chrono-test-001)

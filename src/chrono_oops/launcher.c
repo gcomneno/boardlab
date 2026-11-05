@@ -1,4 +1,4 @@
-#include <errno.h>
+#include "input.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,22 +10,14 @@ int chrono_m005_run(void);
 
 static int read_selection(void)
 {
-    char buffer[80];
-    char *end;
-    long selection;
+    long selection = 0;
+    ChronoInputResult result = chrono_input_read(stdin, &selection, 0);
 
-    if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
+    if (result == CHRONO_INPUT_EOF)
         return 0;
-    }
-
-    errno = 0;
-    selection = strtol(buffer, &end, 10);
-
-    if (errno != 0 || end == buffer ||
-        (*end != '\n' && *end != '\0') ||
-        selection < 0 || selection > 5) {
+    if (result != CHRONO_INPUT_NUMBER ||
+        selection < 0 || selection > 5)
         return -1;
-    }
 
     return (int)selection;
 }

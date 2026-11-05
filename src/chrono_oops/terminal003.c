@@ -1,3 +1,4 @@
+#include "input.h"
 #include "mission003.h"
 
 #include <errno.h>
@@ -125,19 +126,13 @@ static void show_menu(const ChronoM003State *s)
 
 static int read_choice(long *choice)
 {
-    char buffer[80];
-    char *end;
+    ChronoInputResult result = chrono_input_read(stdin, choice, 1);
 
-    if (fgets(buffer, sizeof(buffer), stdin) == NULL)
+    if (result == CHRONO_INPUT_EOF || result == CHRONO_INPUT_QUIT)
         return 0;
-    if (buffer[0] == 'q' && (buffer[1] == '\n' || buffer[1] == '\0'))
-        return 0;
-
-    errno = 0;
-    *choice = strtol(buffer, &end, 10);
-    if (errno != 0 || end == buffer ||
-        (*end != '\n' && *end != '\0'))
+    if (result != CHRONO_INPUT_NUMBER)
         return -1;
+
     return 1;
 }
 
