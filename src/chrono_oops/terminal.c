@@ -379,6 +379,31 @@ int chrono_m001_run(void)
     if (state.victory) {
         printf("\nVITTORIA! Capsula recuperata al turno %u.\n",
                state.turn);
+        if (state.world.bridge_exists && !state.world.duck_exists) {
+            puts("\n1985 — A osservo' il progetto approvato con una certa");
+            puts("soddisfazione. Un ponte. Finalmente una soluzione ragionevole.");
+            puts("\n2025 — B attraverso' il fiume e recupero' la capsula.");
+            puts("\nNessuna esplosione. Nessun paradosso.");
+            puts("Nessun animale di dimensioni architettoniche.");
+            puts("\n\"Comincio a preoccuparmi\", mormoro' B.");
+            puts("\"E' andato tutto troppo bene.\"");
+            puts("\nMISSIONE COMPIUTA — La storia, per una volta,");
+            puts("ha collaborato.");
+        } else if (state.world.duck_exists &&
+                   !state.world.bridge_exists) {
+            puts("\n1985 — A firmo' il progetto definitivo.");
+            puts("\nAlla voce Tipologia dell'opera qualcuno aveva scritto:");
+            puts("\"Papera\".");
+            puts("Alla voce Motivazione tecnica: \"Funziona\".");
+            puts("\n2025 — B raggiunse la torre grazie a un'anatra meccanica");
+            puts("che, secondo ogni legge del buon senso,");
+            puts("non avrebbe dovuto esistere.");
+            puts("\nLa capsula era salva. La cronologia era coerente.");
+            puts("La dignita' dell'ingegneria civile, invece,");
+            puts("risultava dispersa.");
+            puts("\nMISSIONE COMPIUTA — La causalita' ha ragione.");
+            puts("Il buon senso presentera' ricorso.");
+        }
         if (state.world.tide_register_acquired) {
             puts("BONUS: Registro delle Maree acquisito!");
         }
