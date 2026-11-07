@@ -23,7 +23,13 @@ test("maps API-Football teams without altering official names", async () => {
       return response({
         errors: [],
         response: [
-          { team: { id: 492, name: "SSC Napoli" } },
+          {
+            team: {
+              id: 492,
+              name: "SSC Napoli",
+              logo: "https://media.api-sports.io/football/teams/492.png",
+            },
+          },
         ],
       });
     },
@@ -34,7 +40,11 @@ test("maps API-Football teams without altering official names", async () => {
     season: 2026,
   });
 
-  assert.deepEqual(teams, [{ id: 492, name: "SSC Napoli" }]);
+  assert.deepEqual(teams, [{
+    id: 492,
+    name: "SSC Napoli",
+    logo: "https://media.api-sports.io/football/teams/492.png",
+  }]);
   assert.equal(request.url.searchParams.get("league"), "135");
   assert.equal(request.url.searchParams.get("season"), "2026");
   assert.equal(request.options.headers["x-apisports-key"], "secret");

@@ -70,6 +70,7 @@ export function createApiFootballAdapter({
       return rows.map(({ team }) => ({
         id: team.id,
         name: team.name,
+        logo: team.logo,
       }));
     },
 

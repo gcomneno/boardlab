@@ -1,3 +1,20 @@
+
+export async function getLatestFootballCatalogue(db, provider) {
+  const row = await db.prepare(`
+    SELECT catalogue_json
+    FROM football_catalogues
+    WHERE provider = ?
+    ORDER BY updated_at DESC
+    LIMIT 1
+  `).bind(String(provider)).first();
+
+  if (!row) {
+    return null;
+  }
+
+  return JSON.parse(row.catalogue_json);
+}
+
 export async function getFootballCatalogue(
   db,
   { provider, competitionId, season },

@@ -3,83 +3,214 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dado Goal! — Partita online</title>
-  <link rel="stylesheet" href="./multiplayer-theme.css">
+  <meta name="theme-color" content="#103b2d">
+  <meta name="description" content="Dado Goal: il gioco calcistico originale di Giancarlo Cicellyn Comneno.">
+  <title>Dado Goal — Gioca gratis</title>
+  <link rel="stylesheet" href="./style.css">
   <script type="module" src="./multiplayer-play.mjs"></script>
 </head>
 <body>
-  <main>
-    <h1>⚽ Dado Goal!</h1>
-    <label for="language" data-i18n="language">Lingua</label>
-    <select id="language" name="language">
-      <option value="it">Italiano</option>
-      <option value="en">English</option>
-    </select>
-    <p data-i18n="mpSubtitle">Multiplayer online: due giocatori, una partita
-      condivisa in tempo reale.</p>
-    <section id="auth-panel" aria-labelledby="auth-heading">
+  <main class="shell">
+<section id="auth-panel" class="panel multiplayer-access"
+             aria-labelledby="auth-heading">
       <h2 id="auth-heading" data-i18n="mpAuthHeading">Accesso</h2>
-      <button id="login" type="button" data-i18n="mpLogin">Inizia a giocare</button>
-      <button id="logout" type="button" disabled data-i18n="mpLogout">Esci</button>
-      <p id="auth-status" role="status" aria-live="polite" data-i18n-dynamic="mpAuthPrompt">
+      <div class="match-actions">
+        <button id="login" type="button" data-i18n="mpLogin">Inizia a giocare</button>
+        <button id="logout" type="button" disabled data-i18n="mpLogout">Esci</button>
+      </div>
+      <p id="auth-status" role="status" aria-live="polite"
+         data-i18n-dynamic="mpAuthPrompt">
         Premi «Inizia a giocare», poi crea una partita o inserisci un invito.
       </p>
     </section>
+    <header>
+      <p class="eyebrow">GIADAWARE · BOARDLAB</p>
+      <h1>⚽ DADO GOAL</h1>
+      <p>Quattro dadi. Due squadre. Un solo obiettivo: GOAL!</p>
+    </header>
 
-    <section>
-      <h2 data-i18n="mpCreateHeading">Crea una partita</h2>
-      <label>
-        <span data-i18n="handsPerTeam">Mani per squadra</span>
-        <input id="hands" type="number" min="1" max="1000" value="6">
+    <section class="panel settings" aria-label="Impostazioni partita">
+      <label for="language" class="locale-setting">
+        <span data-i18n="language">Lingua</span>
+        <select id="language" name="language">
+          <option value="it">Italiano</option>
+          <option value="en">English</option>
+        </select>
       </label>
-      <button id="create" type="button" disabled data-i18n="mpCreate">Crea partita</button>
-      <label>
-        <input id="remember" type="checkbox">
-        <span data-i18n="mpRemember">Ricorda questa postazione</span>
+      <label for="competition" class="locale-setting">
+        <span data-i18n="competition">Campionato</span>
+        <select id="competition" name="competition"></select>
       </label>
-      <p class="game-notes" data-i18n="mpRememberNote">Usa questa opzione soltanto su un dispositivo personale.
-        Le credenziali salvate possono essere accessibili a chi usa
-        lo stesso browser.</p>
+
+      <div class="team-config">
+        <label><span data-i18n-team="1">Squadra 1</span>
+          <div class="team-select-with-logo">
+            <img id="team-logo-0" class="team-logo"
+                 alt="" hidden>
+            <select id="team-0">
+              <option value="">Squadra 1</option>
+            </select>
+          </div>
+        </label>
+        <div class="team-colors">
+          <label class="team-color-primary">
+            <span data-i18n="color">Colore</span>
+            <input id="color-0" type="color" value="#e9bd48">
+          </label>
+          <label class="second-color-toggle"
+                 aria-label="Abilita secondo colore Squadra 1">
+            <input id="color-0-enabled" type="checkbox">
+          </label>
+          <input id="color-0-secondary" class="secondary-color"
+                 type="color" value="#111111" disabled
+                 aria-label="Secondo colore Squadra 1">
+        </div>
+      </div>
+
+      <div class="team-config">
+        <label><span data-i18n-team="2">Squadra 2</span>
+          <div class="team-select-with-logo">
+            <img id="team-logo-1" class="team-logo"
+                 alt="" hidden>
+            <select id="team-1">
+              <option value="">Squadra 2</option>
+            </select>
+          </div>
+        </label>
+        <div class="team-colors">
+          <label class="team-color-primary">
+            <span data-i18n="color">Colore</span>
+            <input id="color-1" type="color" value="#66a5ef">
+          </label>
+          <label class="second-color-toggle"
+                 aria-label="Abilita secondo colore Squadra 2">
+            <input id="color-1-enabled" type="checkbox">
+          </label>
+          <input id="color-1-secondary" class="secondary-color"
+                 type="color" value="#111111" disabled
+                 aria-label="Secondo colore Squadra 2">
+        </div>
+      </div>
+
+
+
+      <div class="match-actions multiplayer-create-actions">
+        <button id="create" type="button" disabled
+                data-i18n="mpCreate">Crea partita</button>
+        <label class="roll-count">
+          <span data-i18n="handsPerTeam">Num. di lanci</span>
+          <input id="hands" type="number" min="1" max="1000"
+                 step="1" value="20">
+        </label>
+        <label class="multiplayer-remember">
+          <input id="remember" type="checkbox">
+          <span data-i18n="mpRemember">Ricorda questa postazione</span>
+        </label>
+      </div>
+      <p class="game-notes" data-i18n="mpRememberNote">
+        Usa questa opzione soltanto su un dispositivo personale.
+      </p>
     </section>
 
-    <section>
+<section class="panel multiplayer-invite">
       <h2 data-i18n="mpInviteHeading">Invita un amico</h2>
-      <p class="game-notes" data-i18n="mpInviteNote">Condividi con l’avversario il codice invito della partita.</p>
+      <p class="game-notes" data-i18n="mpInviteNote">
+        Condividi con l’avversario il codice invito della partita.
+      </p>
       <label>
         <span data-i18n="mpInviteCode">Codice invito</span>
         <input id="invite-code" type="text" size="60"
                autocomplete="off" spellcheck="false">
       </label>
-      <button id="copy-invite" type="button" disabled data-i18n="mpCopyInvite">Copia codice invito</button>
-      <button id="join" type="button" disabled data-i18n="mpJoin">Entra nella partita</button>
-    </section>
-
-    <section>
-      <h2 data-i18n="mpMatchHeading">Partita</h2>
-      <p id="status" role="status" aria-live="polite" data-i18n-dynamic="mpNoMatch">
-        Nessuna partita attiva.
-      </p>
-      <p id="score">Risultato: —</p>
-      <p id="hands-done">Mani: —</p>
-      <p id="turn">Turno: —</p>
-      <p id="die">Dado: —</p>
-      <p id="last-roll">Ultimo lancio: —</p>
       <div class="match-actions">
-        <button id="roll" type="button" disabled data-i18n="mpRoll">
-          Lancia il dado
-        </button>
-        <button id="refresh" type="button" disabled data-i18n="mpRefresh">
-          Aggiorna stato
-        </button>
-        <button id="leave" type="button" disabled data-i18n="mpLeave">
-          Esci
-        </button>
+        <button id="copy-invite" type="button" disabled
+                data-i18n="mpCopyInvite">Copia codice invito</button>
+        <button id="join" type="button" disabled
+                data-i18n="mpJoin">Entra nella partita</button>
       </div>
     </section>
 
-    <footer class="game-footer">
-      <p>© 2026 Giancarlo Cicellyn Comneno · Dado Goal</p>
-      <p data-i18n="mpProject">Un progetto GiadaWare · BoardLab</p>
+    <section class="panel" aria-label="Tabellone">
+      <div class="scoreboard">
+        <div class="team" id="panel-0">
+          <span id="name-0">Squadra 1</span>
+          <strong id="goals-0">0</strong>
+          <small id="hands-0">0 / 10 mani</small>
+        </div>
+        <div class="separator">:</div>
+        <div class="team" id="panel-1">
+          <span id="name-1">Squadra 2</span>
+          <strong id="goals-1">0</strong>
+          <small id="hands-1">0 / 10 mani</small>
+        </div>
+      </div>
+      <section class="match-events" aria-labelledby="match-events-heading">
+        <h3 id="match-events-heading">📋 Cronaca della partita</h3>
+        <ol id="match-events-list" aria-live="polite"></ol>
+        <p id="match-events-empty">Nessun evento registrato.</p>
+      </section>
+    </section>
+
+    <section class="panel play" aria-label="Campo di gioco">
+      <div class="pitch">
+        <p id="match-clock" class="match-clock" role="timer">1° TEMPO · 0′</p>
+        <p id="turn" class="turn" aria-live="polite"></p>
+        <div class="pitch-branding">
+          <img id="pitch-logo-0" class="pitch-team-logo"
+               alt="" hidden>
+          <div id="die" class="die" aria-label="Dado corrente">🎲</div>
+          <img id="pitch-logo-1" class="pitch-team-logo"
+               alt="" hidden>
+        </div>
+        <ol class="dice-guide" aria-label="Sequenza dei dadi">
+          <li id="guide-team-0">🟡 Squadra 1</li>
+          <li id="guide-team-1">🔵 Squadra 2</li>
+          <li id="guide-pink">🩷 Rosa</li>
+          <li id="guide-result">🎯 Finale</li>
+        </ol>
+        <p id="phase" class="phase"></p>
+        <p id="result" class="result" role="status" aria-live="polite">
+          La partita può iniziare!
+        </p>
+        <div class="roll-actions">
+          <button id="roll" type="button">Lancia il dado!</button>
+        </div>
+        <section class="match-commentary" aria-label="Telecronaca">
+          <div class="commentary-header">
+            <strong>📻 Radio Stadio</strong>
+            <button id="commentary-toggle" type="button"
+                    aria-pressed="true">🎙️ ON</button>
+          </div>
+          <p id="commentary-text" aria-live="polite">
+            Telecronaca pronta per il calcio d’inizio.
+          </p>
+        </section>
+        <section class="match-stats" aria-label="Statistiche partita">
+          <h3>Statistiche della partita</h3>
+          <div class="stat-row stat-header">
+            <strong id="stats-team-0"></strong>
+            <strong>Voce</strong>
+            <strong id="stats-team-1"></strong>
+          </div>
+          <div id="match-stats"></div>
+        </section>
+
+      </div>
+      <p id="message" class="message" aria-live="polite"></p>
+    </section>
+
+    <details class="panel">
+      <summary>Come si gioca?</summary>
+      <p>Ogni giocatore lancia il proprio dado squadra. Un tiro in porta o un cross porta al dado rosa.</p>
+      <p>Il dado rosa determina lo sviluppo dell'azione. Mezza rovesciata, rovesciata e colpo di testa portano al dado finale rosso/blu.</p>
+      <p>Il dado finale può segnare GOAL oppure terminare l'azione senza goal. RIGORE fa rilanciare lo stesso dado.</p>
+      <p>Passaggio permette di rilanciare il dado squadra. Ogni fine mano passa il gioco all'avversario, anche dopo un goal.</p>
+      <p>Vince chi segna più goal dopo il numero concordato di mani per squadra. Il pareggio è ammesso.</p>
+    </details>
+
+    <footer>
+      Dado Goal Originale · Adattamento digitale ·
+      Due giocatori locali · Nessun account · GiadaWare
     </footer>
   </main>
 </body>

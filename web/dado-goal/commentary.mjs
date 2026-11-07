@@ -124,6 +124,19 @@ const linesEn = {
   ],
 };
 
+export function describeFace(face, index = 0, locale = "it") {
+  if (typeof face !== "string" ||
+      !Number.isSafeInteger(index) || index < 0) {
+    throw new RangeError("Invalid commentary face");
+  }
+
+  const table = locale === "en" ? linesEn : linesIt;
+  const choices = table[face];
+  if (!choices) throw new RangeError("Unknown commentary event");
+
+  return choices[index % choices.length];
+}
+
 export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Squadra 2"], index = 0, locale = "it") {
   if (!event || !before || !after ||
       ![0, 1].includes(event.seat) ||
@@ -134,11 +147,8 @@ export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Sq
     throw new RangeError("Invalid commentary input");
   }
 
-  const choices = (locale === "it" ? linesIt : linesEn)[event.face];
-  if (!choices) throw new RangeError("Unknown commentary event");
-
   const name = teamNames[event.seat];
-  const phrase = choices[index % choices.length];
+  const phrase = describeFace(event.face, index, locale);
 
   if (after.phase === "finished") {
     const [a, b] = after.goals;
@@ -163,6 +173,40 @@ export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Sq
  * Describe a referee event without modifying the original roll commentary.
  * All text is derived from event data, so changing locale is reversible.
  */
+const EVENT_REASONS = Object.freeze({
+  it: Object.freeze({
+    "reckless-challenge": "intervento imprudente",
+    "persistent-fouling": "falli reiterati",
+    dissent: "proteste",
+    "time-wasting": "perdita di tempo",
+    "unsporting-behaviour": "comportamento antisportivo",
+    "serious-foul-play": "grave fallo di gioco",
+    "violent-conduct": "condotta violenta",
+    "denying-goal-opportunity": "chiara occasione da gol negata",
+    injury: "infortunio",
+  }),
+  en: Object.freeze({
+    "reckless-challenge": "reckless challenge",
+    "persistent-fouling": "persistent fouling",
+    dissent: "dissent",
+    "time-wasting": "time wasting",
+    "unsporting-behaviour": "unsporting behaviour",
+    "serious-foul-play": "serious foul play",
+    "violent-conduct": "violent conduct",
+    "denying-goal-opportunity": "denying a clear goal opportunity",
+    injury: "injury",
+  }),
+});
+
+export function describeEventReason(reason, locale = "it") {
+  if (reason === "tactical" || reason === undefined || reason === null) {
+    return "";
+  }
+
+  const table = EVENT_REASONS[locale] ?? EVENT_REASONS.it;
+  return table[reason] ?? "";
+}
+
 export function describeMatchEvent(event, teamNames, locale = "it") {
   if (!event || !["yellow", "red", "substitution"].includes(event.type) ||
       ![0, 1].includes(event.team) ||
@@ -180,22 +224,30 @@ export function describeMatchEvent(event, teamNames, locale = "it") {
     if (!Number.isInteger(event.out) || !Number.isInteger(event.in)) {
       throw new RangeError("Invalid substitution numbers");
     }
+    const reason = describeEventReason(event.reason, locale);
+    const suffix = reason
+      ? (locale === "it" ? ` (${reason})` : ` (${reason})`)
+      : "";
+
     return locale === "it"
-      ? `${minute}′ Cambio per ${name}! Esce il numero ${event.out}, entra il numero ${event.in}.`
-      : `${minute}′ Substitution for ${name}! Number ${event.out} off, number ${event.in} on.`;
+      ? `${minute}′ Cambio per ${name}${suffix}! Esce il numero ${event.out}, entra il numero ${event.in}.`
+      : `${minute}′ Substitution for ${name}${suffix}! Number ${event.out} off, number ${event.in} on.`;
   }
 
   if (!Number.isInteger(event.number)) {
     throw new RangeError("Invalid shirt number");
   }
 
+  const reason = describeEventReason(event.reason, locale);
+  const suffix = reason ? ` (${reason})` : "";
+
   if (event.type === "yellow") {
     return locale === "it"
-      ? `${minute}′ Cartellino giallo! Ammonito il numero ${event.number} di ${name}.`
-      : `${minute}′ Yellow card! Number ${event.number} of ${name} is booked.`;
+      ? `${minute}′ Cartellino giallo${suffix}! Ammonito il numero ${event.number} di ${name}.`
+      : `${minute}′ Yellow card${suffix}! Number ${event.number} of ${name} is booked.`;
   }
 
   return locale === "it"
-    ? `${minute}′ Cartellino rosso! Espulso il numero ${event.number} di ${name}!`
-    : `${minute}′ Red card! Number ${event.number} of ${name} is sent off!`;
+    ? `${minute}′ Cartellino rosso${suffix}! Espulso il numero ${event.number} di ${name}!`
+    : `${minute}′ Red card${suffix}! Number ${event.number} of ${name} is sent off!`;
 }

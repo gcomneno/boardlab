@@ -110,15 +110,28 @@ export async function routeMultiplayer(request, authority) {
     const path = url.pathname;
 
     if (request.method === "POST" && path === "/api/v1/matches") {
-      const body = await jsonBody(request, ["handsPerTeam"]);
+      const body = await jsonBody(
+        request,
+        ["handsPerTeam", "teamSelections"],
+      );
       if (
         !Number.isInteger(body.handsPerTeam) ||
         body.handsPerTeam < 1 ||
-        body.handsPerTeam > 1000
+        body.handsPerTeam > 1000 ||
+        (
+          body.teamSelections !== undefined &&
+          (
+            !Array.isArray(body.teamSelections) ||
+            body.teamSelections.length !== 2
+          )
+        )
       ) {
         return fail(400, "BAD_REQUEST");
       }
-      return respond(201, await authority.create(body.handsPerTeam));
+      return respond(201, await authority.create(
+        body.handsPerTeam,
+        body.teamSelections ?? null,
+      ));
     }
 
     const match = MATCH.exec(path);

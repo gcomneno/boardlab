@@ -40,6 +40,8 @@ export function importCatalogueJson(source) {
       name: rawTeam.name,
       competitionId: rawTeam.competitionId,
       season: rawTeam.season,
+      colors: rawTeam.colors,
+      logo: rawTeam.logo,
     });
 
     if (!Array.isArray(rawTeam.players)) {

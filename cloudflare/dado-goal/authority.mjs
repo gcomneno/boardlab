@@ -1,4 +1,11 @@
 import { createMatchEventContext } from "./match-events-authority.mjs";
+import {
+  createAuthoritativeMatchRosters,
+  resolveMatchTeam,
+} from "./match-team-rosters.mjs";
+import {
+  getMatchTeams,
+} from "./match-teams-d1.mjs";
 /**
  * Server-side multiplayer authority backed by Cloudflare D1.
  *
@@ -52,6 +59,25 @@ function equalBytes(left, right) {
     difference |= a[i] ^ b[i];
   }
   return difference === 0;
+}
+
+async function matchTeamPresentation(db, matchId) {
+  const selections = await getMatchTeams(db, matchId);
+  if (selections === null) return null;
+  const teams = await Promise.all(
+    selections.map(selection => resolveMatchTeam(db, selection))
+  );
+  return teams.map(team => ({
+    name: team.name,
+    logo: team.logo ?? null,
+    colors: Array.isArray(team.colors) ? [...team.colors] : [],
+  }));
+}
+
+async function matchTeamNames(db, matchId) {
+  const teams = await matchTeamPresentation(db, matchId);
+  if (teams === null) return null;
+  return teams.map(team => team.name);
 }
 
 function snapshot(row, seat) {
@@ -126,9 +152,13 @@ export class D1Authority {
     throw new AuthorityError("Unauthorized participant");
   }
 
-  async create(handsPerTeam) {
+  async create(handsPerTeam, teamSelections = null) {
     const state = initialState(handsPerTeam);
     const now = this.now();
+
+    if (teamSelections !== null) {
+      await createAuthoritativeMatchRosters(this.db, teamSelections);
+    }
 
     const matchId = token();
     const hostToken = token();
@@ -141,6 +171,7 @@ export class D1Authority {
       hostDigest: await digest(hostToken),
       createdAt: now,
       expiresAt: now + this.waitingTTL,
+      teamSelections,
     });
 
     return {
@@ -152,6 +183,13 @@ export class D1Authority {
         status: "waiting",
         seat: 0,
         state,
+        teamNames: teamSelections === null
+          ? null
+          : (await Promise.all(
+              teamSelections.map(selection =>
+                resolveMatchTeam(this.db, selection))
+            )).map(team => team.name),
+        teams: await matchTeamPresentation(this.db, matchId),
       },
     };
   }
@@ -166,7 +204,11 @@ export class D1Authority {
     const guestToken = token();
 
     // Generated once; persisted only if the atomic join succeeds.
-    const initialRosters = createMatchEventContext().rosters;
+    // Legacy matches without team metadata retain synthetic rosters.
+    const teamSelections = await getMatchTeams(this.db, matchId);
+    const initialRosters = teamSelections === null
+      ? createMatchEventContext().rosters
+      : await createAuthoritativeMatchRosters(this.db, teamSelections);
 
     const result = await joinMatch(this.db, {
       eventJson: JSON.stringify({
@@ -188,7 +230,11 @@ export class D1Authority {
 
     return {
       guestToken,
-      snapshot: snapshot(row, 1),
+      snapshot: {
+        ...snapshot(row, 1),
+        teamNames: await matchTeamNames(this.db, matchId),
+        teams: await matchTeamPresentation(this.db, matchId),
+      },
     };
   }
 
@@ -232,6 +278,7 @@ export class D1Authority {
         die: event.die,
         face: event.face,
         ...(event.goal ? { goal: event.goal } : {}),
+        ...(event.penalty ? { penalty: event.penalty } : {}),
         ...(event.matchEvent ? { matchEvent: event.matchEvent } : {}),
       });
 
@@ -245,6 +292,8 @@ export class D1Authority {
 
     return {
       ...snapshot(row, seat),
+      teamNames: await matchTeamNames(this.db, matchId),
+      teams: await matchTeamPresentation(this.db, matchId),
       lastRoll,
       rollEvents,
       matchEventContext: (() => {

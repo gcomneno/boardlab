@@ -24,8 +24,8 @@ test("paces provider requests and builds the normalized catalogue", async () => 
       return response({
         errors: [],
         response: [
-          { team: { id: 529, name: "AS Roma" } },
-          { team: { id: 492, name: "SSC Napoli" } },
+          { team: { id: 497, name: "AS Roma", logo: "https://example.test/497.png" } },
+          { team: { id: 492, name: "SSC Napoli", logo: "https://example.test/492.png" } },
         ],
       });
     }
@@ -38,7 +38,7 @@ test("paces provider requests and builds the normalized catalogue", async () => 
         team: { id: teamId },
         players: [{
           id: teamId * 10,
-          name: teamId === 529 ? "Roma Player" : "Napoli Player",
+          name: teamId === 497 ? "Roma Player" : "Napoli Player",
           number: 9,
           position: "Attacker",
         }],
@@ -91,7 +91,7 @@ test("persists the imported catalogue in D1", async () => {
       return response({
         errors: [],
         response: [
-          { team: { id: 529, name: "AS Roma" } },
+          { team: { id: 497, name: "AS Roma", logo: "https://example.test/497.png" } },
         ],
       });
     }
@@ -99,9 +99,9 @@ test("persists the imported catalogue in D1", async () => {
     return response({
       errors: [],
       response: [{
-        team: { id: 529 },
+        team: { id: 497 },
         players: [{
-          id: 5290,
+          id: 4970,
           name: "Roma Player",
           number: 10,
           position: "Attacker",

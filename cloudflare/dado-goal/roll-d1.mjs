@@ -78,9 +78,26 @@ export async function rollAuthorized(
   // Only completed hands can produce narrative events.
   // Historical matches without initial rosters remain compatible.
   let matchEvent = null;
+  let penalty = null;
   if (next.hands[seat] === state.hands[seat] + 1 &&
       typeof authority.matchHistory === "function") {
     const history = await authority.matchHistory(matchId);
+    const previousRoll = [...history].reverse()
+      .map(entry => JSON.parse(entry.event_json))
+      .find(event => event.type === "roll");
+
+    if (phase === "result" &&
+        face !== "RIGORE" &&
+        previousRoll?.die === "result" &&
+        previousRoll?.face === "RIGORE") {
+      penalty = {
+        type: "penalty",
+        team: seat,
+        minute: Math.floor(matchClock(next).seconds / 60),
+        outcome: face,
+      };
+    }
+
     const context = replayMatchEvents(history);
     if (context) {
       matchEvent = evaluateCompletedHand(state, next, context);
@@ -113,6 +130,7 @@ export async function rollAuthorized(
     completedAt: status === "completed" ? updatedAt : null,
     eventJson: JSON.stringify({ type: "roll", seat, die: phase, face,
       ...(goal ? { goal } : {}),
+      ...(penalty ? { penalty } : {}),
       ...(matchEvent ? { matchEvent } : {}) }),
     seat,
     requestId,

@@ -1,3 +1,11 @@
+import {
+  autoAllowsTeam,
+  autoQuotaReached,
+  createAutoConfig,
+  createInterruptibleDelay,
+  remainingHands
+} from "./auto-play.mjs";
+
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
 import { matchClock } from "./match-clock.mjs";
@@ -25,9 +33,21 @@ import {
 import {
   createEventState, evaluateHandEvent
 } from "./match-events.mjs";
-import { describeRoll, describeMatchEvent } from "./commentary.mjs";
+import {
+  createExtraordinaryEventState,
+  evaluateExtraordinaryEvent,
+} from "./extraordinary-events.mjs";
+import {
+  describeExtraordinaryEvent,
+} from "./extraordinary-commentary.mjs";
+import {
+  describeEventReason,
+  describeRoll,
+  describeMatchEvent
+} from "./commentary.mjs";
 import { DICE_ART } from "./dice-art.mjs";
 import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
+import { socialColors } from "./team-colors.mjs";
 
 const byId = (id) => document.getElementById(id);
 const phaseNames = {
@@ -55,10 +75,41 @@ const diceFaces = {
   ],
 };
 
+const dieFaceMessageKeys = Object.freeze({
+  "Tiro in porta!": "faceShotOnTarget",
+  "Passaggio intercettato!": "faceInterceptedPass",
+  "Cross!": "faceCross",
+  "Passaggio": "facePass",
+  "Palla sul fondo": "faceWide",
+  "Mezza rovesciata": "faceScissorKick",
+  "Palla alta sulla traversa": "faceOverTheBar",
+  "Palla intercettata": "faceBallIntercepted",
+  "Rovesciata": "faceBicycleKick",
+  "Colpo di testa": "faceHeader",
+  "Respinto!": "faceBlocked",
+  "GOAL!": "faceGoal",
+  "FUORI!": "faceOut",
+  "PALO/TRAVERSA": "faceWoodwork",
+  "RIGORE": "facePenalty",
+  "Parato!": "faceSaved",
+});
+
+function displayDieFace(face) {
+  const key = dieFaceMessageKeys[face];
+  if (!key) throw new RangeError("Unknown die face");
+  return translate(key);
+}
+
 function diceKind(phase, player) {
   return phase === "team"
     ? (player === 0 ? "yellow" : "blue")
     : phase === "pink" ? "pink" : "final";
+}
+
+const teamPalettes = [null, null];
+
+function visualTeamPalette(player) {
+  return teamPalettes[player] ?? [colors[player]];
 }
 
 function shade(hex, factor) {
@@ -69,11 +120,33 @@ function shade(hex, factor) {
     n.toString(16).padStart(2, "0")).join("");
 }
 
-function displayFace(phase, player, index) {
+const dieFaceTransforms = [
+  "rotateY(0deg) translateZ(var(--die-half))",
+  "rotateY(90deg) translateZ(var(--die-half))",
+  "rotateY(180deg) translateZ(var(--die-half))",
+  "rotateY(-90deg) translateZ(var(--die-half))",
+  "rotateX(90deg) translateZ(var(--die-half))",
+  "rotateX(-90deg) translateZ(var(--die-half))",
+];
+
+const dieFinalRotations = [
+  "rotateX(0deg) rotateY(0deg)",
+  "rotateX(0deg) rotateY(-90deg)",
+  "rotateX(0deg) rotateY(-180deg)",
+  "rotateX(0deg) rotateY(90deg)",
+  "rotateX(-90deg) rotateY(0deg)",
+  "rotateX(90deg) rotateY(0deg)",
+];
+
+function buildDie3d(phase, player) {
   const die = byId("die");
+  die.classList.remove("kickoff-ball");
   const kind = diceKind(phase, player);
-  const svg = DICE_ART[kind][index];
-  if (!svg) throw new RangeError("Invalid die face");
+  const art = DICE_ART[kind];
+
+  if (!Array.isArray(art) || art.length !== 6) {
+    throw new RangeError("Invalid 3D die faces");
+  }
 
   const color = colors[player];
   die.style.removeProperty("--die-light");
@@ -86,15 +159,35 @@ function displayFace(phase, player, index) {
     die.style.setProperty("--die-ink", shade(color, 0.28));
   }
 
-  // SVG controllati dal repository, incorporati affinché
-  // ereditino i colori CSS della squadra.
-  die.innerHTML = svg;
-  die.setAttribute(
-    "aria-label",
-    `Dado ${kind}: ${diceFaces[phase][index]}`,
-  );
+  const cube = document.createElement("div");
+  cube.className = "die-cube";
+
+  art.forEach((svg, index) => {
+    const face = document.createElement("div");
+    face.className = `die-face die-face-${index}`;
+    face.style.transform = dieFaceTransforms[index];
+    face.innerHTML = svg;
+    cube.append(face);
+  });
+
+  die.replaceChildren(cube);
+  return cube;
 }
 
+function displayFace(phase, player, index) {
+  if (!Number.isInteger(index) || index < 0 || index > 5) {
+    throw new RangeError("Invalid die face");
+  }
+
+  const die = byId("die");
+  const cube = buildDie3d(phase, player);
+  cube.style.transform = dieFinalRotations[index];
+
+  die.setAttribute(
+    "aria-label",
+    `${phaseName(phase)}: ${displayDieFace(diceFaces[phase][index])}`,
+  );
+}
 
 let state;
 let names = [];
@@ -104,9 +197,11 @@ let rollEvents = [];
 let matchEvents = [];
 let rosters = [];
 let refereeStates = [];
+let extraordinaryState;
 let commentaryEnabled = true;
 let lastCommentary = null;
 let lastRefereeEvent = null;
+let lastExtraordinaryEvent = null;
 let lastGoalScorer = null;
 let messageKey = "setupPrompt";
 let messageValues = {};
@@ -119,6 +214,11 @@ function showMessage(key, values = {}) {
 
 let matchStarted = false;
 let autoRunning = false;
+let autoConfig = null;
+const autoDelay = createInterruptibleDelay(
+  window.setTimeout.bind(window),
+  window.clearTimeout.bind(window)
+);
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -139,6 +239,7 @@ function render() {
 
   const eventKeys = {
     goal: "eventGoal",
+    penalty: "eventPenalty",
     yellow: "eventYellow",
     red: "eventRed",
     substitution: "eventSubstitution"
@@ -152,13 +253,34 @@ function render() {
       minute.textContent = `${event.minute}′`;
       minute.className = "event-minute";
 
-      const description = document.createElement("span");
-      description.textContent = formatMessage(eventKeys[event.type], {
-        ...eventDisplayValues(event),
-        team: names[event.team]
-      });
+      const descriptionStack = document.createElement("span");
+      descriptionStack.className = "event-description-stack";
 
-      item.append(minute, description);
+      const description = document.createElement("span");
+      const reason = describeEventReason(event.reason, getLocale());
+      const eventDescription = event.type === "penalty"
+        ? formatMessage("eventPenalty", {
+            outcome: displayDieFace(event.outcome)
+          })
+        : event.classification === "narrative"
+          ? describeExtraordinaryEvent(event, getLocale())
+              .replace(/^\d+′\s*/, "")
+          : formatMessage(eventKeys[event.type], {
+              ...eventDisplayValues(event),
+              team: names[event.team],
+              reason: ""
+            });
+      description.textContent = eventDescription;
+      descriptionStack.append(description);
+
+      if ((event.type === "yellow" || event.type === "red") && reason) {
+        const reasonLine = document.createElement("span");
+        reasonLine.className = "event-reason";
+        reasonLine.textContent = `[${reason}]`;
+        descriptionStack.append(reasonLine);
+      }
+
+      item.append(minute, descriptionStack);
       return item;
     })
   );
@@ -180,6 +302,12 @@ function render() {
           : null,
         lastRefereeEvent
           ? describeMatchEvent(lastRefereeEvent, names, getLocale())
+          : null,
+        lastExtraordinaryEvent
+          ? describeExtraordinaryEvent(
+              lastExtraordinaryEvent,
+              getLocale()
+            )
           : null
       ].filter(Boolean).join(" ")
       : translate("commentaryReady");
@@ -204,7 +332,9 @@ function render() {
         done: state.hands[player], total: state.handsPerTeam
       });
     const panel = byId(`panel-${player}`);
-    panel.style.setProperty("--team-color", colors[player]);
+    const palette = visualTeamPalette(player);
+    panel.style.setProperty("--team-color", palette[0]);
+    panel.style.setProperty("--team-color-secondary", palette[1] ?? palette[0]);
     panel.classList.toggle(
       "active",
       state.phase !== "finished" && state.player === player,
@@ -286,11 +416,32 @@ function render() {
 
   const finished = state.phase === "finished";
   const playing = matchStarted && !finished;
+
+  // Match configuration is immutable from kick-off to the final whistle.
+  byId("competition").disabled = playing;
+  byId("hands").disabled = playing;
+
+  for (const seat of [0, 1]) {
+    byId(`team-${seat}`).disabled = playing;
+    byId(`color-${seat}`).disabled = playing;
+    byId(`color-${seat}-enabled`).disabled = playing;
+    byId(`color-${seat}-secondary`).disabled =
+      playing || !byId(`color-${seat}-enabled`).checked;
+  }
+
   byId("roll").disabled = !playing || isRolling || autoRunning;
   byId("auto").disabled = !playing;
+  byId("commentary-toggle").disabled = !playing;
   byId("auto").textContent = autoRunning ? "■ STOP" : "▶ AUTO";
   byId("auto").setAttribute("aria-pressed", String(autoRunning));
-  byId("new").disabled = isRolling;
+  const selectedTeamIds = [0, 1].map(
+    seat => byId(`team-${seat}`).value
+  );
+  const sameSelectedTeam =
+    selectedTeamIds[0] !== "" &&
+    selectedTeamIds[0] === selectedTeamIds[1];
+
+  byId("new").disabled = isRolling || (!playing && sameSelectedTeam);
   byId("new").textContent = translate(
     playing ? "cancelMatch" : "newGame"
   );
@@ -323,23 +474,7 @@ try {
   managementState = createManagementDocument();
 }
 
-function renderManagementStatus() {
-  byId("management-status").textContent =
-    `${managementState.matches.length} partite archiviate localmente`;
-}
 
-function downloadManagementJson() {
-  const blob = new Blob(
-    [exportManagementJson(managementState)],
-    { type: "application/json" }
-  );
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "dado-goal-management.json";
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 function recordCompletedMatch() {
   if (matchRecorded || state.phase !== "finished") return;
@@ -389,166 +524,228 @@ function catalogueTeam(selectId) {
   if (value === "") return null;
 
   return footballCatalogue.teams.find(
-    (team) => team.providerTeamId === value
+    (team) => String(team.providerTeamId) === value
   ) ?? null;
 }
 
-function ratingPlayerKey(team, player) {
-  return `${team.providerTeamId}:${player.providerPlayerId}`;
-}
 
-function ratingEntry(key) {
-  return managementState.ratings.find(entry => entry.key === key) ?? null;
-}
 
-function renderRatingPlayers() {
-  const select = byId("ratings-player");
-  select.replaceChildren();
 
-  const teams = [0, 1]
-    .map(i => catalogueTeam(`catalogue-team-${i}`))
-    .filter(Boolean);
 
-  if (teams.length === 0) {
-    select.append(new Option("Seleziona una squadra reale", ""));
-    select.disabled = true;
-    byId("ratings-save").disabled = true;
-    byId("ratings-fields").replaceChildren();
-    return;
-  }
-
-  select.append(new Option("Seleziona giocatore", ""));
-
-  for (const team of teams) {
-    for (const player of team.players) {
-      const key = ratingPlayerKey(team, player);
-      select.append(new Option(
-        `${team.name} · ${player.name}`,
-        key
-      ));
-    }
-  }
-
-  select.disabled = false;
-  renderRatingFields();
-}
-
-function renderRatingFields() {
-  const key = byId("ratings-player").value;
-  const container = byId("ratings-fields");
-  container.replaceChildren();
-  byId("ratings-save").disabled = !key;
-
-  if (!key) return;
-
-  const saved = ratingEntry(key);
-  const ratings = createPlayerRatings(saved?.ratings);
-
-  for (const field of RATING_FIELDS) {
-    const label = document.createElement("label");
-    label.textContent = field;
-
-    const select = document.createElement("select");
-    select.dataset.ratingField = field;
-
-    for (const level of RATING_LEVELS) {
-      select.append(new Option(level, level));
-    }
-
-    select.value = ratings[field];
-    label.append(select);
-    container.append(label);
-  }
-}
-
-function saveCurrentRating() {
-  const key = byId("ratings-player").value;
-  if (!key) return;
-
-  const [teamId, playerId] = key.split(":");
-  const team = footballCatalogue?.teams.find(
-    candidate => candidate.providerTeamId === teamId
-  );
-  const player = team?.players.find(
-    candidate => candidate.providerPlayerId === playerId
-  );
-  if (!team || !player) return;
-
-  const values = {};
-  for (const select of document.querySelectorAll("[data-rating-field]")) {
-    values[select.dataset.ratingField] = select.value;
-  }
-
-  const entry = {
-    key,
-    providerTeamId: team.providerTeamId,
-    providerPlayerId: player.providerPlayerId,
-    playerName: player.name,
-    ratings: createPlayerRatings(values),
-  };
-
-  const ratings = managementState.ratings.filter(item => item.key !== key);
-  const nextState = createManagementDocument({
-    ratings: [...ratings, entry],
-    matches: managementState.matches,
-  });
-
-  saveManagement(window.localStorage, nextState);
-  managementState = nextState;
-  byId("ratings-status").textContent =
-    `Valutazione salvata per ${player.name}`;
-  renderManagementStatus();
-}
 
 function renderCatalogueTeams() {
-  for (let seat = 0; seat < 2; seat += 1) {
-    const select = byId(`catalogue-team-${seat}`);
-    select.replaceChildren(new Option("Partita rapida", ""));
+  const teams = [...(footballCatalogue?.teams ?? [])].sort(
+    (left, right) => left.name.localeCompare(
+      right.name, undefined, { sensitivity: "base" }
+    )
+  );
 
-    for (const team of footballCatalogue?.teams ?? []) {
-      select.append(new Option(team.name, team.providerTeamId));
+  for (let seat = 0; seat < 2; seat += 1) {
+    const select = byId(`team-${seat}`);
+    const current = select.value;
+    select.replaceChildren(new Option(`Squadra ${seat + 1}`, ""));
+
+    for (const team of teams) {
+      select.append(new Option(team.name, String(team.providerTeamId)));
     }
 
-    select.disabled = !footballCatalogue;
-  }
+    if ([...select.options].some(option => option.value === current)) {
+      select.value = current;
+    }
 
-  renderRatingPlayers();
+    renderSelectedTeamLogo(seat);
+  }
 }
+
 
 async function loadCatalogueFile(file) {
   const source = await file.text();
   footballCatalogue = importCatalogueJson(source);
   renderCatalogueTeams();
-  byId("catalogue-status").textContent =
-    `${footballCatalogue.teams.length} squadre importate`;
+}
+
+const competitionsByLocale = Object.freeze({
+  it: Object.freeze([
+    Object.freeze({ value: "135:2024", label: "Serie A" }),
+    Object.freeze({ value: "136:2024", label: "Serie B" }),
+  ]),
+  en: Object.freeze([
+    Object.freeze({ value: "39:2024", label: "Premier League" }),
+    Object.freeze({ value: "40:2024", label: "Championship" }),
+  ]),
+});
+
+function syncCompetitionSelector() {
+  const selector = byId("competition");
+  const language = byId("language").value;
+  const competitions = competitionsByLocale[language] ??
+    competitionsByLocale.en;
+  const previous = selector.value;
+
+  selector.replaceChildren(
+    ...competitions.map(({ value, label }) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      return option;
+    }),
+  );
+
+  if (competitions.some(({ value }) => value === previous)) {
+    selector.value = previous;
+  }
+
+  if (selector.options.length !== competitions.length) {
+    throw new Error("Competition selector synchronization failed");
+  }
+}
+
+async function reloadLiveCatalogue() {
+  footballCatalogue = null;
+  renderCatalogueTeams();
+
+  try {
+    await loadLiveCatalogue();
+  } catch {
+    footballCatalogue = null;
+    renderCatalogueTeams();
+  }
 }
 
 async function loadLiveCatalogue() {
-  const competition = byId("catalogue-competition").value.trim();
-  const season = byId("catalogue-season").value.trim();
+  const [competitionId, season] = byId("competition").value.split(":");
+  const catalogueUrls = Object.freeze({
+    "135:2024": "./catalogues/serie-a-2024.json",
+    "136:2024": "./catalogues/serie-b-2024.json",
+    "39:2024": "./catalogues/premier-league-2024.json",
+    "40:2024": "./catalogues/championship-2024.json",
+  });
+  const catalogueUrl = catalogueUrls[`${competitionId}:${season}`];
 
-  if (!/^\d+$/.test(competition) || !/^\d{4}$/.test(season)) {
-    throw new TypeError("invalid catalogue query");
+  if (!catalogueUrl) {
+    throw new Error(
+      `unsupported football catalogue ${competitionId}:${season}`
+    );
   }
 
-  const parameters = new URLSearchParams({ competition, season });
-  const response = await fetch(
-    `https://dado-goal-multiplayer-beta.giancarlo-cicellyn.workers.dev/api/football/catalogue?${parameters}`,
-  );
+  const response = await fetch(catalogueUrl);
 
   if (!response.ok) {
     throw new Error(`catalogue HTTP ${response.status}`);
   }
 
-  const source = await response.text();
-  footballCatalogue = importCatalogueJson(source);
+  footballCatalogue = importCatalogueJson(await response.text());
   renderCatalogueTeams();
-  byId("catalogue-status").textContent =
-    `${footballCatalogue.teams.length} squadre caricate`;
+}
+
+
+function manualTeamPalette(seat) {
+  const primary = byId(`color-${seat}`).value;
+  const enabled = byId(`color-${seat}-enabled`).checked;
+  return enabled
+    ? [primary, byId(`color-${seat}-secondary`).value]
+    : [primary];
+}
+
+function syncSecondaryColorControl(seat) {
+  const enabled = byId(`color-${seat}-enabled`).checked;
+  byId(`color-${seat}-secondary`).disabled = !enabled;
+}
+
+function selectedCatalogueTeam(seat) {
+  const teamId = byId(`team-${seat}`).value;
+
+  if (!teamId) {
+    return null;
+  }
+
+  return footballCatalogue?.teams.find(
+    candidate => String(candidate.providerTeamId) === String(teamId)
+  ) ?? null;
+}
+
+function renderSelectedTeamLogo(seat) {
+  const logo = byId(`team-logo-${seat}`);
+  const team = selectedCatalogueTeam(seat);
+
+  if (!team) {
+    logo.hidden = true;
+    logo.removeAttribute("src");
+    logo.alt = "";
+    return;
+  }
+
+  logo.src = team.logo;
+  logo.alt = team.name;
+  logo.hidden = false;
+}
+
+function capturePitchTeamLogos() {
+  for (const seat of [0, 1]) {
+    const logo = byId(`pitch-logo-${seat}`);
+    const team = selectedCatalogueTeam(seat);
+
+    if (!team) {
+      logo.hidden = true;
+      logo.removeAttribute("src");
+      logo.alt = "";
+      continue;
+    }
+
+    logo.src = team.logo;
+    logo.alt = team.name;
+    logo.hidden = false;
+  }
+}
+
+function applySelectedTeamColor(seat) {
+  const team = selectedCatalogueTeam(seat);
+
+  if (!team) {
+    teamPalettes[seat] = null;
+    renderSelectedTeamLogo(seat);
+    return;
+  }
+
+  const palette = [...team.colors];
+  teamPalettes[seat] = palette;
+  byId(`color-${seat}`).value = palette[0];
+  byId(`color-${seat}-enabled`).checked = palette.length === 2;
+  byId(`color-${seat}-secondary`).value = palette[1] ?? palette[0];
+  syncSecondaryColorControl(seat);
+  renderSelectedTeamLogo(seat);
+}
+
+byId("competition").addEventListener("change", () => {
+  void reloadLiveCatalogue();
+});
+
+for (const seat of [0, 1]) {
+  byId(`team-${seat}`).addEventListener("change", () => {
+    applySelectedTeamColor(seat);
+    render();
+  });
+  byId(`color-${seat}-enabled`).addEventListener(
+    "change", () => syncSecondaryColorControl(seat)
+  );
+  syncSecondaryColorControl(seat);
+}
+
+function palettesConflict(left, right) {
+  const normalizedLeft = new Set(
+    left.map(color => color.trim().toUpperCase())
+  );
+  return right.some(
+    color => normalizedLeft.has(color.trim().toUpperCase())
+  );
 }
 
 function start(activate = true) {
   const rawHands = byId("hands").value;
+
+  if (activate) {
+    capturePitchTeamLogos();
+  }
   const n = Number(rawHands);
 
   if (
@@ -561,12 +758,21 @@ function start(activate = true) {
     return;
   }
 
-  const selectedTeams = [0, 1].map(
-    (i) => catalogueTeam(`catalogue-team-${i}`)
+  const selectedTeamIds = [0, 1].map(
+    (i) => byId(`team-${i}`).value
   );
 
-  selectedMatchTeams = selectedTeams;
-  matchRecorded = false;
+  if (activate &&
+      selectedTeamIds[0] !== "" &&
+      selectedTeamIds[0] === selectedTeamIds[1]) {
+    showMessage("sameTeamConflict");
+    render();
+    return;
+  }
+
+  const selectedTeams = [0, 1].map(
+    (i) => catalogueTeam(`team-${i}`)
+  );
 
   names = [0, 1].map((i) =>
     selectedTeams[i]?.name ||
@@ -574,6 +780,30 @@ function start(activate = true) {
     `Squadra ${i + 1}`
   );
   colors = [0, 1].map((i) => byId(`color-${i}`).value);
+
+  const candidatePalettes = [0, 1].map((seat) =>
+    selectedTeams[seat]
+      ? socialColors(selectedTeams[seat].providerTeamId)
+      : manualTeamPalette(seat)
+  );
+
+  const realTeamKitConflict =
+    selectedTeams.every(Boolean) &&
+    palettesConflict(candidatePalettes[0], candidatePalettes[1]);
+
+  if (activate && realTeamKitConflict) {
+    showMessage("kitColorConflict");
+    render();
+    return;
+  }
+
+  selectedMatchTeams = selectedTeams;
+  matchRecorded = false;
+
+  for (const seat of [0, 1]) {
+    teamPalettes[seat] = candidatePalettes[seat];
+  }
+
   state = newMatch(n);
   matchStarted = activate;
   autoRunning = false;
@@ -584,12 +814,15 @@ function start(activate = true) {
     createMatchRoster({ team })
   );
   refereeStates = [createEventState(), createEventState()];
+  extraordinaryState = createExtraordinaryEventState();
   lastCommentary = null;
   lastRefereeEvent = null;
+  lastExtraordinaryEvent = null;
   lastGoalScorer = null;
 
   const die = byId("die");
   die.classList.remove("rolling");
+  die.classList.add("kickoff-ball");
   die.textContent = "⚽";
   die.setAttribute("aria-label", "In attesa del primo lancio");
   byId("result").textContent = "Calcio d'inizio!";
@@ -601,26 +834,29 @@ function start(activate = true) {
   render();
 }
 
-async function animateRoll(phase, player, finalFace) {
+async function animateRoll(phase, player, finalFace, durationMs = 700) {
   const die = byId("die");
   const finalIndex = diceFaces[phase].indexOf(finalFace);
   if (finalIndex < 0) throw new RangeError("Unknown die result");
 
-  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+      durationMs > 0) {
+    const cube = buildDie3d(phase, player);
     die.classList.add("rolling");
-    for (let index = 0; index < 10; index += 1) {
-      displayFace(phase, player, index % 6);
-      await sleep(70);
-    }
+    cube.classList.add("rolling");
+
+    await sleep(durationMs);
+
+    cube.classList.remove("rolling");
     die.classList.remove("rolling");
   }
 
   displayFace(phase, player, finalIndex);
-  byId("result").textContent = finalFace;
+  byId("result").textContent = displayDieFace(finalFace);
 }
 
 async function roll() {
-  if (!matchStarted || state.phase === "finished" || isRolling) return;
+  if (!matchStarted || state.phase === "finished" || isRolling) return false;
 
   isRolling = true;
   render();
@@ -631,9 +867,15 @@ async function roll() {
 
   await animateRoll(state.phase, player, face);
   const before = state;
+  const penaltyResolved =
+    phase === "result" &&
+    face !== "RIGORE" &&
+    rollEvents.at(-1)?.die === "result" &&
+    rollEvents.at(-1)?.face === "RIGORE";
   state = applyRoll(state, face);
   rollEvents.push({ seat: player, die: phase, face });
   lastRefereeEvent = null;
+  lastExtraordinaryEvent = null;
   lastGoalScorer = null;
   if (commentaryEnabled) {
     lastCommentary = {
@@ -650,9 +892,18 @@ async function roll() {
   if (handEnded) {
     const minute = Math.floor(matchClock(state).seconds / 60);
 
+    if (penaltyResolved) {
+      matchEvents.push({
+        type: "penalty",
+        team: player,
+        minute,
+        outcome: face
+      });
+    }
+
     // The score comes exclusively from the dice engine.
     if (state.goals[player] > before.goals[player]) {
-      lastGoalScorer = pickScorer(rosters[player]);
+      lastGoalScorer = pickScorer(rosters[player], Math.random, minute);
       matchEvents.push(enrichMatchEvent(rosters[player], {
         type: "goal",
         team: player,
@@ -663,7 +914,11 @@ async function roll() {
 
     // Only the team completing its hand gets an event opportunity.
     const refereeEvent = evaluateHandEvent(
-      rosters[player], refereeStates[player], minute
+      rosters[player],
+      refereeStates[player],
+      minute,
+      Math.random,
+      { halftime: matchClock(state).halftime }
     );
 
     if (refereeEvent) {
@@ -672,6 +927,23 @@ async function roll() {
         { ...refereeEvent, team: player }
       );
       matchEvents.push(lastRefereeEvent);
+    } else {
+      // Extraordinary events are a separate narrative channel, but a
+      // completed hand may still emit at most one auxiliary event.
+      const extraordinaryEvent = evaluateExtraordinaryEvent(
+        rosters[player],
+        extraordinaryState,
+        minute,
+        Math.random
+      );
+
+      if (extraordinaryEvent) {
+        lastExtraordinaryEvent = {
+          ...extraordinaryEvent,
+          team: player
+        };
+        matchEvents.push(lastExtraordinaryEvent);
+      }
     }
   }
 
@@ -699,23 +971,73 @@ async function roll() {
   }
 
   isRolling = false;
-  if (state.phase === "finished") autoRunning = false;
+  if (state.phase === "finished") {
+    autoRunning = false;
+    autoConfig = null;
+  }
   render();
+
+  if (handEnded &&
+      autoConfig &&
+      !autoRunning &&
+      state.phase !== "finished" &&
+      autoAllowsTeam(autoConfig, state.player)) {
+    void runAuto();
+  }
+
+  return handEnded;
 }
 
 async function runAuto() {
-  if (autoRunning || !matchStarted || state.phase === "finished" || isRolling) return;
+  if (autoRunning || !autoConfig || !matchStarted ||
+      state.phase === "finished" || isRolling) return;
 
+  let completedHands = 0;
   autoRunning = true;
   render();
 
   while (autoRunning && matchStarted && state.phase !== "finished") {
-    await roll();
+    if (autoQuotaReached(autoConfig, completedHands)) {
+      break;
+    }
+
+    // A team-specific AUTO remains armed while the other team plays
+    // manually. Its run resumes from roll() when control reaches the
+    // configured team.
+    if (!autoAllowsTeam(autoConfig, state.player)) {
+      autoRunning = false;
+      render();
+      return;
+    }
+
+    // AUTO reproduces the manual "roll die" action:
+    // wait first, then perform every automatic die roll.
+    if (!await autoDelay.wait(autoConfig.rollDelay)) break;
     if (!autoRunning || state.phase === "finished") break;
-    await sleep(350);
+
+    const handEnded = await roll();
+
+    if (!autoRunning || state.phase === "finished") break;
+
+    if (handEnded) {
+      completedHands += 1;
+
+      if (autoQuotaReached(autoConfig, completedHands) ||
+          !autoAllowsTeam(autoConfig, state.player)) {
+        break;
+      }
+
+
+    }
   }
 
   autoRunning = false;
+
+  if (state.phase === "finished" ||
+      autoQuotaReached(autoConfig, completedHands)) {
+    autoConfig = null;
+  }
+
   render();
 }
 
@@ -724,17 +1046,81 @@ byId("commentary-toggle").addEventListener("click", () => {
   render();
 });
 
+const autoDialog = byId("auto-config");
+const autoMode = byId("auto-mode");
+const autoHandLimitRow = byId("auto-hand-limit-row");
+const autoHandLimit = byId("auto-hand-limit");
+
+function updateAutoConfigForm() {
+  const maximum = remainingHands(state);
+  const previous = autoHandLimit.value;
+
+  autoHandLimit.replaceChildren();
+
+  const all = document.createElement("option");
+  all.value = "all";
+  all.textContent = "Tutti i lanci rimanenti";
+  autoHandLimit.append(all);
+
+  for (let count = 1; count <= maximum; count += 1) {
+    const option = document.createElement("option");
+    option.value = String(count);
+    option.textContent = String(count);
+    autoHandLimit.append(option);
+  }
+
+  autoHandLimit.value =
+    previous !== "" &&
+    [...autoHandLimit.options].some(option => option.value === previous)
+      ? previous
+      : "all";
+}
+
+autoMode.addEventListener("change", updateAutoConfigForm);
+
+byId("auto-cancel").addEventListener("click", () => {
+  autoDialog.close();
+});
+
+byId("auto-config-form").addEventListener("submit", event => {
+  event.preventDefault();
+
+  const handLimit = autoHandLimit.value === "all"
+    ? null
+    : Number(autoHandLimit.value);
+
+  if (handLimit !== null && handLimit > remainingHands(state)) {
+    return;
+  }
+
+  autoConfig = createAutoConfig({
+    mode: autoMode.value,
+    handLimit,
+    rollDelay: Math.round(Number(byId("auto-roll-delay").value) * 1000),
+    handDelay: 0
+  });
+
+  autoDialog.close();
+  void runAuto();
+});
+
 byId("auto").addEventListener("click", () => {
   if (autoRunning) {
     autoRunning = false;
+    autoDelay.cancel();
     render();
-  } else {
-    void runAuto();
+    return;
   }
+
+  autoConfig = null;
+  updateAutoConfigForm();
+  autoDialog.showModal();
 });
 
 byId("new").addEventListener("click", () => {
-  if (isRolling) return;
+  if (isRolling) {
+    return;
+  }
 
   if (matchStarted && state.phase !== "finished") {
     if (!window.confirm(translate("cancelConfirm"))) return;
@@ -754,76 +1140,12 @@ document.querySelector(".multiplayer-button").addEventListener("click", event =>
 byId("roll").addEventListener("click", () => {
   void roll();
 });
-byId("catalogue-team-0").addEventListener("change", renderRatingPlayers);
-byId("catalogue-team-1").addEventListener("change", renderRatingPlayers);
-byId("ratings-player").addEventListener("change", renderRatingFields);
-byId("ratings-save").addEventListener("click", saveCurrentRating);
-
-byId("management-export").addEventListener("click", () => {
-  downloadManagementJson();
-});
-
-byId("management-import").addEventListener("change", async (event) => {
-  const [file] = event.target.files;
-  if (!file) return;
-
-  try {
-    const imported = importManagementJson(await file.text());
-    saveManagement(window.localStorage, imported);
-    managementState = imported;
-    renderManagementStatus();
-    renderRatingPlayers();
-  } catch {
-    byId("management-status").textContent = "Dati gestione non validi";
-  }
-
-  event.target.value = "";
-});
-
-byId("management-clear").addEventListener("click", () => {
-  if (!window.confirm("Cancellare tutti i dati di gestione locali?")) return;
-
-  try {
-    clearManagement(window.localStorage);
-    managementState = createManagementDocument();
-    renderManagementStatus();
-    renderRatingPlayers();
-  } catch {
-    byId("management-status").textContent =
-      "Impossibile cancellare i dati locali";
-  }
-});
-
-byId("catalogue-live-load").addEventListener("click", async () => {
-  const button = byId("catalogue-live-load");
-  button.disabled = true;
-  byId("catalogue-status").textContent = "Caricamento catalogo…";
-
-  try {
-    await loadLiveCatalogue();
-  } catch {
-    footballCatalogue = null;
-    renderCatalogueTeams();
-    byId("catalogue-status").textContent =
-      "Catalogo non disponibile";
-  } finally {
-    button.disabled = false;
-  }
-});
-
-byId("catalogue-file").addEventListener("change", async (event) => {
-  const [file] = event.target.files;
-  if (!file) return;
-
-  try {
-    await loadCatalogueFile(file);
-  } catch {
-    footballCatalogue = null;
-    renderCatalogueTeams();
-    byId("catalogue-status").textContent = "Catalogo non valido";
-  }
-});
-
-renderManagementStatus();
 start(false);
-initializeLocale(render);
+initializeLocale(() => {
+  syncCompetitionSelector();
+  render();
+  void reloadLiveCatalogue();
+});
+
+syncCompetitionSelector();
+void reloadLiveCatalogue();

@@ -1,3 +1,12 @@
+import {
+  createExtraordinaryEventState,
+  extraordinaryEventCatalogue,
+} from "../../web/dado-goal/extraordinary-events.mjs";
+
+const EXTRAORDINARY_TYPES = new Set(
+  extraordinaryEventCatalogue.map(event => event.type)
+);
+
 /**
  * Reconstruct authoritative narrative state from persisted D1 events.
  *
@@ -23,6 +32,7 @@ export function replayMatchEvents(entries) {
           { yellowed: new Set() },
           { yellowed: new Set() },
         ],
+        extraordinaryState: createExtraordinaryEventState(),
       };
       continue;
     }
@@ -41,6 +51,23 @@ export function replayMatchEvents(entries) {
     const roster = context.rosters[seat];
     const referee = context.refereeStates[seat];
 
+    if (change.classification === "narrative") {
+      const catalogueEvent = extraordinaryEventCatalogue.find(
+        event => event.type === change.type
+      );
+
+      if (!catalogueEvent || !EXTRAORDINARY_TYPES.has(change.type) ||
+          change.family !== catalogueEvent.family) {
+        throw new Error("Invalid extraordinary event replay");
+      }
+
+      context.extraordinaryState.occurredTypes.add(change.type);
+      if (["weather", "external", "technical"].includes(change.family)) {
+        context.extraordinaryState.occurredFamilies.add(change.family);
+      }
+      continue;
+    }
+
     if (change.type === "yellow") {
       if (!roster.active.includes(change.number) ||
           referee.yellowed.has(change.number)) {
@@ -58,6 +85,16 @@ export function replayMatchEvents(entries) {
 
       if (outgoing < 0 || incoming < 0 || roster.substitutions >= 5) {
         throw new Error("Invalid substitution replay");
+      }
+
+      const outgoingPosition =
+        roster.identities?.[change.out]?.position;
+      const incomingPosition =
+        roster.identities?.[change.in]?.position;
+
+      if (outgoingPosition === "Goalkeeper" &&
+          incomingPosition !== "Goalkeeper") {
+        throw new Error("Invalid goalkeeper substitution replay");
       }
 
       roster.active.splice(outgoing, 1, change.in);
