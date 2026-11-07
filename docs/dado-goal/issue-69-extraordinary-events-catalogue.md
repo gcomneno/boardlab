@@ -1,5 +1,7 @@
 # Dado Goal! #69 — Extraordinary events catalogue
 
+[English](issue-69-extraordinary-events-catalogue.md) | [Italiano](issue-69-extraordinary-events-catalogue.it.md)
+
 Status: design candidate — single-player first
 
 ## Invariants
