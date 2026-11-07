@@ -278,6 +278,7 @@ export class D1Authority {
         die: event.die,
         face: event.face,
         ...(event.goal ? { goal: event.goal } : {}),
+        ...(event.penalty ? { penalty: event.penalty } : {}),
         ...(event.matchEvent ? { matchEvent: event.matchEvent } : {}),
       });
 

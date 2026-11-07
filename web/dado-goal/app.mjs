@@ -239,6 +239,7 @@ function render() {
 
   const eventKeys = {
     goal: "eventGoal",
+    penalty: "eventPenalty",
     yellow: "eventYellow",
     red: "eventRed",
     substitution: "eventSubstitution"
@@ -257,14 +258,18 @@ function render() {
 
       const description = document.createElement("span");
       const reason = describeEventReason(event.reason, getLocale());
-      const eventDescription = event.classification === "narrative"
-        ? describeExtraordinaryEvent(event, getLocale())
-            .replace(/^\d+′\s*/, "")
-        : formatMessage(eventKeys[event.type], {
-            ...eventDisplayValues(event),
-            team: names[event.team],
-            reason: ""
-          });
+      const eventDescription = event.type === "penalty"
+        ? formatMessage("eventPenalty", {
+            outcome: displayDieFace(event.outcome)
+          })
+        : event.classification === "narrative"
+          ? describeExtraordinaryEvent(event, getLocale())
+              .replace(/^\d+′\s*/, "")
+          : formatMessage(eventKeys[event.type], {
+              ...eventDisplayValues(event),
+              team: names[event.team],
+              reason: ""
+            });
       description.textContent = eventDescription;
       descriptionStack.append(description);
 
@@ -426,6 +431,7 @@ function render() {
 
   byId("roll").disabled = !playing || isRolling || autoRunning;
   byId("auto").disabled = !playing;
+  byId("commentary-toggle").disabled = !playing;
   byId("auto").textContent = autoRunning ? "■ STOP" : "▶ AUTO";
   byId("auto").setAttribute("aria-pressed", String(autoRunning));
   const selectedTeamIds = [0, 1].map(
@@ -861,6 +867,11 @@ async function roll() {
 
   await animateRoll(state.phase, player, face);
   const before = state;
+  const penaltyResolved =
+    phase === "result" &&
+    face !== "RIGORE" &&
+    rollEvents.at(-1)?.die === "result" &&
+    rollEvents.at(-1)?.face === "RIGORE";
   state = applyRoll(state, face);
   rollEvents.push({ seat: player, die: phase, face });
   lastRefereeEvent = null;
@@ -880,6 +891,15 @@ async function roll() {
 
   if (handEnded) {
     const minute = Math.floor(matchClock(state).seconds / 60);
+
+    if (penaltyResolved) {
+      matchEvents.push({
+        type: "penalty",
+        team: player,
+        minute,
+        outcome: face
+      });
+    }
 
     // The score comes exclusively from the dice engine.
     if (state.goals[player] > before.goals[player]) {

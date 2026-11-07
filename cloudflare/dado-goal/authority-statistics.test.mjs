@@ -27,6 +27,9 @@ test("authenticated D1 snapshot aggregates rolls, excludes joins and preserves l
             },
             async all() {
               calls.push(sql);
+              if (sql.includes("FROM lifecycle_match_teams")) {
+                return { results: [] };
+              }
               if (sql.includes("FROM lifecycle_events")) {
                 return {
                   results: [
@@ -79,7 +82,14 @@ test("authenticated D1 snapshot aggregates rolls, excludes joins and preserves l
     die: "result",
     face: "GOAL!",
   });
-  assert.equal(calls.length, 2);
+  assert.equal(
+    calls.filter(sql => sql.includes("FROM lifecycle_matches")).length,
+    1,
+  );
+  assert.equal(
+    calls.filter(sql => sql.includes("FROM lifecycle_events")).length,
+    1,
+  );
 });
 
 test("M2D: snapshot JSON preserves yellow-card numbers", async () => {
@@ -130,6 +140,9 @@ test("M2D: snapshot JSON preserves yellow-card numbers", async () => {
               throw new Error("Unexpected first()");
             },
             async all() {
+              if (sql.includes("FROM lifecycle_match_teams")) {
+                return { results: [] };
+              }
               if (sql.includes("FROM lifecycle_events")) {
                 return { results: history };
               }

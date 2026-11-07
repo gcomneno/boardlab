@@ -233,6 +233,7 @@ let rosters = [];
 let refereeStates = [];
 let extraordinaryState;
 let commentaryEnabled = true;
+let autoEnabled = false;
 let autoRunning = false;
 let lastCommentary = null;
 let lastRefereeEvent = null;
@@ -279,6 +280,8 @@ function render() {
 
   if (!state) {
     byId("roll").disabled = true;
+    byId("auto").disabled = true;
+    byId("commentary-toggle").disabled = true;
     byId("result").textContent = "⚽";
     byId("match-clock").textContent = "—";
     return;
@@ -295,6 +298,7 @@ function render() {
 
   const eventKeys = {
     goal: "eventGoal",
+    penalty: "eventPenalty",
     yellow: "eventYellow",
     red: "eventRed",
     substitution: "eventSubstitution"
@@ -313,14 +317,18 @@ function render() {
 
       const description = document.createElement("span");
       const reason = describeEventReason(event.reason, getLocale());
-      const eventDescription = event.classification === "narrative"
-        ? describeExtraordinaryEvent(event, getLocale())
-            .replace(/^\d+′\s*/, "")
-        : formatMessage(eventKeys[event.type], {
-            ...eventDisplayValues(event),
-            team: names[event.team],
-            reason: ""
-          });
+      const eventDescription = event.type === "penalty"
+        ? formatMessage("eventPenalty", {
+            outcome: displayDieFace(event.outcome)
+          })
+        : event.classification === "narrative"
+          ? describeExtraordinaryEvent(event, getLocale())
+              .replace(/^\d+′\s*/, "")
+          : formatMessage(eventKeys[event.type], {
+              ...eventDisplayValues(event),
+              team: names[event.team],
+              reason: ""
+            });
       description.textContent = eventDescription;
       descriptionStack.append(description);
 
@@ -485,11 +493,13 @@ function render() {
       ? state.player === localSeat
       : false;
   byId("roll").disabled = !playing || isRolling || !localTurn;
+  byId("commentary-toggle").disabled = !playing;
 
   const autoButton = byId("auto");
-  autoButton.disabled = !playing || isRolling || !localTurn;
-  autoButton.textContent = autoRunning ? "■ AUTO" : "▶ AUTO";
-  autoButton.setAttribute("aria-pressed", String(autoRunning));
+  autoButton.disabled =
+    !playing || isRolling || (!localTurn && !autoEnabled);
+  autoButton.textContent = autoEnabled ? "■ AUTO" : "▶ AUTO";
+  autoButton.setAttribute("aria-pressed", String(autoEnabled));
   const selectedTeamIds = [0, 1].map(
     seat => byId(`team-${seat}`).value
   );
@@ -855,6 +865,8 @@ function start(activate = true) {
 
   state = newMatch(n);
   matchStarted = activate;
+  autoEnabled = false;
+  autoRunning = false;
   isRolling = false;
   rollEvents = [];
   matchEvents = [];
@@ -955,14 +967,10 @@ async function roll() {
   }
 }
 
-async function toggleAutoRoll() {
-  if (autoRunning) {
-    autoRunning = false;
-    render();
-    return;
-  }
-
+async function runAutoForLocalTurn() {
   if (
+    autoRunning ||
+    !autoEnabled ||
     !snapshot ||
     snapshot.status !== "active" ||
     state.phase === "finished" ||
@@ -977,7 +985,7 @@ async function toggleAutoRoll() {
 
   try {
     while (
-      autoRunning &&
+      autoEnabled &&
       snapshot &&
       snapshot.status === "active" &&
       state.phase !== "finished" &&
@@ -989,10 +997,34 @@ async function toggleAutoRoll() {
     }
   } finally {
     autoRunning = false;
+    if (!snapshot || snapshot.status !== "active" ||
+        state.phase === "finished") {
+      autoEnabled = false;
+    }
     render();
   }
 }
 
+async function toggleAutoRoll() {
+  if (autoEnabled) {
+    autoEnabled = false;
+    render();
+    return;
+  }
+
+  if (
+    !snapshot ||
+    snapshot.status !== "active" ||
+    state.phase === "finished" ||
+    snapshot.seat !== state.player
+  ) {
+    return;
+  }
+
+  autoEnabled = true;
+  render();
+  await runAutoForLocalTurn();
+}
 
 function selectedMultiplayerTeam(seat) {
   const team = selectedCatalogueTeam(seat);
@@ -1065,13 +1097,18 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
   matchStarted = snapshot.status === "active" ||
     snapshot.status === "finished";
 
+  if (snapshot.status === "finished" || state.phase === "finished") {
+    autoEnabled = false;
+  }
+
   rollEvents = Array.isArray(snapshot.rollEvents)
     ? snapshot.rollEvents
     : [];
 
-  matchEvents = rollEvents
-    .filter(event => event.matchEvent)
-    .map(event => event.matchEvent);
+  matchEvents = rollEvents.flatMap(event => [
+    ...(event.penalty ? [event.penalty] : []),
+    ...(event.matchEvent ? [event.matchEvent] : []),
+  ]);
 
   lastCommentary = null;
   if (rollEvents.length > 0) {
@@ -1126,6 +1163,12 @@ function startMultiplayerSync() {
       if (refreshed.revision !== snapshot.revision ||
           refreshed.status !== snapshot.status) {
         adoptAuthoritativeSnapshot(refreshed);
+      }
+
+      if (autoEnabled &&
+          snapshot?.status === "active" &&
+          snapshot.seat === state.player) {
+        void runAutoForLocalTurn().catch(showMultiplayerError);
       }
     } catch (error) {
       console.error(error);
