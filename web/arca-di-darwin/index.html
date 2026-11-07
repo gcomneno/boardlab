@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>L'Arca di Darwin</title>
+<style>
+:root{font-family:system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(145deg,#10262c,#173b38);color:#edf7ef}
+main{max-width:1050px;margin:auto;padding:24px}
+header{text-align:center;padding:25px 0}
+h1{font-size:clamp(2.2rem,6vw,4rem);margin:8px}
+.subtitle{color:#b5d6c7}
+.panel{background:#203e43;border:1px solid #4c6c68;border-radius:18px;padding:22px;margin:18px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px}
+.animal{background:#2c5053;border:2px solid #527674;border-radius:15px;padding:16px;cursor:pointer;text-align:center;color:inherit;font:inherit;min-height:170px}
+.animal.selected{background:#356b4b;border-color:#b5e995}
+.animal:focus-visible,button:focus-visible{outline:3px solid white;outline-offset:3px}
+.emoji{font-size:3rem;display:block}
+.name{font-weight:800;font-size:1.15rem;text-transform:capitalize}
+.small{font-size:.85rem;color:#c1d9d4;margin-top:7px}
+button.action{border:0;border-radius:12px;padding:13px 20px;background:#a8df91;color:#173126;font-weight:800;cursor:pointer}
+button.action:disabled{opacity:.4;cursor:not-allowed}
+button.secondary{background:#63838b;color:white}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+select{padding:12px;background:#143136;color:white;border:1px solid #73958a;border-radius:9px}
+#result{font-size:1.15rem;line-height:1.7;white-space:pre-line}
+.success{color:#b7efa3}.failure{color:#ffbfab}
+.pigeon{display:flex;gap:20px;align-items:center;background:#294c54;border-left:5px solid #a8df91;border-radius:15px;padding:20px}
+.pigeon .face{font-size:4rem}
+.meters{display:flex;gap:18px;flex-wrap:wrap}
+.meter{background:#173238;padding:12px;border-radius:10px}
+footer{text-align:center;color:#a1bdb8;padding:25px;font-size:.85rem}
+
+/* The Ark's hold: an interactive visual representation of embarked species. */
+.hold{
+ position:relative;
+ overflow:hidden;
+ border:12px solid #69482e;
+ border-radius:28px;
+ padding:28px 18px;
+ background:
+  repeating-linear-gradient(90deg,
+   #62432e 0px,#62432e 38px,
+   #785237 40px,#785237 78px);
+ box-shadow:inset 0 0 80px #20130c,0 15px 35px #071b1b;
+}
+.hold::before{
+ content:"";
+ position:absolute;
+ inset:0;
+ pointer-events:none;
+ background:linear-gradient(180deg,#f8c97b22,transparent 65%,#100a0755);
+}
+.hold-title{
+ position:relative;
+ text-align:center;
+ color:#ffe0a5;
+ text-shadow:2px 3px 5px #241509;
+}
+.stalls{
+ position:relative;
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:14px;
+ margin-top:22px;
+}
+.stall{
+ min-height:145px;
+ border:5px solid #a57a4d;
+ border-radius:12px;
+ background:#281c15aa;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex-direction:column;
+ text-align:center;
+ box-shadow:inset 0 0 24px #100904;
+}
+.stall .occupant{font-size:3.5rem}
+.stall .occupant-name{
+ color:#ffe5b4;
+ font-weight:800;
+ text-transform:capitalize;
+}
+.stall.empty{border-style:dashed;color:#d0b38a}
+.hold-pigeon{
+ position:relative;
+ text-align:center;
+ font-size:2.5rem;
+ margin-top:18px;
+}
+.hold-caption{
+ position:relative;
+ text-align:center;
+ color:#f6ddb5;
+ font-size:.9rem;
+}
+@media(min-width:700px){
+ .stalls{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+
+.stall-controls{display:flex;gap:8px;margin-top:8px}
+.stall-controls button{
+ border:1px solid #cda46b;
+ border-radius:7px;
+ background:#77502f;
+ color:white;
+ padding:6px 10px;
+ cursor:pointer;
+}
+.stall-controls button:disabled{opacity:.25;cursor:default}
+.stall.flooded{
+ background:linear-gradient(0deg,#2475a7cc 0%,#153d52bb 65%);
+ border-color:#73c8f3;
+}
+.stall.flooded::before{
+ content:"🌊 COMPARTIMENTO ALLAGATO";
+ color:#c7f0ff;
+ font-size:.68rem;
+ font-weight:800;
+ margin-bottom:8px;
+}
+body.storm-mode{
+ background:linear-gradient(145deg,#101b35,#203b53,#152c39);
+}
+body.storm-mode .hold{
+ border-color:#526879;
+ box-shadow:inset 0 0 90px #071421,0 15px 35px #071b1b;
+}
+body.storm-mode .hold::after{
+ content:"🌧️ DILUVIO IN CORSO";
+ position:absolute;
+ top:8px;
+ right:12px;
+ color:#c9eaff;
+ font-weight:900;
+ font-size:.8rem;
+ letter-spacing:.08em;
+ pointer-events:none;
+}
+body.storm-mode .pigeon{
+ border-left-color:#83c8fa;
+}
+.ark-banner{display:block;width:100%;max-width:960px;height:auto;margin:0 auto 18px;border-radius:18px}
+
+/* Il titolo resta disponibile ai lettori di schermo. */
+.ark-banner ~ h1,
+.ark-banner ~ .subtitle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+<img src="assets/arca-di-darwin-banner.png" alt="Arca di legno tra le onde con animali e uccellino azzurro" class="ark-banner">
+<div class="controls">
+<label for="language">Language / Lingua:</label>
+<select id="language" aria-label="Language / Lingua">
+<option value="it">Italiano</option>
+<option value="en">English</option>
+</select>
+</div>
+<h1>L'Arca di Darwin</h1>
+<p class="subtitle" data-i18n="subtitle">Salva le specie. Ricostruisci la natura. Affronta il cambiamento.</p>
+</header>
+<section class="pigeon">
+<div class="face">🐦</div>
+<div><strong>L'Uccellino Azzurro della Felicità</strong>
+<p id="pigeon">Benvenuto a bordo! Ti guiderò io!</p></div>
+</section>
+<section class="panel">
+<h2 data-i18n="holdHeading">🚢 La Stiva — Prima notte del Diluvio</h2>
+<div class="controls">
+<label for="scenario" data-i18n="ecosystem">Ecosistema:</label>
+<select id="scenario"></select>
+<button id="next" class="action secondary" data-i18n="next">➡️ Capitolo successivo</button>
+</div>
+<h3 id="mission"></h3>
+<p id="description"></p>
+<div class="meters">
+<div class="meter" id="food"></div>
+<div class="meter" id="water"></div>
+<div class="meter" data-i18n="capacity">🚢 Posti: 4</div>
+</div>
+<p data-i18n="ecologyNote">Ogni specie consuma risorse. Un ecosistema con troppi predatori rispetto agli erbivori non è sostenibile.</p>
+</section>
+<section class="panel" id="puzzle-panel">
+<h2 data-i18n="puzzleHeading">🧩 Rompicapo del piccione</h2>
+<div class="controls">
+<label for="difficulty" data-i18n="difficulty">Difficoltà:</label>
+<select id="difficulty">
+<option value="facile">Facile</option>
+<option value="medio">Medio</option>
+<option value="difficile">Difficile</option>
+</select>
+<button id="puzzle-start" class="action secondary" data-i18n="play">🧩 Gioca</button>
+<button id="puzzle-exit" class="action secondary" hidden data-i18n="back">🚢 Torna alla storia</button>
+</div>
+<div id="puzzle-clues" hidden></div>
+</section>
+<section class="panel">
+<h2 data-i18n="insideArk">🚢 All'interno dell'Arca</h2>
+<p data-i18n="holdInstructions">Seleziona quattro animali e usa ◀ ▶ per sistemarli. Leone e zebra, lupo e coniglio non possono stare vicini.</p>
+<div class="hold" aria-label="Stiva dell'Arca">
+<h3 class="hold-title" data-i18n="lowerDeck">⚓ Ponte inferiore — Compartimenti</h3>
+<div id="stalls" class="stalls"></div>
+<div class="hold-pigeon" aria-label="Uccellino Azzurro della Felicità">🐦</div>
+<p class="hold-caption" data-i18n="holdCaption">L'Uccellino Azzurro sorveglia l'imbarco!</p>
+</div>
+</section>
+
+<section class="panel">
+<h2 data-i18n="chooseAnimals">🐾 Scegli gli animali</h2>
+<p id="counter">Imbarcati: 0 / 4</p>
+<div id="animals" class="grid"></div>
+</section>
+<section class="panel">
+<div class="controls">
+<button id="check" class="action" disabled data-i18n="sail">🚢 Salpa!</button>
+<button id="reset" class="action secondary" data-i18n="reset">Ricomincia</button>
+</div>
+<p id="result" role="status" aria-live="polite"></p>
+</section>
+<footer data-i18n="footer">BoardLab · L'Arca di Darwin · Prototipo M2</footer>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const STATIC_I18N = {
+ it: {
+  subtitle: "Salva le specie. Ricostruisci la natura. Affronta il cambiamento.",
+  holdHeading: "🚢 La Stiva — Prima notte del Diluvio",
+  ecosystem: "Ecosistema:",
+  next: "➡️ Capitolo successivo",
+  puzzleHeading: "🧩 Rompicapo del piccione",
+  difficulty: "Difficoltà:",
+  chooseAnimals: "🐾 Scegli gli animali",
+  reset: "Ricomincia"
+ },
+ en: {
+  subtitle: "Save species. Restore nature. Face change.",
+  holdHeading: "🚢 The Hold — First Night of the Flood",
+  ecosystem: "Ecosystem:",
+  next: "➡️ Next chapter",
+  puzzleHeading: "🧩 Pigeon's puzzle",
+  difficulty: "Difficulty:",
+  chooseAnimals: "🐾 Choose the animals",
+  reset: "Restart"
+ }
+};
+let locale = "it";
+const DYNAMIC_I18N = {
+ it: {
+  moveAnimal: "Sposta animale",
+  emptyStall: "Compartimento libero",
+  boarded: "Imbarcati: ",
+  pigeonEmpty: "Cip! Comincia scegliendo quattro animali. Io sorveglio la stiva!",
+  pigeonRemaining: n => "Ottimo! Mancano " + n + " animali. Controlla cibo e acqua!",
+  pigeonReady: "Tutti a bordo! Ora usa le frecce per separare le coppie incompatibili, poi premi Salpa!",
+  pigeonPuzzle: "Cip! Usa gli indizi per sistemare i quattro animali."
+ },
+ en: {
+  moveAnimal: "Move animal",
+  emptyStall: "Empty compartment",
+  boarded: "Boarded: ",
+  pigeonEmpty: "Chirp! Start by choosing four animals. I'll watch over the hold!",
+  pigeonRemaining: n => "Great! " + n + " animals left. Check food and water!",
+  pigeonReady: "All aboard! Use the arrows to separate incompatible pairs, then press Sail!",
+  pigeonPuzzle: "Chirp! Use the clues to arrange the four animals."
+ }
+};
+const dynamicText = key => DYNAMIC_I18N[locale][key];
+
+const ARCA_CONTENT_EN = {
+ species: {
+  leone: ["Lion", "Territorial predator"],
+  zebra: ["Zebra", "Grassland herbivore"],
+  elefante: ["Elephant", "Large ecosystem engineer"],
+  coniglio: ["Rabbit", "Small prolific herbivore"],
+  lupo: ["Wolf", "Social predator"],
+  tartaruga: ["Turtle", "Resilient reptile"],
+  volpe: ["Fox", "Opportunistic predator"],
+  giraffa: ["Giraffe", "Large savanna herbivore"],
+  castoro: ["Beaver", "Wetland engineer"],
+  anatra: ["Duck", "Omnivorous waterbird"]
+ },
+ scenarios: {
+  stiva: [
+   "Chapter 1 — The Ark's Hold",
+   "The Flood is coming. Prepare the hold by choosing four species that can coexist. Manage food and water, maintain ecological balance, and arrange the animals safely.",
+   "Chirp chirp! I've checked the hold! Watch the supplies and predators!"
+  ],
+  diluvio: [
+   "Chapter 2 — The Flooding",
+   "The storm has reached the Ark and the first compartment is flooded. Some species are better suited to these conditions. Rearrange the hold without endangering the animals.",
+   "CHIRP! The first compartment is flooded! Which animal could cope with this?"
+  ],
+  savana: [
+   "Chapter 3 — Drought in the Savanna",
+   "The dry season has sharply reduced water supplies. You have only 6 units of water for four animals. Choose species with sustainable consumption that can coexist.",
+   "I spotted water to the east! Watch out for animals that drink a lot."
+  ],
+  foresta: [
+   "Chapter 4 — The Forest Mosaic",
+   "Vegetation is regenerating into different habitats. To support biodiversity, bring together four species from four different habitats while keeping resource use sustainable.",
+   "I've explored the trees! Biodiversity will be precious here."
+  ],
+  isole: [
+   "Chapter 5 — The New World's Archipelago",
+   "The Ark reaches an archipelago of islands and wetlands. Resources are limited, and at least one species must be able to handle aquatic environments. Organize the final expedition while respecting every constraint.",
+   "I can see so many islands from above! A balanced choice will be essential."
+  ]
+ }
+};
+
+function speciesText(name, field=0){
+ const original=species.find(s=>s.name===name);
+ if(locale==="en")return ARCA_CONTENT_EN.species[name]?.[field]
+  ||(field===0?name:original?.description||"");
+ return field===0?name:original?.description||"";
+}
+function scenarioText(item, field){
+ if(!item)return "";
+ if(locale==="it")return item[field];
+ const entry=ARCA_CONTENT_EN.scenarios[item.id];
+ const index={title:0,description:1,pigeon:2}[field];
+ return entry?.[index]||item[field];
+}
+function localizeClue(clue){
+ if(locale==="it")return clue;
+ const names={
+  "La zebra":"The zebra",
+  "Il coniglio":"The rabbit",
+  "La tartaruga":"The turtle",
+  "L'elefante":"The elephant"
+ };
+ const match=clue.match(/^(La zebra|Il coniglio|La tartaruga|L'elefante) (occupa il compartimento|non può stare nel compartimento) (\d+)\.$/);
+ if(!match)return clue;
+ return names[match[1]]+
+  (match[2]==="occupa il compartimento"
+   ?" occupies compartment ":" cannot be in compartment ")+
+  match[3]+".";
+}
+function refreshClues(){
+ if(!puzzleMode)return;
+ for(const [index,item] of
+     [...$("puzzle-clues").querySelectorAll("li")].entries()){
+  const level=puzzleLevels.find(x=>x.difficulty===puzzleDifficulty);
+  if(level?.clues[index])item.textContent=localizeClue(level.clues[index]);
+ }
+}
+function refreshContentLocale(){
+ applyStaticLocale();
+ for(const option of $("scenario").options){
+  const item=scenarios.find(s=>s.id===option.value);
+  if(item)option.textContent=scenarioText(item,"title");
+ }
+ for(const option of $("difficulty").options){
+  const names={
+   facile:["Facile","Easy"],
+   medio:["Medio","Medium"],
+   difficile:["Difficile","Hard"]
+  };
+  option.textContent=names[option.value]?.[locale==="en"?1:0]
+   ||option.textContent;
+ }
+ if(current){
+  $("mission").textContent=puzzleMode
+   ?"🧩 "+(locale==="en"?"Puzzle — ":"Rompicapo — ")+
+     $("difficulty").selectedOptions[0].textContent
+   :scenarioText(current,"title");
+  $("description").textContent=puzzleMode
+   ?(locale==="en"?"Arrange the animals using all the clues.":
+     "Sistema gli animali seguendo tutti gli indizi.")
+   :scenarioText(current,"description");
+  $("food").textContent=(locale==="en"?"🌿 Available food: ":"🌿 Cibo disponibile: ")+current.food;
+  $("water").textContent=(locale==="en"?"💧 Available water: ":"💧 Acqua disponibile: ")+current.water;
+ }
+ render();
+ refreshClues();
+ const clueHeading=$("puzzle-clues").querySelector("p");
+ if(clueHeading)clueHeading.textContent=uiText("cluesTitle");
+ renderLocalizedResult();
+}
+
+
+
+const ARCA_UI_EXTRA = {
+ it: {
+  ecologyNote: "Ogni specie consuma risorse. Un ecosistema con troppi predatori rispetto agli erbivori non è sostenibile.",
+  holdInstructions: "Seleziona quattro animali e usa ◀ ▶ per sistemarli. Leone e zebra, lupo e coniglio non possono stare vicini.",
+  sail: "🚢 Salpa!",
+  play: "🧩 Gioca",
+  back: "🚢 Torna alla storia",
+  insideArk: "🚢 All'interno dell'Arca",
+  lowerDeck: "⚓ Ponte inferiore — Compartimenti",
+  holdCaption: "L'Uccellino Azzurro sorveglia l'imbarco!",
+  capacity: "🚢 Posti: 4",
+  footer: "BoardLab · L'Arca di Darwin · Prototipo M2",
+  cluesTitle: "🐦 Gli indizi dell'Uccellino Azzurro:",
+  puzzleDescription: "Sistema gli animali seguendo tutti gli indizi.",
+  complete: "Cip cip! Hai completato tutte le missioni disponibili!",
+  solved: "CIP CIP! Rompicapo risolto!",
+  retry: "Non ancora! Rileggi gli indizi e riprova.",
+  engineError: "Il motore del gioco non risponde.",
+  loadError: "Impossibile caricare il gioco."
+ },
+ en: {
+  ecologyNote: "Every species consumes resources. An ecosystem with too many predators compared with herbivores is not sustainable.",
+  holdInstructions: "Choose four animals and use ◀ ▶ to arrange them. Lions and zebras, wolves and rabbits cannot be next to each other.",
+  sail: "🚢 Sail!",
+  play: "🧩 Play",
+  back: "🚢 Back to story",
+  insideArk: "🚢 Inside the Ark",
+  lowerDeck: "⚓ Lower deck — Compartments",
+  holdCaption: "The Bluebird watches over boarding!",
+  capacity: "🚢 Places: 4",
+  footer: "BoardLab · Darwin's Ark · Prototype M2",
+  cluesTitle: "🐦 The Bluebird's clues:",
+  puzzleDescription: "Arrange the animals using all the clues.",
+  complete: "Chirp chirp! You have completed all available missions!",
+  solved: "CHIRP CHIRP! Puzzle solved!",
+  retry: "Not yet! Read the clues and try again.",
+  engineError: "The game engine is not responding.",
+  loadError: "Unable to load the game."
+ }
+};
+for(const lang of ["it","en"]){
+ Object.assign(STATIC_I18N[lang],ARCA_UI_EXTRA[lang]);
+}
+function uiText(key){return ARCA_UI_EXTRA[locale][key];}
+let lastGameResponse=null;
+function renderLocalizedResult(){
+ if(!lastGameResponse)return;
+ const {data,puzzle,chapter}=lastGameResponse;
+ const message=translateApiMessage(data.message);
+ if(puzzle){
+  $("result").textContent=message;
+  return;
+ }
+ const events={
+  stiva:"The Ark survives its first stormy night.",
+  diluvio:"The storm has passed. The Ark continues its journey.",
+  savana:"Drought challenges the thirstiest animals.",
+  foresta:"A rainy season encourages vegetation growth.",
+  isole:"The tides change the available habitats."
+ };
+ const event=locale==="en"?(events[chapter]||data.event):data.event;
+ $("result").textContent=message+"\\n"+(
+  data.valid
+   ?(locale==="en"?"🏆 Score: ":"🏆 Punteggio: ")+data.score+" · "+event
+   :(locale==="en"
+      ?"🐦 The Bluebird suggests: try lower resource consumption and better balance."
+      :"🐦 L'Uccellino Azzurro consiglia: prova una combinazione con consumi più bassi e maggiore equilibrio.")
+ );
+}
+function translateApiMessage(message){
+ if(locale==="it"||typeof message!=="string")return message;
+ const translations={
+  "CIP CIP! Rompicapo risolto!":uiText("solved"),
+  "Non ancora! Rileggi gli indizi e riprova.":uiText("retry"),
+  "Selezione non valida.":"Invalid selection.",
+  "Servono quattro specie diverse.":"Four different species are required.",
+  "Specie sconosciuta.":"Unknown species.",
+  "Capacità dell'Arca non rispettata.":"Ark capacity exceeded or not met.",
+  "Cibo insufficiente":"Insufficient food",
+  "Acqua insufficiente":"Insufficient water",
+  "Troppi predatori rispetto agli erbivori":"Too many predators compared with herbivores",
+  "Servono 4 habitat differenti":"Four different habitats are required",
+  "La tartaruga deve essere imbarcata":"The turtle must be aboard"
+ };
+ let result=message;
+ for(const [italian,english] of Object.entries(translations)){
+  result=result.split(italian).join(english);
+ }
+ return result;
+}
+
+function applyStaticLocale(){
+ document.documentElement.lang = locale;
+ for(const element of document.querySelectorAll("[data-i18n]")){
+  element.textContent = STATIC_I18N[locale][element.dataset.i18n];
+ }
+}
+$("language").addEventListener("change", event=>{
+ locale = event.target.value === "en" ? "en" : "it";
+ refreshContentLocale();
+});
+applyStaticLocale();
+
+const selected=new Set();
+let arrangement=[];
+let species=[],scenarios=[],current=null;
+let puzzleMode=false;
+let puzzleLevels=[];
+let puzzleDifficulty="facile";
+let unlockedChapter=0;
+const completedChapters=new Set();
+function clear(){
+ lastGameResponse=null;
+ selected.clear();arrangement=[];$("result").textContent="";$("result").className="";
+ render();
+}
+function choose(id){
+ puzzleMode=false;
+ $("puzzle-clues").hidden=true;
+ $("puzzle-exit").hidden=true;
+ current=scenarios.find(s=>s.id===id);
+ if(!current)return;
+ $("scenario").value=id;
+ $("next").disabled=!completedChapters.has(id)
+  ||scenarios.findIndex(s=>s.id===id)+1>=scenarios.length;
+ document.body.classList.toggle("storm-mode",id==="diluvio");
+ $("mission").textContent=scenarioText(current,"title");
+ $("description").textContent=scenarioText(current,"description");
+ $("food").textContent=(locale==="en"?"🌿 Available food: ":"🌿 Cibo disponibile: ")+current.food;
+ $("water").textContent=(locale==="en"?"💧 Available water: ":"💧 Acqua disponibile: ")+current.water;
+ $("pigeon").textContent=current.id==="stiva"?"Benvenuto nella stiva! Scegli quattro animali, controlla le scorte e separa quelli incompatibili.":scenarioText(current,"pigeon");
+ clear();
+}
+function renderHold(){
+ const stalls=$("stalls");
+ stalls.replaceChildren();
+ const aboard=arrangement;
+ const flooded=!puzzleMode&&current?.id==="diluvio";
+ for(let i=0;i<4;i++){
+  const stall=document.createElement("div");
+  stall.className="stall"+(i>=aboard.length?" empty":"")
+   +(flooded&&i===0?" flooded":"");
+  if(i<aboard.length){
+   const animal=species.find(s=>s.name===aboard[i]);
+   const symbol=document.createElement("span");
+   symbol.className="occupant";
+   symbol.textContent=animal?.emoji||"🐾";
+   const name=document.createElement("span");
+   name.className="occupant-name";
+   name.textContent=speciesText(aboard[i]);
+   stall.append(symbol,name);
+   const controls=document.createElement("div");
+   controls.className="stall-controls";
+   for(const [direction,label] of [[-1,"◀"],[1,"▶"]]){
+    const move=document.createElement("button");
+    move.type="button";
+    move.textContent=label;
+    move.title=dynamicText("moveAnimal");
+    move.disabled=i+direction<0||i+direction>=aboard.length;
+    move.addEventListener("click",()=>{
+     const j=i+direction;
+     [arrangement[i],arrangement[j]]=[arrangement[j],arrangement[i]];
+     $("result").textContent="";
+     render();
+    });
+    controls.append(move);
+   }
+   stall.append(controls);
+  }else{
+   stall.textContent=dynamicText("emptyStall");
+  }
+  stalls.append(stall);
+ }
+}
+function render(){
+ renderHold();
+
+ $("animals").replaceChildren();
+ for(const s of species){
+  const button=document.createElement("button");
+  button.type="button";
+  button.className="animal"+(selected.has(s.name)?" selected":"");
+  button.setAttribute("aria-pressed",String(selected.has(s.name)));
+  const symbol=document.createElement("span");
+  symbol.className="emoji";symbol.textContent=s.emoji;
+  const name=document.createElement("div");
+  name.className="name";name.textContent=speciesText(s.name);
+  const info=document.createElement("div");
+  info.className="small";
+  info.textContent=speciesText(s.name,1)+" · 🌿"+s.food+" 💧"+s.water;
+  button.append(symbol,name,info);
+  button.addEventListener("click",()=>{
+   if(selected.has(s.name)){
+    selected.delete(s.name);
+    arrangement=arrangement.filter(x=>x!==s.name);
+   }else if(selected.size<4){
+    selected.add(s.name);
+    arrangement.push(s.name);
+   }
+   $("result").textContent="";$("result").className="";
+   render();
+  });
+  $("animals").append(button);
+ }
+ $("counter").textContent=dynamicText("boarded")+selected.size+" / 4";
+ if(!puzzleMode&&current?.id==="stiva" && !$("result").textContent){
+  if(selected.size===0){
+   $("pigeon").textContent=dynamicText("pigeonEmpty");
+  }else if(selected.size<4){
+   $("pigeon").textContent=dynamicText("pigeonRemaining")(4-selected.size);
+  }else{
+   $("pigeon").textContent=dynamicText("pigeonReady");
+  }
+ }
+ $("check").disabled=selected.size!==4;
+ if(puzzleMode){
+  $("pigeon").textContent=dynamicText("pigeonPuzzle");
+ }
+}
+$("puzzle-start").addEventListener("click",()=>{
+ const difficulty=$("difficulty").value;
+ const level=puzzleLevels.find(x=>x.difficulty===difficulty);
+ if(!level)return;
+ puzzleMode=true;
+ puzzleDifficulty=difficulty;
+ $("puzzle-clues").hidden=false;
+ $("puzzle-clues").replaceChildren();
+ const title=document.createElement("p");
+ title.textContent=uiText("cluesTitle");
+ $("puzzle-clues").append(title);
+ const list=document.createElement("ol");
+ for(const clue of level.clues){
+  const item=document.createElement("li");
+  item.textContent=localizeClue(clue);
+  list.append(item);
+ }
+ $("puzzle-clues").append(list);
+ $("puzzle-exit").hidden=false;
+ $("mission").textContent="🧩 Rompicapo — "+difficulty;
+ $("description").textContent=uiText("puzzleDescription");
+ document.body.classList.remove("storm-mode");
+ selected.clear();
+ arrangement=[];
+ for(const name of level.animals){
+  selected.add(name);
+  arrangement.push(name);
+ }
+ lastGameResponse=null;
+ $("result").textContent="";
+ $("result").className="";
+ render();
+});
+$("puzzle-exit").addEventListener("click",()=>choose(current.id));
+$("scenario").addEventListener("change",e=>choose(e.target.value));
+$("reset").addEventListener("click",clear);
+$("next").addEventListener("click",()=>{
+ if($("next").disabled||!completedChapters.has(current?.id))return;
+ if(!scenarios.length)return;
+ const index=scenarios.findIndex(s=>s.id===current?.id);
+ const next=scenarios[index+1];
+ if(next)choose(next.id);
+ else $("pigeon").textContent=uiText("complete");
+});
+$("check").addEventListener("click",async()=>{
+ $("check").disabled=true;
+ try{
+  const response=await fetch(
+   puzzleMode?"/api/levels/check":"/api/validate",{
+   method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify(puzzleMode
+    ?{difficulty:puzzleDifficulty,arrangement:[...arrangement]}
+    :{scenario:current.id,species:[...arrangement],arrangement:[...arrangement]})
+  });
+  if(!response.ok)throw Error("API");
+  const data=await response.json();
+  $("result").className=data.valid?"success":"failure";
+  if(data.valid&&!puzzleMode){
+   completedChapters.add(current.id);
+   const index=scenarios.findIndex(s=>s.id===current.id);
+   if(index>=0){
+    unlockedChapter=Math.max(unlockedChapter,index+1);
+    for(const [i,option] of [...$("scenario").options].entries()){
+     option.disabled=i>unlockedChapter;
+    }
+    $("next").disabled=index+1>=scenarios.length;
+   }
+  }
+  if(!puzzleMode&&current.id==="stiva"){
+   $("pigeon").textContent=data.valid
+    ?"CIP CIP! Missione compiuta! L'Arca è pronta per affrontare il Diluvio!"
+    :"Attenzione! Non arrenderti: controlla risorse, predatori e vicinanza degli animali.";
+  }
+  lastGameResponse={data,puzzle:puzzleMode,chapter:current.id};
+  renderLocalizedResult();
+ }catch(e){
+  $("result").className="failure";
+  $("result").textContent=uiText("engineError");
+ }finally{$("check").disabled=selected.size!==4;}
+});
+async function start(){
+ try{
+  const response=await fetch("/api/species");
+  if(!response.ok)throw Error("API");
+  const data=await response.json();
+  species=data.species;scenarios=data.scenarios;
+  const levelsResponse=await fetch("/api/levels");
+  if(!levelsResponse.ok)throw Error("Levels API");
+  puzzleLevels=(await levelsResponse.json()).levels;
+  for(const s of scenarios){
+   const option=document.createElement("option");
+   option.value=s.id;option.textContent=scenarioText(s,"title");
+   option.disabled=scenarios.indexOf(s)>unlockedChapter;
+   $("scenario").append(option);
+  }
+  $("next").disabled=true;
+  choose(scenarios.find(s=>s.id==="stiva")?.id||scenarios[0].id);
+  refreshContentLocale();
+ }catch(e){$("result").textContent=uiText("loadError");}
+}
+start();
+</script>
+</body>
+</html>
