@@ -60,6 +60,7 @@
         "docs/games/dado-goal/multiplayer-lifecycle-v4.md",
         "docs/games/dado-goal/multiplayer-persistence.md",
         "docs/games/dado-goal/multiplayer-protocol.md",
+        "docs/games/dado-goal/remote-gateway-contract.md",
         "docs/games/dado-goal/wire-schema.md",
         "examples/README.md",
         "src/boardlab/cli/README.md",

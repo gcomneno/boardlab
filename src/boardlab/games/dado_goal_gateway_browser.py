@@ -76,6 +76,12 @@ class BrowserAuthentication:
 
         return True
 
+    def csrf_for(self, cookie_header: str | None) -> str | None:
+        token = self._extract_cookie(cookie_header)
+        if token is None or not self._sessions.valid(token):
+            return None
+        return self._csrf.get(token)
+
     def logout(self, cookie_header: str | None) -> bool:
         token = self._extract_cookie(cookie_header)
         if token is None:

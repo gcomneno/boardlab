@@ -138,8 +138,23 @@ class AuthenticatedGatewayHandler(GatewayHandler):
         )
 
     def _handle(self) -> None:
-        # Require exact Host and Origin before authentication.
-        # For this laboratory adapter, even GET requests require Origin.
+        public_assets = {
+            "/multiplayer.html",
+            "/multiplayer-play.mjs",
+            "/multiplayer-client.mjs",
+            "/multiplayer-theme.css",
+            "/dado-goal-handmade-dice.png",
+        }
+
+        if self.command == "GET" and self.path in public_assets:
+            origin = self._single_header("Origin")
+            if origin is not None and not self._boundary_valid():
+                self._json_reply(403, {"error": "BOUNDARY_DENIED"})
+                return
+            super()._handle()
+            return
+
+        # Authenticated routes require the exact Host/Origin boundary.
         if not self._boundary_valid():
             self._json_reply(403, {"error": "BOUNDARY_DENIED"})
             return
@@ -148,20 +163,17 @@ class AuthenticatedGatewayHandler(GatewayHandler):
             self._login()
             return
 
-        public_assets = {
-            "/multiplayer.html",
-            "/multiplayer-play.mjs",
-            "/multiplayer-client.mjs",
-            "/multiplayer-theme.css",
-            "/dado-goal-handmade-dice.png",
-        }
-        if self.command == "GET" and self.path in public_assets:
-            super()._handle()
-            return
-
         cookie = self._single_header("Cookie")
         csrf = self._single_header("X-Dado-CSRF")
         mutation = self.command != "GET"
+
+        if self.command == "GET" and self.path == "/auth/session":
+            value = self.server.browser_auth.csrf_for(cookie)
+            if value is None:
+                self._json_reply(403, {"error": "SESSION_DENIED"})
+            else:
+                self._json_reply(200, {"csrfToken": value})
+            return
 
         if not self.server.browser_auth.authenticate(
             cookie,

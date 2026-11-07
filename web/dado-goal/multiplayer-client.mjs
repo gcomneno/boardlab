@@ -49,7 +49,7 @@ export class MultiplayerClient {
       method,
       headers,
       cache: "no-store",
-      credentials: "omit",
+      credentials: "same-origin",
       ...(body !== undefined
         ? { body: JSON.stringify(body) }
         : {}),
