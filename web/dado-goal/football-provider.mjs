@@ -1,4 +1,5 @@
 import { createCatalogue, createPlayer, createTeam } from "./team-catalogue.mjs";
+import { socialColors } from "./team-colors.mjs";
 
 export async function importFootballCatalogue({
   adapter,
@@ -25,6 +26,8 @@ export async function importFootballCatalogue({
       name: rawTeam.name,
       competitionId,
       season,
+      colors: socialColors(rawTeam.id),
+      logo: rawTeam.logo,
     });
 
     const rawPlayers = await adapter.fetchPlayers({

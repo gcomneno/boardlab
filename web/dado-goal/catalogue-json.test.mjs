@@ -19,6 +19,8 @@ test("catalogue JSON round-trip preserves data", () => {
       name: "SSC Napoli",
       competitionId: "135",
       season: "2026",
+      colors: ["#4AADE0"],
+      logo: "https://media.api-sports.io/football/teams/492.png",
       players: [],
     }],
   });

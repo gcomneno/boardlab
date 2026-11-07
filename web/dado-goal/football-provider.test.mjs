@@ -8,16 +8,24 @@ test("normalizes provider teams and players", async () => {
     name: "fixture",
     async fetchTeams() {
       return [
-        { id: 10, name: "SSC Napoli" },
-        { id: 20, name: "AS Roma" },
+        {
+          id: 492,
+          name: "SSC Napoli",
+          logo: "https://example.test/492.png",
+        },
+        {
+          id: 497,
+          name: "AS Roma",
+          logo: "https://example.test/497.png",
+        },
       ];
     },
     async fetchPlayers({ teamId }) {
       return [{
         id: teamId * 100,
-        name: teamId === 10 ? "José Ángel" : "Mario Rossi",
-        position: teamId === 10 ? "Goalkeeper" : "Forward",
-        shirtNumber: teamId === 10 ? 1 : 9,
+        name: teamId === 492 ? "José Ángel" : "Mario Rossi",
+        position: teamId === 492 ? "Goalkeeper" : "Forward",
+        shirtNumber: teamId === 492 ? 1 : 9,
       }];
     },
   };
@@ -31,6 +39,7 @@ test("normalizes provider teams and players", async () => {
 
   assert.equal(catalogue.teams.length, 2);
   assert.equal(catalogue.teams[0].name, "SSC Napoli");
+  assert.equal(catalogue.teams[0].logo, "https://example.test/492.png");
   assert.equal(catalogue.teams[0].players[0].name, "José Ángel");
   assert.equal(catalogue.teams[1].name, "AS Roma");
   assert.equal(catalogue.teams[1].players[0].shirtNumber, 9);

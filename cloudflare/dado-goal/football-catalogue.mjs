@@ -1,4 +1,7 @@
-import { getFootballCatalogue } from "./football-catalogue-d1.mjs";
+import {
+  getFootballCatalogue,
+  getLatestFootballCatalogue,
+} from "./football-catalogue-d1.mjs";
 
 function failure(status, code) {
   return Response.json(
@@ -18,21 +21,25 @@ export async function footballCatalogue(request, env) {
   const competitionId = url.searchParams.get("competition");
   const season = url.searchParams.get("season");
 
+  const hasCompetition = competitionId !== null;
+  const hasSeason = season !== null;
+
   if (
-    !competitionId ||
-    !season ||
-    !/^\d+$/.test(competitionId) ||
-    !/^\d{4}$/.test(season)
+    hasCompetition !== hasSeason ||
+    (hasCompetition && !/^\d+$/.test(competitionId)) ||
+    (hasSeason && !/^\d{4}$/.test(season))
   ) {
     return failure(400, "INVALID_CATALOGUE_QUERY");
   }
 
   try {
-    const catalogue = await getFootballCatalogue(env.DB, {
-      provider: "api-football",
-      competitionId,
-      season,
-    });
+    const catalogue = hasCompetition
+      ? await getFootballCatalogue(env.DB, {
+          provider: "api-football",
+          competitionId,
+          season,
+        })
+      : await getLatestFootballCatalogue(env.DB, "api-football");
 
     if (!catalogue) {
       return failure(404, "FOOTBALL_CATALOGUE_NOT_IMPORTED");

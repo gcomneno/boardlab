@@ -1,10 +1,25 @@
-export const CATALOGUE_SCHEMA_VERSION = 1;
+export const CATALOGUE_SCHEMA_VERSION = 3;
 
 function requireText(value, field) {
   if (typeof value !== "string" || value.trim() === "") {
     throw new TypeError(`${field} must be a non-empty string`);
   }
   return value;
+}
+
+function requireColors(value) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 2) {
+    throw new TypeError("colors must contain one or two colors");
+  }
+
+  return Object.freeze(value.map((color, index) => {
+    if (typeof color !== "string" ||
+        !/^#[0-9a-f]{6}$/i.test(color)) {
+      throw new TypeError(`colors[${index}] must be a hex color`);
+    }
+
+    return color.toUpperCase();
+  }));
 }
 
 function requireProviderId(value, field) {
@@ -21,6 +36,8 @@ export function createTeam({
   name,
   competitionId,
   season,
+  colors,
+  logo,
 }) {
   return Object.freeze({
     provider: requireText(provider, "provider"),
@@ -28,6 +45,8 @@ export function createTeam({
     name: requireText(name, "name"),
     competitionId: requireProviderId(competitionId, "competitionId"),
     season: requireProviderId(season, "season"),
+    colors: requireColors(colors),
+    logo: requireText(logo, "logo"),
   });
 }
 

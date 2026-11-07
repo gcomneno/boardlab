@@ -30,6 +30,38 @@ test("departed players never return and substitutions stop at five", () => {
   assert.equal(new Set(roster.departed).size, 5);
 });
 
+test("tactical substitutions do not immediately recycle substitutes", () => {
+  const roster = createRoster(() => 0.5);
+
+  const first = substitute(roster, () => 0);
+  assert.ok(first);
+  assert.ok(roster.substitutesIn.includes(first.in));
+
+  const second = substitute(roster, () => 0);
+  assert.ok(second);
+  assert.notEqual(second.out, first.in);
+  assert.ok(roster.active.includes(first.in));
+});
+
+test("injury substitutions may replace a previous substitute", () => {
+  const roster = createRoster(() => 0.5);
+
+  const first = substitute(roster, () => 0);
+  assert.ok(first);
+
+  const index = roster.active.indexOf(first.in);
+  const draw = index / roster.active.length;
+
+  const second = substitute(
+    roster,
+    () => draw,
+    { allowSubstituteOut: true },
+  );
+
+  assert.ok(second);
+  assert.equal(second.out, first.in);
+});
+
 test("sent-off players cannot return through substitutions", () => {
   const roster = createRoster(() => 0.75);
   const expelled = sendOff(roster, () => 0);
@@ -74,4 +106,76 @@ test("scorer selection is deterministic and validates random input", () => {
     pickScorer(roster, () => 0));
   assert.throws(() => pickScorer(roster, () => 1), RangeError);
   assert.equal(pickScorer({ active: [] }, () => 0), null);
+});
+
+
+test("players who leave the pitch are never eligible for later player events", () => {
+  const roster = createRoster(() => 0.5);
+
+  const changed = substitute(roster, () => 0);
+  assert.ok(changed);
+  assert.ok(!roster.active.includes(changed.out));
+  assert.ok(roster.departed.includes(changed.out));
+
+  for (let i = 0; i < 40; i += 1) {
+    const scorer = pickScorer(roster, () => i / 40);
+    assert.notEqual(scorer, changed.out);
+  }
+
+  const expelled = sendOff(roster, () => 0);
+  assert.ok(expelled !== null);
+  assert.ok(!roster.active.includes(expelled));
+  assert.ok(roster.sentOff.includes(expelled));
+
+  for (let i = 0; i < 40; i += 1) {
+    const scorer = pickScorer(roster, () => i / 40);
+    assert.notEqual(scorer, changed.out);
+    assert.notEqual(scorer, expelled);
+  }
+});
+
+test("a goalkeeper can only be replaced by another goalkeeper", () => {
+  const roster = {
+    active: [1, 2],
+    bench: [12, 13],
+    departed: [],
+    sentOff: [],
+    substitutesIn: [],
+    substitutions: 0,
+    identities: {
+      1: { position: "Goalkeeper" },
+      2: { position: "Defender" },
+      12: { position: "Defender" },
+      13: { position: "Goalkeeper" },
+    },
+  };
+
+  const change = substitute(roster, () => 0);
+
+  assert.deepEqual(change, { out: 1, in: 13 });
+  assert.ok(roster.active.includes(13));
+  assert.ok(!roster.active.includes(1));
+  assert.ok(roster.bench.includes(12));
+});
+
+test("a goalkeeper is not automatically replaced by an outfield player", () => {
+  const roster = {
+    active: [1, 2],
+    bench: [12],
+    departed: [],
+    sentOff: [],
+    substitutesIn: [],
+    substitutions: 0,
+    identities: {
+      1: { position: "Goalkeeper" },
+      2: { position: "Defender" },
+      12: { position: "Defender" },
+    },
+  };
+
+  const snapshot = structuredClone(roster);
+  const change = substitute(roster, () => 0);
+
+  assert.equal(change, null);
+  assert.deepEqual(roster, snapshot);
 });

@@ -1,0 +1,4849 @@
+{
+  "schemaVersion": 3,
+  "provider": "api-football",
+  "competitionId": "135",
+  "season": "2024",
+  "importedAt": "2026-11-02T16:29:33.137Z",
+  "teams": [
+    {
+      "provider": "api-football",
+      "providerTeamId": "487",
+      "name": "Lazio",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "63934",
+          "name": "A. Furlanetto",
+          "position": "Goalkeeper",
+          "shirtNumber": 55
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "26644",
+          "name": "C. Mandas",
+          "position": "Goalkeeper",
+          "shirtNumber": 35
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "431413",
+          "name": "E. Motta",
+          "position": "Goalkeeper",
+          "shirtNumber": 40
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616197",
+          "name": "Nicolo Pannozzo",
+          "position": "Goalkeeper",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "408625",
+          "name": "D. Renzetti",
+          "position": "Goalkeeper",
+          "shirtNumber": 47
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "407916",
+          "name": "Filipe Bordon",
+          "position": "Defender",
+          "shirtNumber": 76
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616198",
+          "name": "Ricardo Bordon",
+          "position": "Defender",
+          "shirtNumber": 33
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "37117",
+          "name": "D. Doekhi",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "342651",
+          "name": "R. Floriani Mussolini",
+          "position": "Defender",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "568028",
+          "name": "B. Galassi",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "376",
+          "name": "Diogo Leite",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1844",
+          "name": "A. Marušić",
+          "position": "Defender",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "684560",
+          "name": "M. Morelli",
+          "position": "Defender",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1702",
+          "name": "Pedraza",
+          "position": "Defender",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30554",
+          "name": "L. Pellegrini",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "350857",
+          "name": "O. Provstgaard",
+          "position": "Defender",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "14701",
+          "name": "J. Šutalo",
+          "position": "Defender",
+          "shirtNumber": 37
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "41577",
+          "name": "Nuno Tavares",
+          "position": "Defender",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "333116",
+          "name": "R. Belahyane",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1852",
+          "name": "D. Cataldi",
+          "position": "Midfielder",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "144740",
+          "name": "F. Dele-Bashiru",
+          "position": "Midfielder",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "483662",
+          "name": "V. Farcomeni",
+          "position": "Midfielder",
+          "shirtNumber": 71
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31173",
+          "name": "D. Frattesi",
+          "position": "Midfielder",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616206",
+          "name": "Francesco Gatto",
+          "position": "Midfielder",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30866",
+          "name": "M. Lazzari",
+          "position": "Midfielder",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30784",
+          "name": "N. Rovella",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "38749",
+          "name": "K. Taylor",
+          "position": "Midfielder",
+          "shirtNumber": 24
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30937",
+          "name": "M. Zaccagni",
+          "position": "Attacker",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "286474",
+          "name": "M. Cancellieri",
+          "position": "Attacker",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2799",
+          "name": "A. Guðmundsson",
+          "position": "Attacker",
+          "shirtNumber": 80
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "135519",
+          "name": "G. Isaksen",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "133729",
+          "name": "T. Noslin",
+          "position": "Attacker",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31094",
+          "name": "A. Pinamonti",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "405241",
+          "name": "A. Przyborek",
+          "position": "Midfielder",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "436244",
+          "name": "F. Serra",
+          "position": "Attacker",
+          "shirtNumber": 63
+        }
+      ],
+      "colors": [
+        "#78B9E6",
+        "#F4F4F4"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/487.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "489",
+      "name": "AC Milan",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "626719",
+          "name": "L. P. Bouyer",
+          "position": "Goalkeeper",
+          "shirtNumber": 41
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "22221",
+          "name": "M. Maignan",
+          "position": "Goalkeeper",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "484293",
+          "name": "M. Pittarella",
+          "position": "Goalkeeper",
+          "shirtNumber": 37
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30394",
+          "name": "P. Terracciano",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "386298",
+          "name": "L. Torriani",
+          "position": "Goalkeeper",
+          "shirtNumber": 96
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "374359",
+          "name": "D. Bartesaghi",
+          "position": "Defender",
+          "shirtNumber": 33
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162141",
+          "name": "K. De Winter",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "467860",
+          "name": "S. Bocoum",
+          "position": "Midfielder",
+          "shirtNumber": 13
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "46731",
+          "name": "P. Estupiñán",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "56473",
+          "name": "M. Gabbia",
+          "position": "Defender",
+          "shirtNumber": 46
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162952",
+          "name": "Mario Gila",
+          "position": "Defender",
+          "shirtNumber": 34
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "45826",
+          "name": "S. Pavlović",
+          "position": "Defender",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "19209",
+          "name": "F. Tomori",
+          "position": "Defender",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "496790",
+          "name": "V. Vladimirov",
+          "position": "Defender",
+          "shirtNumber": 35
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "336580",
+          "name": "S. Vos",
+          "position": "Midfielder",
+          "shirtNumber": 55
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "452330",
+          "name": "C. Comotto",
+          "position": "Midfielder",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "264705",
+          "name": "A. Jashari",
+          "position": "Midfielder",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2292",
+          "name": "R. Loftus-Cheek",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "754",
+          "name": "L. Modrić",
+          "position": "Midfielder",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "335056",
+          "name": "Diego Moreira",
+          "position": "Midfielder",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162106",
+          "name": "Y. Musah",
+          "position": "Midfielder",
+          "shirtNumber": 80
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "272",
+          "name": "A. Rabiot",
+          "position": "Midfielder",
+          "shirtNumber": 12
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1417",
+          "name": "A. Saelemaekers",
+          "position": "Midfielder",
+          "shirtNumber": 56
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "264472",
+          "name": "F. Terracciano",
+          "position": "Defender",
+          "shirtNumber": 42
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "336928",
+          "name": "M. Valletta",
+          "position": "Attacker",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "582073",
+          "name": "E. Borsani",
+          "position": "Attacker",
+          "shirtNumber": 35
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "436260",
+          "name": "F. Camarda",
+          "position": "Attacker",
+          "shirtNumber": 73
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1696",
+          "name": "S. Chukwueze",
+          "position": "Attacker",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "359100",
+          "name": "A. Cissè",
+          "position": "Midfielder",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "284428",
+          "name": "O. Hutchinson",
+          "position": "Attacker",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "17",
+          "name": "C. Pulišić",
+          "position": "Midfielder",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "41585",
+          "name": "Gonçalo Ramos",
+          "position": "Attacker",
+          "shirtNumber": 9
+        }
+      ],
+      "colors": [
+        "#D71920",
+        "#111111"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/489.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "490",
+      "name": "Cagliari",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30731",
+          "name": "E. Caprile",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31601",
+          "name": "B. Radunović",
+          "position": "Goalkeeper",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "3737",
+          "name": "A. Sherri",
+          "position": "Goalkeeper",
+          "shirtNumber": 12
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2484",
+          "name": "Y. Mina",
+          "position": "Defender",
+          "shirtNumber": 26
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "321744",
+          "name": "A. Obert",
+          "position": "Defender",
+          "shirtNumber": 33
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "41964",
+          "name": "Zé Pedro",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "415155",
+          "name": "J. Rodríguez",
+          "position": "Defender",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "32887",
+          "name": "Y. Sugawara",
+          "position": "Defender",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30505",
+          "name": "M. Adopo",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "570129",
+          "name": "A. Akarakiri",
+          "position": "Midfielder",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "264477",
+          "name": "G. Aurelio",
+          "position": "Defender",
+          "shirtNumber": 24
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30561",
+          "name": "A. Deiola",
+          "position": "Defender",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "340700",
+          "name": "J. Fazzini",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31734",
+          "name": "M. Felici",
+          "position": "Midfielder",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "203",
+          "name": "R. Gagliardini",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "468711",
+          "name": "N. Grandu",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "377118",
+          "name": "R. Kofler",
+          "position": "Midfielder",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "417892",
+          "name": "J. Liteta",
+          "position": "Midfielder",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "134926",
+          "name": "D. Maldini",
+          "position": "Midfielder",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "326177",
+          "name": "Y. Massolin",
+          "position": "Midfielder",
+          "shirtNumber": 79
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "394183",
+          "name": "A. Romano",
+          "position": "Midfielder",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "341307",
+          "name": "Ivan Stoyanov Sulev",
+          "position": "Midfielder",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "182",
+          "name": "H. Winks",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "279757",
+          "name": "R. Ciervo",
+          "position": "Attacker",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "263699",
+          "name": "A. Fadera",
+          "position": "Midfielder",
+          "shirtNumber": 39
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "188319",
+          "name": "Kevin Carlos",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "626704",
+          "name": "P. Mendy",
+          "position": "Attacker",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31318",
+          "name": "M&apos;Bala Nzola",
+          "position": "Attacker",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "476792",
+          "name": "A. Sugamele",
+          "position": "Attacker",
+          "shirtNumber": 35
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "584116",
+          "name": "Y. Trepy",
+          "position": "Attacker",
+          "shirtNumber": 19
+        }
+      ],
+      "colors": [
+        "#174A8B",
+        "#C8202F"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/490.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "492",
+      "name": "Napoli",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "32172",
+          "name": "N. Contini",
+          "position": "Goalkeeper",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "312",
+          "name": "A. Meret",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31156",
+          "name": "V. Milinković-Savić",
+          "position": "Goalkeeper",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "568114",
+          "name": "C. Pugliese",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "95",
+          "name": "B. Badiashile",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "37604",
+          "name": "S. Beukema",
+          "position": "Defender",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31226",
+          "name": "A. Buongiorno",
+          "position": "Defender",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31042",
+          "name": "G. Di Lorenzo",
+          "position": "Defender",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "388547",
+          "name": "Luca Marianucci",
+          "position": "Defender",
+          "shirtNumber": 35
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "237066",
+          "name": "Rafa Marín",
+          "position": "Defender",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "47254",
+          "name": "M. Olivera",
+          "position": "Defender",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1314",
+          "name": "Amir Rrahmani",
+          "position": "Defender",
+          "shirtNumber": 13
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "862",
+          "name": "L. Spinazzola",
+          "position": "Defender",
+          "shirtNumber": 37
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "3406",
+          "name": "A. Zambo Anguissa",
+          "position": "Midfielder",
+          "shirtNumber": 99
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "579077",
+          "name": "F. Barido",
+          "position": "Midfielder",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "629",
+          "name": "K. De Bruyne",
+          "position": "Midfielder",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "348532",
+          "name": "C. Favasuli",
+          "position": "Midfielder",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "130423",
+          "name": "B. Gilmour",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "47439",
+          "name": "S. Lobotka",
+          "position": "Midfielder",
+          "shirtNumber": 68
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "903",
+          "name": "S. McTominay",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "347395",
+          "name": "A. Vergara",
+          "position": "Midfielder",
+          "shirtNumber": 26
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "310943",
+          "name": "Alisson Santos",
+          "position": "Attacker",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "552",
+          "name": "David Neres",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "312615",
+          "name": "Giovane",
+          "position": "Attacker",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "288006",
+          "name": "R. Højlund",
+          "position": "Attacker",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "544",
+          "name": "N. Lang",
+          "position": "Attacker",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "199089",
+          "name": "L. Lucca",
+          "position": "Attacker",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "643876",
+          "name": "M. Pereyra",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "219",
+          "name": "M. Politano",
+          "position": "Attacker",
+          "shirtNumber": 21
+        }
+      ],
+      "colors": [
+        "#4AADE0"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/492.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "494",
+      "name": "Udinese",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "126896",
+          "name": "B. Mrozek",
+          "position": "Goalkeeper",
+          "shirtNumber": 41
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "143648",
+          "name": "M. Okoye",
+          "position": "Goalkeeper",
+          "shirtNumber": 40
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "189",
+          "name": "D. Padelli",
+          "position": "Goalkeeper",
+          "shirtNumber": 93
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "619923",
+          "name": "R. Pirih",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "320335",
+          "name": "J. Abankwah",
+          "position": "Defender",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "505",
+          "name": "D. Alaba",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "315249",
+          "name": "N. Bertola",
+          "position": "Defender",
+          "shirtNumber": 13
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "20656",
+          "name": "E. Ebosse",
+          "position": "Defender",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "18797",
+          "name": "C. Kabasele",
+          "position": "Defender",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "22007",
+          "name": "H. Kamara",
+          "position": "Midfielder",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "684355",
+          "name": "Lorenzo Mossolin",
+          "position": "Defender",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "422156",
+          "name": "M. Palma",
+          "position": "Defender",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "656",
+          "name": "O. Solet",
+          "position": "Defender",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "8586",
+          "name": "M. Vojvoda",
+          "position": "Midfielder",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162907",
+          "name": "A. Zanoli",
+          "position": "Defender",
+          "shirtNumber": 59
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "411171",
+          "name": "J. Arizala",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "8481",
+          "name": "G. Chakvetadze",
+          "position": "Midfielder",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "541",
+          "name": "J. Ekkelenkamp",
+          "position": "Midfielder",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "332308",
+          "name": "Unai Gómez",
+          "position": "Midfielder",
+          "shirtNumber": 46
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "398194",
+          "name": "L. JovanoviÄ",
+          "position": "Attacker",
+          "shirtNumber": 91
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "48047",
+          "name": "J. Karlström",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "7591",
+          "name": "S. Lovrić",
+          "position": "Midfielder",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "343558",
+          "name": "L. Miller",
+          "position": "Midfielder",
+          "shirtNumber": 38
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1939",
+          "name": "J. Piotrowski",
+          "position": "Midfielder",
+          "shirtNumber": 24
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "611378",
+          "name": "A. Ramku",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "786",
+          "name": "N. Zaniolo",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "182560",
+          "name": "Oier Zarraga",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1134",
+          "name": "V. Bayo",
+          "position": "Attacker",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "611368",
+          "name": "P. Carrillo",
+          "position": "Attacker",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "19185",
+          "name": "K. Davis",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "434410",
+          "name": "I. Gueye",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "493365",
+          "name": "G. Vinciati",
+          "position": "Attacker",
+          "shirtNumber": 45
+        }
+      ],
+      "colors": [
+        "#111111",
+        "#F4F4F4"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/494.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "495",
+      "name": "Genoa",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "37137",
+          "name": "J. Bijlow",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31445",
+          "name": "D. Sommariva",
+          "position": "Goalkeeper",
+          "shirtNumber": 39
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "7228",
+          "name": "F. Stolz",
+          "position": "Goalkeeper",
+          "shirtNumber": 99
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "441134",
+          "name": "M. Doucoure",
+          "position": "Defender",
+          "shirtNumber": 74
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "153411",
+          "name": "C. Drameh",
+          "position": "Defender",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "36916",
+          "name": "K. Ehizibue",
+          "position": "Midfielder",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616217",
+          "name": "Kris Gecaj",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616219",
+          "name": "Klisys",
+          "position": "Defender",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "567646",
+          "name": "G. Lauricella",
+          "position": "Defender",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "281826",
+          "name": "A. Marcandalli",
+          "position": "Defender",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "270613",
+          "name": "M. Mitaj",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "18967",
+          "name": "L. Østigård",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "387128",
+          "name": "S. Otoa",
+          "position": "Defender",
+          "shirtNumber": 34
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "362813",
+          "name": "D. Puczka",
+          "position": "Defender",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31137",
+          "name": "S. Sabelli",
+          "position": "Defender",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "675895",
+          "name": "Alessio Scelta",
+          "position": "Defender",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "35544",
+          "name": "J. Vásquez",
+          "position": "Defender",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "626523",
+          "name": "M. Vaz",
+          "position": "Defender",
+          "shirtNumber": 85
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "405239",
+          "name": "Alexsandro Amorim",
+          "position": "Midfielder",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "288769",
+          "name": "T. Baldanzi",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "89520",
+          "name": "M. Ellertsson",
+          "position": "Midfielder",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "15881",
+          "name": "M. Frendrup",
+          "position": "Midfielder",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "393926",
+          "name": "Gaël Lafont",
+          "position": "Midfielder",
+          "shirtNumber": 75
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "475672",
+          "name": "E. Meichtry",
+          "position": "Midfielder",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "197500",
+          "name": "Nikita Solodchenko",
+          "position": "Attacker",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "957",
+          "name": "D. Sow",
+          "position": "Midfielder",
+          "shirtNumber": 97
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "567684",
+          "name": "N. Tondi",
+          "position": "Midfielder",
+          "shirtNumber": 74
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31057",
+          "name": "H. Traorè",
+          "position": "Midfielder",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "263481",
+          "name": "L. Colombo",
+          "position": "Attacker",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "791",
+          "name": "S. El Shaarawy",
+          "position": "Attacker",
+          "shirtNumber": 92
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162561",
+          "name": "E. Havel",
+          "position": "Attacker",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "56396",
+          "name": "Junior Messias",
+          "position": "Attacker",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "66761",
+          "name": "M. Osmajić",
+          "position": "Attacker",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616229",
+          "name": "Elia Spicuglia",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "281408",
+          "name": "Vítinha",
+          "position": "Midfielder",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "611384",
+          "name": "S. Wiafe",
+          "position": "Midfielder",
+          "shirtNumber": 71
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "478201",
+          "name": "A. Žulevič",
+          "position": "Attacker",
+          "shirtNumber": 97
+        }
+      ],
+      "colors": [
+        "#C8202F",
+        "#174A8B"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/495.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "496",
+      "name": "Juventus",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "15573",
+          "name": "K. Grabara",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "476231",
+          "name": "S. Mangiapoco",
+          "position": "Goalkeeper",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "912",
+          "name": "Neto",
+          "position": "Goalkeeper",
+          "shirtNumber": 33
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "850",
+          "name": "C. Pinsoglio",
+          "position": "Goalkeeper",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "597936",
+          "name": "R. Radu",
+          "position": "Goalkeeper",
+          "shirtNumber": 40
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31354",
+          "name": "G. Vicario",
+          "position": "Goalkeeper",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30497",
+          "name": "Bremer",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "125674",
+          "name": "J. Cabal",
+          "position": "Defender",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "127011",
+          "name": "A. Cambiaso",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "22222",
+          "name": "Z. Çelik",
+          "position": "Midfielder",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "379068",
+          "name": "C. Corradi",
+          "position": "Defender",
+          "shirtNumber": 38
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "268341",
+          "name": "F. Gatti",
+          "position": "Defender",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162188",
+          "name": "P. Kalulu",
+          "position": "Midfielder",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "19263",
+          "name": "L. Kelly",
+          "position": "Defender",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1929",
+          "name": "J. Lucumí",
+          "position": "Defender",
+          "shirtNumber": 26
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "414441",
+          "name": "A. Montero",
+          "position": "Defender",
+          "shirtNumber": 44
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "405298",
+          "name": "N. Rizzo",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "861",
+          "name": "D. Rugani",
+          "position": "Defender",
+          "shirtNumber": 24
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "47522",
+          "name": "Douglas Luiz",
+          "position": "Midfielder",
+          "shirtNumber": 12
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "36899",
+          "name": "T. Koopmeiners",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30533",
+          "name": "M. Locatelli",
+          "position": "Midfielder",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "498792",
+          "name": "G. Makiobo",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "415",
+          "name": "W. McKennie",
+          "position": "Midfielder",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "436927",
+          "name": "A. Owusu",
+          "position": "Midfielder",
+          "shirtNumber": 41
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "410399",
+          "name": "F. Pagnucco",
+          "position": "Midfielder",
+          "shirtNumber": 43
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "237129",
+          "name": "P. Sarr",
+          "position": "Midfielder",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "116",
+          "name": "K. Thuram",
+          "position": "Midfielder",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "395559",
+          "name": "Kerim-Sam Alajbegović",
+          "position": "Midfielder",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30531",
+          "name": "J. Boga",
+          "position": "Attacker",
+          "shirtNumber": 13
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "161585",
+          "name": "Francisco Conceição",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "445447",
+          "name": "A. Durmiši",
+          "position": "Attacker",
+          "shirtNumber": 47
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "451504",
+          "name": "J. Ekhator",
+          "position": "Attacker",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "561568",
+          "name": "D. Elimoghale",
+          "position": "Attacker",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "26315",
+          "name": "N. González",
+          "position": "Attacker",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "21104",
+          "name": "R. Kolo Muani",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "503461",
+          "name": "A. Merola",
+          "position": "Attacker",
+          "shirtNumber": 51
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "333",
+          "name": "A. Milik",
+          "position": "Attacker",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "337941",
+          "name": "J. Oboavwoduo",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "158054",
+          "name": "N. Woltemade",
+          "position": "Attacker",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "339883",
+          "name": "K. Yıldız",
+          "position": "Attacker",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "48392",
+          "name": "E. Zhegrova",
+          "position": "Attacker",
+          "shirtNumber": 11
+        }
+      ],
+      "colors": [
+        "#F4F4F4",
+        "#111111"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/496.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "497",
+      "name": "AS Roma",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "483676",
+          "name": "G. De Marzi",
+          "position": "Goalkeeper",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30418",
+          "name": "P. Gollini",
+          "position": "Goalkeeper",
+          "shirtNumber": 95
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "556",
+          "name": "M. Svilar",
+          "position": "Goalkeeper",
+          "shirtNumber": 99
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "6",
+          "name": "L. Balerdi",
+          "position": "Defender",
+          "shirtNumber": 26
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "342019",
+          "name": "D. Ghilardi",
+          "position": "Defender",
+          "shirtNumber": 87
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2669",
+          "name": "Hermoso",
+          "position": "Defender",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162409",
+          "name": "K. Koulierakis",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "598615",
+          "name": "E. Lulli",
+          "position": "Midfielder",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30425",
+          "name": "G. Mancini",
+          "position": "Defender",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "6503",
+          "name": "N. Molina",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1807",
+          "name": "E. Ndicka",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162452",
+          "name": "D. Rensch",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "626713",
+          "name": "M. Seck",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "349001",
+          "name": "Wesley",
+          "position": "Midfielder",
+          "shirtNumber": 43
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "626686",
+          "name": "M. Bah",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "778",
+          "name": "B. Cristante",
+          "position": "Midfielder",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "552679",
+          "name": "G. Giammattei",
+          "position": "Midfielder",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "22147",
+          "name": "M. Koné",
+          "position": "Midfielder",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "404097",
+          "name": "Rodrigo Mora",
+          "position": "Attacker",
+          "shirtNumber": 86
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "782",
+          "name": "L. Pellegrini",
+          "position": "Midfielder",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "356888",
+          "name": "N. Pisilli",
+          "position": "Midfielder",
+          "shirtNumber": 61
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30432",
+          "name": "M. de Roon",
+          "position": "Midfielder",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "484027",
+          "name": "A. Arena",
+          "position": "Attacker",
+          "shirtNumber": 68
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "675841",
+          "name": "M. Camara",
+          "position": "Attacker",
+          "shirtNumber": 78
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "311067",
+          "name": "S. Castro",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "875",
+          "name": "P. Dybala",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "249",
+          "name": "D. Malen",
+          "position": "Attacker",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "323936",
+          "name": "M. Soulé",
+          "position": "Midfielder",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "81012",
+          "name": "Devis Vasquez",
+          "position": "Goalkeeper",
+          "shirtNumber": 32
+        }
+      ],
+      "colors": [
+        "#F5A623",
+        "#8E1F2D"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/497.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "499",
+      "name": "Atalanta",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30417",
+          "name": "M. Carnesecchi",
+          "position": "Goalkeeper",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "392279",
+          "name": "P. Pardel",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "558758",
+          "name": "T. Pompei",
+          "position": "Goalkeeper",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30419",
+          "name": "F. Rossi",
+          "position": "Goalkeeper",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "568271",
+          "name": "M. Sonzogni",
+          "position": "Goalkeeper",
+          "shirtNumber": 51
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31069",
+          "name": "M. Sportiello",
+          "position": "Goalkeeper",
+          "shirtNumber": 57
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "137976",
+          "name": "I. Hien",
+          "position": "Defender",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "492165",
+          "name": "I. Isoa",
+          "position": "Defender",
+          "shirtNumber": 55
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1442",
+          "name": "S. Kolašinac",
+          "position": "Defender",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "48119",
+          "name": "O. Kossounou",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "281495",
+          "name": "T. Kristensen",
+          "position": "Defender",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "458411",
+          "name": "Jacopo Mirra",
+          "position": "Defender",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "400530",
+          "name": "R. ObriÄ",
+          "position": "Defender",
+          "shirtNumber": 40
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "558690",
+          "name": "M. Plaia",
+          "position": "Defender",
+          "shirtNumber": 53
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "289761",
+          "name": "G. Scalvini",
+          "position": "Defender",
+          "shirtNumber": 42
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2286",
+          "name": "D. Zappacosta",
+          "position": "Defender",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "91422",
+          "name": "R. Bellanova",
+          "position": "Defender",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "264857",
+          "name": "L. Bernasconi",
+          "position": "Defender",
+          "shirtNumber": 47
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "410395",
+          "name": "A. Bonanomi",
+          "position": "Midfielder",
+          "shirtNumber": 48
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "147859",
+          "name": "C. De Ketelaere",
+          "position": "Midfielder",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "10097",
+          "name": "Éderson",
+          "position": "Midfielder",
+          "shirtNumber": 13
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1358",
+          "name": "E. Elmas",
+          "position": "Midfielder",
+          "shirtNumber": 99
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "325",
+          "name": "G. Gaetano",
+          "position": "Midfielder",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "484411",
+          "name": "J. Idele",
+          "position": "Midfielder",
+          "shirtNumber": 41
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1642",
+          "name": "F. Kessié",
+          "position": "Midfielder",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "412893",
+          "name": "S. Levak",
+          "position": "Midfielder",
+          "shirtNumber": 46
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "419423",
+          "name": "A. Manzoni",
+          "position": "Midfielder",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2763",
+          "name": "Mario Pasalic",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "558617",
+          "name": "D. K. Pounga",
+          "position": "Midfielder",
+          "shirtNumber": 45
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "178749",
+          "name": "L. Samardžić",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "485609",
+          "name": "F. Steffanoni",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "203474",
+          "name": "N. Zalewski",
+          "position": "Midfielder",
+          "shirtNumber": 59
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "66817",
+          "name": "N. Krstović",
+          "position": "Attacker",
+          "shirtNumber": 90
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30543",
+          "name": "G. Raspadori",
+          "position": "Attacker",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "278095",
+          "name": "J. Rowe",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30544",
+          "name": "G. Scamacca",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "199837",
+          "name": "K. Sulemana",
+          "position": "Attacker",
+          "shirtNumber": 7
+        }
+      ],
+      "colors": [
+        "#1E71B8",
+        "#111111"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/499.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "500",
+      "name": "Bologna",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616142",
+          "name": "Matteo Franceschelli",
+          "position": "Goalkeeper",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "416518",
+          "name": "U. Happonen",
+          "position": "Goalkeeper",
+          "shirtNumber": 72
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "446089",
+          "name": "M. Pessina",
+          "position": "Goalkeeper",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2998",
+          "name": "Ł. Skorupski",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "295223",
+          "name": "R. Alhassane",
+          "position": "Midfielder",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31099",
+          "name": "N. Casale",
+          "position": "Defender",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "887",
+          "name": "M. Darmian",
+          "position": "Defender",
+          "shirtNumber": 36
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30498",
+          "name": "L. De Silvestri",
+          "position": "Defender",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "416062",
+          "name": "E. Helland",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616147",
+          "name": "Ali Jaber",
+          "position": "Defender",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "39254",
+          "name": "T. Heggem",
+          "position": "Defender",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "134",
+          "name": "Juan Miranda",
+          "position": "Midfielder",
+          "shirtNumber": 33
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "204043",
+          "name": "A. Theate",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "287564",
+          "name": "M. Vitík",
+          "position": "Defender",
+          "shirtNumber": 41
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "426626",
+          "name": "M. Amondarain",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "319919",
+          "name": "O. El Azzouzi",
+          "position": "Midfielder",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "44814",
+          "name": "L. Ferguson",
+          "position": "Midfielder",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "47985",
+          "name": "E. Holm",
+          "position": "Midfielder",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "605412",
+          "name": "Besalet Krasniqi",
+          "position": "Midfielder",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "559723",
+          "name": "L. Kusic",
+          "position": "Midfielder",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "606953",
+          "name": "M. Libra",
+          "position": "Midfielder",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1322",
+          "name": "N. Moro",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31273",
+          "name": "T. Pobega",
+          "position": "Midfielder",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "128461",
+          "name": "N. Zortea",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "873",
+          "name": "F. Bernardeschi",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30438",
+          "name": "N. Cambiaghi",
+          "position": "Midfielder",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "584426",
+          "name": "F. Castaldo",
+          "position": "Attacker",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "15811",
+          "name": "A. Dovbyk",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "349185",
+          "name": "J. Enem",
+          "position": "Attacker",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "346866",
+          "name": "S. Mbangula",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30542",
+          "name": "J. Odgaard",
+          "position": "Attacker",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30488",
+          "name": "R. Orsolini",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30440",
+          "name": "R. Piccoli",
+          "position": "Attacker",
+          "shirtNumber": 91
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "679113",
+          "name": "C. Piro",
+          "position": "Attacker",
+          "shirtNumber": null
+        }
+      ],
+      "colors": [
+        "#174A8B",
+        "#B32032"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/500.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "502",
+      "name": "Fiorentina",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "15843",
+          "name": "O. Christensen",
+          "position": "Goalkeeper",
+          "shirtNumber": 53
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31352",
+          "name": "L. Lezzerini",
+          "position": "Goalkeeper",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "882",
+          "name": "David de Gea",
+          "position": "Goalkeeper",
+          "shirtNumber": 43
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "594877",
+          "name": "Arnis Ademi",
+          "position": "Defender",
+          "shirtNumber": 74
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "41144",
+          "name": "Dodô",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162498",
+          "name": "R. Drăgușin",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "330437",
+          "name": "Álex Jiménez",
+          "position": "Defender",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "41734",
+          "name": "João Mário",
+          "position": "Defender",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "136087",
+          "name": "F. Parisi",
+          "position": "Defender",
+          "shirtNumber": 65
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1084",
+          "name": "M. Pongračić",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31642",
+          "name": "L. Ranieri",
+          "position": "Defender",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "490779",
+          "name": "Valde",
+          "position": "Defender",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "424277",
+          "name": "Viery",
+          "position": "Defender",
+          "shirtNumber": 33
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "347644",
+          "name": "A. Atta",
+          "position": "Midfielder",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1639",
+          "name": "M. Brescianini",
+          "position": "Midfielder",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "876",
+          "name": "N. Fagioli",
+          "position": "Midfielder",
+          "shirtNumber": 44
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "474591",
+          "name": "C. Inao OulaÃ¯",
+          "position": "Midfielder",
+          "shirtNumber": 42
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "311083",
+          "name": "C. Ndour",
+          "position": "Midfielder",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "631204",
+          "name": "Pirro",
+          "position": "Midfielder",
+          "shirtNumber": 73
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "125743",
+          "name": "Beto",
+          "position": "Attacker",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "462229",
+          "name": "T. Campaniello",
+          "position": "Attacker",
+          "shirtNumber": 89
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "639656",
+          "name": "F. Croci",
+          "position": "Attacker",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162128",
+          "name": "W. Gnonto",
+          "position": "Attacker",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "449249",
+          "name": "Franco Mastantuono",
+          "position": "Attacker",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "610532",
+          "name": "B. Mazzeo",
+          "position": "Attacker",
+          "shirtNumber": 72
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "383006",
+          "name": "A. Njie",
+          "position": "Attacker",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "292172",
+          "name": "Mateo Pellegrino",
+          "position": "Attacker",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "18748",
+          "name": "Pote",
+          "position": "Midfielder",
+          "shirtNumber": 28
+        }
+      ],
+      "colors": [
+        "#5B2C83"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/502.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "503",
+      "name": "Torino",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "56266",
+          "name": "F. Israel",
+          "position": "Goalkeeper",
+          "shirtNumber": 81
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "80296",
+          "name": "Lucas Perri",
+          "position": "Goalkeeper",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "419871",
+          "name": "D. Mascardi",
+          "position": "Goalkeeper",
+          "shirtNumber": 26
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "565709",
+          "name": "L. Siviero",
+          "position": "Goalkeeper",
+          "shirtNumber": 76
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "303362",
+          "name": "R. Belghali",
+          "position": "Midfielder",
+          "shirtNumber": 45
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30396",
+          "name": "C. Biraghi",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616233",
+          "name": "Manuel Carrascosa",
+          "position": "Defender",
+          "shirtNumber": 63
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "122468",
+          "name": "Saúl Coco",
+          "position": "Defender",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "48372",
+          "name": "E. Cömert",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "396637",
+          "name": "P. Comuzzo",
+          "position": "Defender",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "437093",
+          "name": "N. Fortini",
+          "position": "Defender",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "14329",
+          "name": "A. Ismajli",
+          "position": "Defender",
+          "shirtNumber": 44
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "138417",
+          "name": "N. Patterson",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1631",
+          "name": "R. Rodríguez",
+          "position": "Defender",
+          "shirtNumber": 13
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "628981",
+          "name": "A. Ballanti",
+          "position": "Midfielder",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "41892",
+          "name": "Daniel Bragança",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "270507",
+          "name": "C. Casadei",
+          "position": "Midfielder",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "36895",
+          "name": "K. Fitz-Jim",
+          "position": "Midfielder",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "343189",
+          "name": "G. Gineitis",
+          "position": "Midfielder",
+          "shirtNumber": 66
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "336573",
+          "name": "E. İlkhan",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616236",
+          "name": "Zalan Kugyela",
+          "position": "Midfielder",
+          "shirtNumber": 96
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "579118",
+          "name": "A. Luongo",
+          "position": "Midfielder",
+          "shirtNumber": 79
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30810",
+          "name": "R. Mandragora",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "161859",
+          "name": "G. Oristanio",
+          "position": "Midfielder",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "522242",
+          "name": "Aaron Tchamda",
+          "position": "Midfielder",
+          "shirtNumber": 36
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "842",
+          "name": "N. Vlašić",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "243",
+          "name": "Z. Aboukhlal",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "19524",
+          "name": "C. Adams",
+          "position": "Attacker",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "611399",
+          "name": "O. Banse",
+          "position": "Attacker",
+          "shirtNumber": 45
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "471040",
+          "name": "A. Cacciamani",
+          "position": "Midfielder",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "40405",
+          "name": "S. Kulenović",
+          "position": "Attacker",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "123",
+          "name": "P. Pellegri",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30414",
+          "name": "G. Simeone",
+          "position": "Attacker",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2495",
+          "name": "D. Zapata",
+          "position": "Attacker",
+          "shirtNumber": 91
+        }
+      ],
+      "colors": [
+        "#7A263A",
+        "#8B2332"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/503.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "504",
+      "name": "Hellas Verona",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31631",
+          "name": "N. Leali",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31383",
+          "name": "S. Perilli",
+          "position": "Goalkeeper",
+          "shirtNumber": 34
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "350539",
+          "name": "G. Toniolo",
+          "position": "Goalkeeper",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "14327",
+          "name": "D. Bradarić",
+          "position": "Defender",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "383036",
+          "name": "N. Calabrese",
+          "position": "Defender",
+          "shirtNumber": 37
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "527234",
+          "name": "F. Cham",
+          "position": "Defender",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30921",
+          "name": "P. Dawidowicz",
+          "position": "Defender",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "418846",
+          "name": "D. De Battisti",
+          "position": "Defender",
+          "shirtNumber": 71
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "169297",
+          "name": "A. Edmundsson",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "15909",
+          "name": "M. Frese",
+          "position": "Midfielder",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "70362",
+          "name": "S. Korač",
+          "position": "Defender",
+          "shirtNumber": 48
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "368129",
+          "name": "T. Slotsager",
+          "position": "Defender",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "626663",
+          "name": "N. Tagne",
+          "position": "Defender",
+          "shirtNumber": 33
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "200",
+          "name": "G. Zappa",
+          "position": "Defender",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "546576",
+          "name": "L. Bega",
+          "position": "Midfielder",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1090",
+          "name": "A. Bernede",
+          "position": "Midfielder",
+          "shirtNumber": 24
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "37437",
+          "name": "A. Harroui",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "281291",
+          "name": "E. Iannoni",
+          "position": "Midfielder",
+          "shirtNumber": 44
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "867",
+          "name": "G. Kastanos",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "562612",
+          "name": "A. Le Borgne",
+          "position": "Midfielder",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30551",
+          "name": "N. Lella",
+          "position": "Midfielder",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "194837",
+          "name": "T. Suslov",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "580829",
+          "name": "R. Akale",
+          "position": "Midfielder",
+          "shirtNumber": 38
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "558681",
+          "name": "S. Cerbone",
+          "position": "Attacker",
+          "shirtNumber": 35
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "266185",
+          "name": "M. Compagnon",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "3430",
+          "name": "C. Ekuban",
+          "position": "Attacker",
+          "shirtNumber": 81
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "343287",
+          "name": "D. Livramento",
+          "position": "Midfielder",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "59421",
+          "name": "D. Mosquera",
+          "position": "Attacker",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "91490",
+          "name": "S. Mulattieri",
+          "position": "Attacker",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "236955",
+          "name": "A. Sarr",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "266178",
+          "name": "K. Sezonienko",
+          "position": "Midfielder",
+          "shirtNumber": 79
+        }
+      ],
+      "colors": [
+        "#F2C500",
+        "#173F7A"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/504.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "505",
+      "name": "Inter",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "91488",
+          "name": "R. Di Gennaro",
+          "position": "Goalkeeper",
+          "shirtNumber": 12
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "46988",
+          "name": "Josep Martínez",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31037",
+          "name": "I. Provedel",
+          "position": "Goalkeeper",
+          "shirtNumber": 49
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "5",
+          "name": "M. Akanji",
+          "position": "Defender",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31009",
+          "name": "A. Bastoni",
+          "position": "Defender",
+          "shirtNumber": 95
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "24953",
+          "name": "Y. Bisseck",
+          "position": "Defender",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "568287",
+          "name": "L. Bovio",
+          "position": "Defender",
+          "shirtNumber": 46
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31010",
+          "name": "F. Dimarco",
+          "position": "Defender",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "2725",
+          "name": "B. Pavard",
+          "position": "Defender",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "19235",
+          "name": "D. Spence",
+          "position": "Midfielder",
+          "shirtNumber": 99
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "386867",
+          "name": "F. Stante",
+          "position": "Defender",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "626",
+          "name": "J. Stones",
+          "position": "Defender",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30558",
+          "name": "N. Barella",
+          "position": "Midfielder",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "420715",
+          "name": "Leonardo Bovo",
+          "position": "Midfielder",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1640",
+          "name": "H. Çalhanoğlu",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "10238",
+          "name": "Carlos Augusto",
+          "position": "Midfielder",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "270509",
+          "name": "A. Diouf",
+          "position": "Midfielder",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "293",
+          "name": "C. Jones",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "552669",
+          "name": "M. Marello",
+          "position": "Midfielder",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1457",
+          "name": "H. Mkhitaryan",
+          "position": "Midfielder",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "342230",
+          "name": "A. Stanković",
+          "position": "Midfielder",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "348205",
+          "name": "P. Sučić",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "329",
+          "name": "P. Zieliński",
+          "position": "Midfielder",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "275651",
+          "name": "A. Bonny",
+          "position": "Attacker",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "345808",
+          "name": "F. Esposito",
+          "position": "Attacker",
+          "shirtNumber": 94
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "565689",
+          "name": "J. Iddrissou",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "461830",
+          "name": "M. Lavelli",
+          "position": "Attacker",
+          "shirtNumber": 53
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "10077",
+          "name": "Luis Henrique",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "217",
+          "name": "Lautaro Martínez",
+          "position": "Attacker",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "437678",
+          "name": "M. Mosconi",
+          "position": "Attacker",
+          "shirtNumber": 48
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "21509",
+          "name": "M. Thuram",
+          "position": "Attacker",
+          "shirtNumber": 9
+        }
+      ],
+      "colors": [
+        "#111111",
+        "#0068A8"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/505.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "511",
+      "name": "Empoli",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "557193",
+          "name": "E. Filippis",
+          "position": "Goalkeeper",
+          "shirtNumber": 13
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30794",
+          "name": "S. Perisan",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "393947",
+          "name": "J. Seghetti",
+          "position": "Goalkeeper",
+          "shirtNumber": 12
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "495307",
+          "name": "D. Bembnista",
+          "position": "Defender",
+          "shirtNumber": 36
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "32095",
+          "name": "C. Cauz",
+          "position": "Defender",
+          "shirtNumber": 33
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31040",
+          "name": "M. Curto",
+          "position": "Defender",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "340697",
+          "name": "G. Indragoli",
+          "position": "Defender",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31136",
+          "name": "S. Romagnoli",
+          "position": "Defender",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30624",
+          "name": "F. Bandinelli",
+          "position": "Midfielder",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31051",
+          "name": "L. Belardinelli",
+          "position": "Midfielder",
+          "shirtNumber": 57
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "552672",
+          "name": "E. Biondini",
+          "position": "Midfielder",
+          "shirtNumber": 39
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "47841",
+          "name": "J. Ceesay",
+          "position": "Defender",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "136005",
+          "name": "N. Corrado",
+          "position": "Midfielder",
+          "shirtNumber": 91
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "340699",
+          "name": "D. Degli Innocenti",
+          "position": "Midfielder",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "626661",
+          "name": "L. Deli",
+          "position": "Midfielder",
+          "shirtNumber": 44
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "616952",
+          "name": "M. Egan",
+          "position": "Defender",
+          "shirtNumber": 35
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31765",
+          "name": "L. Magnino",
+          "position": "Defender",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "352354",
+          "name": "E. Saporiti",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "329401",
+          "name": "Gerard Yepes",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "323",
+          "name": "K. Zedadka",
+          "position": "Midfielder",
+          "shirtNumber": 98
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "342067",
+          "name": "F. Distefano",
+          "position": "Attacker",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "559714",
+          "name": "F. Meznar",
+          "position": "Attacker",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "554185",
+          "name": "S. Monaco",
+          "position": "Attacker",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "452409",
+          "name": "B. Popov",
+          "position": "Attacker",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "337982",
+          "name": "S. Shpendi",
+          "position": "Attacker",
+          "shirtNumber": 11
+        }
+      ],
+      "colors": [
+        "#1665A8"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/511.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "517",
+      "name": "Venezia",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31565",
+          "name": "M. Grandi",
+          "position": "Goalkeeper",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30611",
+          "name": "L. Montipò",
+          "position": "Goalkeeper",
+          "shirtNumber": 96
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "557120",
+          "name": "A. Pozzi",
+          "position": "Goalkeeper",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162445",
+          "name": "F. Stanković",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "25061",
+          "name": "A. Bella-Kotchap",
+          "position": "Defender",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1482",
+          "name": "Thierry Correia",
+          "position": "Defender",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "610145",
+          "name": "A. Gomes",
+          "position": "Defender",
+          "shirtNumber": 95
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "326183",
+          "name": "R. Halhal",
+          "position": "Defender",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "37144",
+          "name": "R. Haps",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "774",
+          "name": "Juan Jesus",
+          "position": "Defender",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31390",
+          "name": "P. Mazzocchi",
+          "position": "Midfielder",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "466346",
+          "name": "R. Mohammed",
+          "position": "Defender",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "421807",
+          "name": "M. Moreno",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "375321",
+          "name": "R. Sagrado",
+          "position": "Defender",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "373825",
+          "name": "J. Schingtienne",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1266",
+          "name": "T. Bašić",
+          "position": "Midfielder",
+          "shirtNumber": 26
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "513179",
+          "name": "L. Berardi",
+          "position": "Midfielder",
+          "shirtNumber": 36
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "51266",
+          "name": "G. Busio",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "342025",
+          "name": "M. Dagasso",
+          "position": "Midfielder",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30532",
+          "name": "A. Duncan",
+          "position": "Midfielder",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "415517",
+          "name": "Lamine Dabo",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "14704",
+          "name": "B. Franjić",
+          "position": "Midfielder",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "275394",
+          "name": "A. Hainaut",
+          "position": "Midfielder",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "28744",
+          "name": "Þ. Helgason",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162010",
+          "name": "S. Panada",
+          "position": "Midfielder",
+          "shirtNumber": 55
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "107153",
+          "name": "Kike Pérez",
+          "position": "Midfielder",
+          "shirtNumber": 71
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1014",
+          "name": "S. Sohm",
+          "position": "Midfielder",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "25414",
+          "name": "J. Yeboah",
+          "position": "Attacker",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "57446",
+          "name": "A. Adams",
+          "position": "Attacker",
+          "shirtNumber": 45
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "212",
+          "name": "A. Adorante",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "445973",
+          "name": "Toni Fernández",
+          "position": "Midfielder",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "26438",
+          "name": "L. Lauberbach",
+          "position": "Attacker",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "425255",
+          "name": "K. Lisman",
+          "position": "Attacker",
+          "shirtNumber": 56
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "318546",
+          "name": "A. Rrahmani",
+          "position": "Attacker",
+          "shirtNumber": 7
+        }
+      ],
+      "colors": [
+        "#177245",
+        "#111111"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/517.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "523",
+      "name": "Parma",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "180762",
+          "name": "E. Corvi",
+          "position": "Goalkeeper",
+          "shirtNumber": 40
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "335117",
+          "name": "G. Daffara",
+          "position": "Goalkeeper",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30392",
+          "name": "S. Ghidotti",
+          "position": "Goalkeeper",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "637969",
+          "name": "A. Mazzocchi",
+          "position": "Goalkeeper",
+          "shirtNumber": 75
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "499380",
+          "name": "S. Britschgi",
+          "position": "Midfielder",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "286473",
+          "name": "F. Carboni",
+          "position": "Midfielder",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30420",
+          "name": "E. Del Prato",
+          "position": "Defender",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "552828",
+          "name": "D. Diallo",
+          "position": "Defender",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "21090",
+          "name": "Diego Carlos",
+          "position": "Defender",
+          "shirtNumber": 34
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "576948",
+          "name": "D. Drobnic",
+          "position": "Defender",
+          "shirtNumber": 72
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "203483",
+          "name": "A. N&apos;Diaye",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "595812",
+          "name": "Karlo Pajsar",
+          "position": "Defender",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "428237",
+          "name": "M. Troilo",
+          "position": "Defender",
+          "shirtNumber": 37
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "6221",
+          "name": "L. Valenti",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "91358",
+          "name": "E. Valeri",
+          "position": "Defender",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "48193",
+          "name": "P. Almqvist",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "628",
+          "name": "Adrián Bernabé",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "362061",
+          "name": "B. Cremaschi",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "322630",
+          "name": "G. Fabbian",
+          "position": "Midfielder",
+          "shirtNumber": 80
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "308836",
+          "name": "M. Keita",
+          "position": "Midfielder",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "595817",
+          "name": "Abdou Konate",
+          "position": "Midfielder",
+          "shirtNumber": 47
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "881",
+          "name": "H. Nicolussi",
+          "position": "Midfielder",
+          "shirtNumber": 41
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "362752",
+          "name": "C. Ordoñez",
+          "position": "Midfielder",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "48491",
+          "name": "V. Sierro",
+          "position": "Midfielder",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "472572",
+          "name": "T. De Martis",
+          "position": "Attacker",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "432610",
+          "name": "Ousmane Diallo",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "301924",
+          "name": "N. Elphege",
+          "position": "Attacker",
+          "shirtNumber": 23
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "292543",
+          "name": "M. Frigan",
+          "position": "Attacker",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "483670",
+          "name": "S. Lontani",
+          "position": "Attacker",
+          "shirtNumber": 76
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "194905",
+          "name": "D. Romero",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "194750",
+          "name": "E. Touré",
+          "position": "Midfielder",
+          "shirtNumber": 19
+        }
+      ],
+      "colors": [
+        "#1E4B9B",
+        "#F4D000"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/523.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "867",
+      "name": "Lecce",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31717",
+          "name": "M. Bleve",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "42712",
+          "name": "A. Borbei",
+          "position": "Goalkeeper",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "56459",
+          "name": "W. Falcone",
+          "position": "Goalkeeper",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "650552",
+          "name": "C. Lupo",
+          "position": "Goalkeeper",
+          "shirtNumber": 12
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "446138",
+          "name": "P. Penev",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "675850",
+          "name": "Ismael Dabo",
+          "position": "Defender",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "349232",
+          "name": "A. Dembélé",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "280431",
+          "name": "S. Fofana",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31543",
+          "name": "A. Gallo",
+          "position": "Defender",
+          "shirtNumber": 25
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "291589",
+          "name": "Kialonda Gaspar",
+          "position": "Defender",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "23253",
+          "name": "G. Jean",
+          "position": "Defender",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "19738",
+          "name": "C. Ndaba",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "434081",
+          "name": "E. Scott",
+          "position": "Defender",
+          "shirtNumber": 31
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "203219",
+          "name": "J. Siebert",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "455316",
+          "name": "Tiago Gabriel",
+          "position": "Defender",
+          "shirtNumber": 44
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "558590",
+          "name": "M. Ubani",
+          "position": "Defender",
+          "shirtNumber": 70
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "161702",
+          "name": "Danilo Veiga",
+          "position": "Defender",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "335071",
+          "name": "M. Berisha",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1748",
+          "name": "L. Coulibaly",
+          "position": "Midfielder",
+          "shirtNumber": 29
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "126974",
+          "name": "O. Gandelman",
+          "position": "Midfielder",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "387537",
+          "name": "Olaf Gorter",
+          "position": "Midfielder",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "46170",
+          "name": "I. Ilić",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "197779",
+          "name": "M. Kaba",
+          "position": "Midfielder",
+          "shirtNumber": 77
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "340179",
+          "name": "N. Kovač ",
+          "position": "Midfielder",
+          "shirtNumber": 80
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "56560",
+          "name": "Y. Maleh",
+          "position": "Midfielder",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "277862",
+          "name": "Joël Monteiro",
+          "position": "Attacker",
+          "shirtNumber": 99
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "8643",
+          "name": "K. N’Dri",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "334925",
+          "name": "O. Ngom",
+          "position": "Midfielder",
+          "shirtNumber": 79
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "636372",
+          "name": "A. Zovko",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "589789",
+          "name": "Paco Esteban",
+          "position": "Attacker",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "345107",
+          "name": "A. Ahmed Fatah",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "120",
+          "name": "W. Geubbels",
+          "position": "Attacker",
+          "shirtNumber": 69
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "479776",
+          "name": "H. Lærke",
+          "position": "Attacker",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "595869",
+          "name": "Divine Onyemachi",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "6662",
+          "name": "S. Pierotti",
+          "position": "Attacker",
+          "shirtNumber": 50
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "264122",
+          "name": "N. Štulić",
+          "position": "Attacker",
+          "shirtNumber": 9
+        }
+      ],
+      "colors": [
+        "#D71920",
+        "#F5D000"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/867.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "895",
+      "name": "Como",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "8574",
+          "name": "J. Butez",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "681919",
+          "name": "L. Ginelli",
+          "position": "Goalkeeper",
+          "shirtNumber": 12
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "18959",
+          "name": "Robert Sánchez",
+          "position": "Goalkeeper",
+          "shirtNumber": 97
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31719",
+          "name": "M. Vigorito",
+          "position": "Goalkeeper",
+          "shirtNumber": 22
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "674625",
+          "name": "Adam Asfour",
+          "position": "Defender",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "19720",
+          "name": "T. Chalobah",
+          "position": "Defender",
+          "shirtNumber": 99
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "197448",
+          "name": "Yan Couto",
+          "position": "Defender",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "32034",
+          "name": "A. Dossena",
+          "position": "Defender",
+          "shirtNumber": 13
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31073",
+          "name": "E. Goldaniga",
+          "position": "Defender",
+          "shirtNumber": 18
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "309792",
+          "name": "Kaiki",
+          "position": "Defender",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "288112",
+          "name": "Willy Kambwala Ndengushi",
+          "position": "Defender",
+          "shirtNumber": 53
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "26301",
+          "name": "M. Kempf",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "386305",
+          "name": "Jacobo Ramón Naveros",
+          "position": "Defender",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "14266",
+          "name": "I. Smolčić",
+          "position": "Defender",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "336560",
+          "name": "Álex Valle",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "295026",
+          "name": "M. Baturina",
+          "position": "Midfielder",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "659",
+          "name": "M. Caqueret",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "662278",
+          "name": "R. Cassano",
+          "position": "Midfielder",
+          "shirtNumber": 49
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "162266",
+          "name": "L. da Cunha",
+          "position": "Midfielder",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "459029",
+          "name": "A. Lahdo",
+          "position": "Midfielder",
+          "shirtNumber": 15
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "410396",
+          "name": "M. Liberali",
+          "position": "Midfielder",
+          "shirtNumber": 30
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "47085",
+          "name": "Luis Milla",
+          "position": "Midfielder",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "350037",
+          "name": "N. Paz",
+          "position": "Midfielder",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "288699",
+          "name": "M. Perrone",
+          "position": "Midfielder",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31056",
+          "name": "S. Ricci",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "443162",
+          "name": "Jesús Rodríguez",
+          "position": "Midfielder",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "354533",
+          "name": "J. Addai",
+          "position": "Attacker",
+          "shirtNumber": 42
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "400948",
+          "name": "Assane Diao",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "26845",
+          "name": "T. Douvikas",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "877",
+          "name": "M. Kean",
+          "position": "Attacker",
+          "shirtNumber": 90
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "567667",
+          "name": "S. Pisati",
+          "position": "Attacker",
+          "shirtNumber": 10
+        }
+      ],
+      "colors": [
+        "#2878B8"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/895.png"
+    },
+    {
+      "provider": "api-football",
+      "providerTeamId": "1579",
+      "name": "Monza",
+      "competitionId": "135",
+      "season": "2024",
+      "players": [
+        {
+          "provider": "api-football",
+          "providerPlayerId": "605496",
+          "name": "Aleksandr Ballabio",
+          "position": "Goalkeeper",
+          "shirtNumber": 50
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "686983",
+          "name": "Marco Pirro",
+          "position": "Goalkeeper",
+          "shirtNumber": null
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "388883",
+          "name": "A. Strajnar",
+          "position": "Goalkeeper",
+          "shirtNumber": 43
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31191",
+          "name": "D. Thiam",
+          "position": "Goalkeeper",
+          "shirtNumber": 20
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "193328",
+          "name": "N. Törnqvist",
+          "position": "Goalkeeper",
+          "shirtNumber": 1
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "10997",
+          "name": "V. Antov",
+          "position": "Defender",
+          "shirtNumber": 6
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "384423",
+          "name": "A. Bakoune",
+          "position": "Midfielder",
+          "shirtNumber": 24
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30708",
+          "name": "S. Birindelli",
+          "position": "Defender",
+          "shirtNumber": 19
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "193270",
+          "name": "A. Carboni",
+          "position": "Defender",
+          "shirtNumber": 44
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "318053",
+          "name": "S. Goglichidze",
+          "position": "Defender",
+          "shirtNumber": 2
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "448977",
+          "name": "E. Kouadio",
+          "position": "Defender",
+          "shirtNumber": 60
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "342018",
+          "name": "L. Lucchesi",
+          "position": "Defender",
+          "shirtNumber": 3
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "41324",
+          "name": "Ricardo Mangas",
+          "position": "Midfielder",
+          "shirtNumber": 7
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "436239",
+          "name": "Y. Maye",
+          "position": "Defender",
+          "shirtNumber": 5
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "384543",
+          "name": "J. Ziółkowski",
+          "position": "Defender",
+          "shirtNumber": 4
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "408635",
+          "name": "E. Akinsanmiro",
+          "position": "Midfielder",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "579153",
+          "name": "N. Ballabio",
+          "position": "Midfielder",
+          "shirtNumber": 24
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "394438",
+          "name": "L. Colombo",
+          "position": "Midfielder",
+          "shirtNumber": 21
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30431",
+          "name": "A. Colpani",
+          "position": "Midfielder",
+          "shirtNumber": 28
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "56851",
+          "name": "M. Folorunsho",
+          "position": "Midfielder",
+          "shirtNumber": 90
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "675832",
+          "name": "Christian Mariani",
+          "position": "Midfielder",
+          "shirtNumber": 46
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "613450",
+          "name": "M. Mout",
+          "position": "Midfielder",
+          "shirtNumber": 80
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "18824",
+          "name": "Pedro Obiang",
+          "position": "Midfielder",
+          "shirtNumber": 14
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "421859",
+          "name": "M. Ondoa",
+          "position": "Midfielder",
+          "shirtNumber": 8
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30436",
+          "name": "M. Pessina",
+          "position": "Midfielder",
+          "shirtNumber": 32
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "56293",
+          "name": "I. Touré",
+          "position": "Midfielder",
+          "shirtNumber": 27
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "213",
+          "name": "K. Baldé",
+          "position": "Attacker",
+          "shirtNumber": 17
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "31532",
+          "name": "P. Ciurria",
+          "position": "Attacker",
+          "shirtNumber": 26
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "1649",
+          "name": "P. Cutrone",
+          "position": "Attacker",
+          "shirtNumber": 10
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "284242",
+          "name": "O. Forson",
+          "position": "Attacker",
+          "shirtNumber": 11
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "30603",
+          "name": "Dany Mota",
+          "position": "Attacker",
+          "shirtNumber": 47
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "85",
+          "name": "C. Ngonge",
+          "position": "Midfielder",
+          "shirtNumber": 16
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "380691",
+          "name": "Jay Robinson",
+          "position": "Midfielder",
+          "shirtNumber": 46
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "340547",
+          "name": "Gustavo Varela",
+          "position": "Attacker",
+          "shirtNumber": 9
+        },
+        {
+          "provider": "api-football",
+          "providerPlayerId": "237090",
+          "name": "E. Zeballos",
+          "position": "Attacker",
+          "shirtNumber": 22
+        }
+      ],
+      "colors": [
+        "#F4F4F4",
+        "#D71920"
+      ],
+      "logo": "https://media.api-sports.io/football/teams/1579.png"
+    }
+  ]
+}

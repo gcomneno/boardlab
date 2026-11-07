@@ -78,14 +78,25 @@ export class MultiplayerClient {
     return `/api/v1/matches/${matchId}`;
   }
 
-  async create(handsPerTeam) {
+  async create(handsPerTeam, teamSelections = null) {
     if (!Number.isSafeInteger(handsPerTeam) ||
         handsPerTeam < 1 || handsPerTeam > 1000) {
       throw new RangeError("Invalid match length");
     }
 
+    if (
+      teamSelections !== null &&
+      (!Array.isArray(teamSelections) || teamSelections.length !== 2)
+    ) {
+      throw new TypeError("Invalid team selections");
+    }
+
+    const body = teamSelections === null
+      ? { handsPerTeam }
+      : { handsPerTeam, teamSelections };
+
     const result = await this.request(
-      "POST", "/api/v1/matches", { handsPerTeam }
+      "POST", "/api/v1/matches", body
     );
 
     this.sessionGeneration++;

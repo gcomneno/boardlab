@@ -15,6 +15,8 @@ test("creates canonical provider-backed team and player identities", () => {
     name: "Original Team Name",
     competitionId: 135,
     season: 2026,
+    colors: ["#112233"],
+    logo: "https://media.api-sports.io/football/teams/42.png",
   });
 
   const player = createPlayer({
@@ -54,6 +56,8 @@ test("official names are preserved verbatim", () => {
     name: "São Paulo FC",
     competitionId: "71",
     season: "2026",
+    colors: ["#112233"],
+    logo: "https://media.api-sports.io/football/teams/7.png",
   });
 
   const player = createPlayer({

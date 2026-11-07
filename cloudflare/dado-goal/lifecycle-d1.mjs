@@ -32,6 +32,7 @@ export async function createMatch(db, input) {
     hostDigest,
     createdAt,
     expiresAt,
+    teamSelections = null,
   } = input;
 
   if (
@@ -41,12 +42,29 @@ export async function createMatch(db, input) {
     !hostDigest ||
     !Number.isSafeInteger(createdAt) ||
     !Number.isSafeInteger(expiresAt) ||
-    expiresAt <= createdAt
+    expiresAt <= createdAt ||
+    (
+      teamSelections !== null &&
+      (
+        !Array.isArray(teamSelections) ||
+        teamSelections.length !== 2 ||
+        teamSelections.some(team =>
+          !team ||
+          typeof team !== "object" ||
+          Array.isArray(team) ||
+          ["provider", "competitionId", "season", "providerTeamId"]
+            .some(field =>
+              typeof team[field] !== "string" ||
+              team[field].length === 0
+            )
+        )
+      )
+    )
   ) {
     throw new TypeError("Invalid create input");
   }
 
-  const changes = requireBatch(await db.batch([
+  const statements = [
     db.prepare(`
       INSERT INTO lifecycle_matches (
         match_id, revision, status, state_json,
@@ -63,9 +81,37 @@ export async function createMatch(db, input) {
         (match_id, seat, token_digest)
       VALUES (?, 0, ?)
     `).bind(matchId, hostDigest),
-  ]), 2);
+  ];
 
-  if (changes[0] !== 1 || changes[1] !== 1) {
+  if (teamSelections !== null) {
+    for (const [seat, team] of teamSelections.entries()) {
+      statements.push(db.prepare(`
+        INSERT INTO lifecycle_match_teams (
+          match_id,
+          seat,
+          provider,
+          competition_id,
+          season,
+          provider_team_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        matchId,
+        seat,
+        team.provider,
+        team.competitionId,
+        team.season,
+        team.providerTeamId,
+      ));
+    }
+  }
+
+  const changes = requireBatch(
+    await db.batch(statements),
+    statements.length,
+  );
+
+  if (changes.some(value => value !== 1)) {
     throw new Error("Unexpected create result");
   }
 

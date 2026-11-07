@@ -1,17 +1,53 @@
+
+import { newMatch } from "./engine.mjs";
 import {
   MultiplayerClient,
   MultiplayerAPIError,
 } from "./multiplayer-client.mjs";
-
+import { matchStatistics } from "./statistics.mjs";
+import { matchClock } from "./match-clock.mjs";
+import { createRoster, pickScorer } from "./match-roster.mjs";
+import { importCatalogueJson } from "./catalogue-json.mjs";
+import { createMatchRoster } from "./catalogue-roster.mjs";
+import { createMatchRecord } from "./team-history.mjs";
 import {
-  initializeMultiplayerLocale,
-  translate,
-  formatMessage,
-} from "./i18n.mjs";
+  createPlayerRatings,
+  RATING_FIELDS,
+  RATING_LEVELS,
+} from "./player-ratings.mjs";
+import {
+  clearManagement,
+  createManagementDocument,
+  exportManagementJson,
+  importManagementJson,
+  loadManagement,
+  saveManagement,
+} from "./team-management-store.mjs";
+import {
+  enrichMatchEvent,
+  eventDisplayValues,
+} from "./match-player-identity.mjs";
+import {
+  createEventState, evaluateHandEvent
+} from "./match-events.mjs";
+import {
+  createExtraordinaryEventState,
+  evaluateExtraordinaryEvent,
+} from "./extraordinary-events.mjs";
+import {
+  describeExtraordinaryEvent,
+} from "./extraordinary-commentary.mjs";
+import {
+  describeEventReason,
+  describeRoll,
+  describeMatchEvent
+} from "./commentary.mjs";
+import { DICE_ART } from "./dice-art.mjs";
+import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
+import { socialColors } from "./team-colors.mjs";
 
-const $ = id => document.getElementById(id);
+const byId = (id) => document.getElementById(id);
 
-// One user-facing invitation; two independent server credentials.
 function encodeInvite(matchId, inviteToken) {
   return `DG1.${matchId}.${inviteToken}`;
 }
@@ -19,25 +55,21 @@ function encodeInvite(matchId, inviteToken) {
 function decodeInvite(code) {
   const match = /^DG1\.([A-Za-z0-9_-]{20,128})\.([A-Za-z0-9_-]{20,256})$/
     .exec(code.trim());
-
-  if (!match) {
-    throw new Error("Codice invito non valido.");
-  }
-
+  if (!match) throw new Error("Codice invito non valido.");
   return { matchId: match[1], inviteToken: match[2] };
 }
 
 let browserStorage = null;
 try {
   browserStorage = window.localStorage;
-} catch {
-  // Private browsing or browser policy may disable storage.
-}
+} catch {}
 
 let csrfToken = null;
 let authenticated = false;
+let snapshot = null;
+let multiplayerBusy = false;
 
-const client = new MultiplayerClient({
+const multiplayerClient = new MultiplayerClient({
   storage: browserStorage,
   fetchImpl: (input, init = {}) => {
     const headers = new Headers(init.headers);
@@ -51,361 +83,1086 @@ const client = new MultiplayerClient({
     });
   },
 });
-
-let snapshot = null;
-let lastFace = null; // { player, face } — canonical face unchanged
-let busy = false;
-let polling = false;
-
-const dice = {
-  team: "mpTeamDie",
-  pink: "mpPinkDie",
-  result: "mpFinalDie",
+const phaseNames = {
+  team: "teamDie",
+  pink: "pinkDie",
+  result: "finalDie",
 };
 
-let statusNotice = null;
+const phaseName = phase => translate(phaseNames[phase]);
 
-function message(value) {
-  $("status").textContent = value;
-}
+const diceFaces = {
+  team: [
+    "Tiro in porta!", "Tiro in porta!",
+    "Passaggio intercettato!", "Passaggio intercettato!",
+    "Cross!", "Passaggio",
+  ],
+  pink: [
+    "Palla sul fondo", "Mezza rovesciata",
+    "Palla alta sulla traversa", "Palla intercettata",
+    "Rovesciata", "Colpo di testa",
+  ],
+  result: [
+    "Respinto!", "GOAL!", "FUORI!",
+    "PALO/TRAVERSA", "RIGORE", "Parato!",
+  ],
+};
 
-function showNotice(key, values = {}) {
-  statusNotice = { key, values };
-  message(formatMessage(key, values));
-}
-
-const localErrors = Object.freeze({
-  "Codice invito non valido.": "mpInvalidInvite",
-  "Accesso non disponibile. Riprova più tardi.": "mpLoginUnavailable",
-  "Impossibile terminare la sessione.": "mpLogoutFailed",
-  "Numero di mani non valido": "mpInvalidHands",
-  "Stato della partita non disponibile.": "mpStateUnavailable"
+const dieFaceMessageKeys = Object.freeze({
+  "Tiro in porta!": "faceShotOnTarget",
+  "Passaggio intercettato!": "faceInterceptedPass",
+  "Cross!": "faceCross",
+  "Passaggio": "facePass",
+  "Palla sul fondo": "faceWide",
+  "Mezza rovesciata": "faceScissorKick",
+  "Palla alta sulla traversa": "faceOverTheBar",
+  "Palla intercettata": "faceBallIntercepted",
+  "Rovesciata": "faceBicycleKick",
+  "Colpo di testa": "faceHeader",
+  "Respinto!": "faceBlocked",
+  "GOAL!": "faceGoal",
+  "FUORI!": "faceOut",
+  "PALO/TRAVERSA": "faceWoodwork",
+  "RIGORE": "facePenalty",
+  "Parato!": "faceSaved",
 });
 
-function showError(error) {
-  if (error instanceof MultiplayerAPIError) {
-    showNotice("mpServerError", {
-      code: error.code,
-      status: error.status
-    });
-  } else if (error instanceof Error) {
-    const key = localErrors[error.message];
-    if (key) showNotice(key);
-    else {
-      // Unknown technical errors retain their original diagnostic text.
-      statusNotice = { raw: error.message };
-      message(error.message);
-    }
-  } else {
-    showNotice("mpUnknownError");
-  }
+function displayDieFace(face) {
+  const key = dieFaceMessageKeys[face];
+  if (!key) throw new RangeError("Unknown die face");
+  return translate(key);
 }
 
-function restoreNotice() {
-  if (!statusNotice) return;
-  if ("raw" in statusNotice) message(statusNotice.raw);
-  else message(formatMessage(statusNotice.key, statusNotice.values));
+function diceKind(phase, player) {
+  return phase === "team"
+    ? (player === 0 ? "yellow" : "blue")
+    : phase === "pink" ? "pink" : "final";
+}
+
+const teamPalettes = [null, null];
+
+function visualTeamPalette(player) {
+  return teamPalettes[player] ?? [colors[player]];
+}
+
+function shade(hex, factor) {
+  const channels = [1, 3, 5].map((i) =>
+    Math.round(parseInt(hex.slice(i, i + 2), 16) * factor),
+  );
+  return "#" + channels.map((n) =>
+    n.toString(16).padStart(2, "0")).join("");
+}
+
+const dieFaceTransforms = [
+  "rotateY(0deg) translateZ(var(--die-half))",
+  "rotateY(90deg) translateZ(var(--die-half))",
+  "rotateY(180deg) translateZ(var(--die-half))",
+  "rotateY(-90deg) translateZ(var(--die-half))",
+  "rotateX(90deg) translateZ(var(--die-half))",
+  "rotateX(-90deg) translateZ(var(--die-half))",
+];
+
+const dieFinalRotations = [
+  "rotateX(0deg) rotateY(0deg)",
+  "rotateX(0deg) rotateY(-90deg)",
+  "rotateX(0deg) rotateY(-180deg)",
+  "rotateX(0deg) rotateY(90deg)",
+  "rotateX(-90deg) rotateY(0deg)",
+  "rotateX(90deg) rotateY(0deg)",
+];
+
+function buildDie3d(phase, player) {
+  const die = byId("die");
+  die.classList.remove("kickoff-ball");
+  const kind = diceKind(phase, player);
+  const art = DICE_ART[kind];
+
+  if (!Array.isArray(art) || art.length !== 6) {
+    throw new RangeError("Invalid 3D die faces");
+  }
+
+  const color = colors[player];
+  die.style.removeProperty("--die-light");
+  die.style.removeProperty("--die-dark");
+  die.style.removeProperty("--die-ink");
+
+  if (phase === "team") {
+    die.style.setProperty("--die-light", color);
+    die.style.setProperty("--die-dark", shade(color, 0.65));
+    die.style.setProperty("--die-ink", shade(color, 0.28));
+  }
+
+  const cube = document.createElement("div");
+  cube.className = "die-cube";
+
+  art.forEach((svg, index) => {
+    const face = document.createElement("div");
+    face.className = `die-face die-face-${index}`;
+    face.style.transform = dieFaceTransforms[index];
+    face.innerHTML = svg;
+    cube.append(face);
+  });
+
+  die.replaceChildren(cube);
+  return cube;
+}
+
+function displayFace(phase, player, index) {
+  if (!Number.isInteger(index) || index < 0 || index > 5) {
+    throw new RangeError("Invalid die face");
+  }
+
+  const die = byId("die");
+  const cube = buildDie3d(phase, player);
+  cube.style.transform = dieFinalRotations[index];
+
+  die.setAttribute(
+    "aria-label",
+    `${phaseName(phase)}: ${displayDieFace(diceFaces[phase][index])}`,
+  );
+}
+
+let state;
+let names = [];
+let colors = [];
+let isRolling = false;
+let rollEvents = [];
+let matchEvents = [];
+let rosters = [];
+let refereeStates = [];
+let extraordinaryState;
+let commentaryEnabled = true;
+let lastCommentary = null;
+let lastRefereeEvent = null;
+let lastExtraordinaryEvent = null;
+let lastGoalScorer = null;
+let messageKey = "setupPrompt";
+let messageValues = {};
+
+function showMessage(key, values = {}) {
+  messageKey = key;
+  messageValues = values;
+  byId("message").textContent = formatMessage(key, values);
+}
+
+let matchStarted = false;
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function syncMultiplayerControls() {
+  const hasSeat = Boolean(multiplayerClient.seatToken);
+  const invite = byId("invite-code").value.trim();
+  let validTeams = false;
+
+  try {
+    selectedMultiplayerTeams();
+    validTeams = true;
+  } catch {}
+
+  byId("login").disabled = authenticated || multiplayerBusy;
+  byId("logout").disabled = !authenticated || multiplayerBusy;
+  byId("create").disabled =
+    !authenticated || hasSeat || multiplayerBusy || !validTeams;
+  byId("join").disabled =
+    !authenticated || hasSeat || multiplayerBusy || !invite;
+  byId("copy-invite").disabled = !invite || multiplayerBusy;
 }
 
 function render() {
-  const active = Boolean(client.seatToken && snapshot);
-  const state = snapshot?.state;
-  const status = snapshot?.status;
-  const myTurn =
-    status === "active" && state?.player === client.seat;
-
-  $("roll").disabled = !myTurn || busy;
-  $("refresh").disabled = !active || busy;
-  $("leave").disabled = !client.seatToken || busy;
-  $("create").disabled = !authenticated || Boolean(client.seatToken) || busy;
-  $("join").disabled = !authenticated || Boolean(client.seatToken) || busy;
-  $("copy-invite").disabled =
-    !$("invite-code").value.trim() || busy;
-
   if (!state) {
-    restoreNotice();
-    $("score").textContent = formatMessage("mpScore", {
-      home: "—", away: "—"
-    });
-    $("hands-done").textContent = formatMessage("mpHands", {
-      home: "—", away: "—", total: "—"
-    });
-    $("turn").textContent = formatMessage("mpTurn", {
-      player: "—", detail: "—"
-    });
-    $("die").textContent = formatMessage("mpDie", { die: "—" });
-    $("last-roll").textContent = formatMessage("mpLastRoll", { face: "—" });
+    byId("roll").disabled = true;
+    byId("result").textContent = "⚽";
+    byId("match-clock").textContent = "—";
     return;
   }
+  byId("message").textContent = formatMessage(messageKey, messageValues);
 
-  $("score").textContent = formatMessage("mpScore", {
-    home: state.goals[0], away: state.goals[1]
-  });
-  $("hands-done").textContent = formatMessage("mpHands", {
-    home: state.hands[0], away: state.hands[1],
-    total: state.handsPerTeam
-  });
-  $("turn").textContent = status === "completed"
-    ? translate("mpFinalWhistle")
-    : formatMessage("mpTurn", {
-      player: state.player + 1,
-      detail: translate(myTurn ? "mpYourTurn" : "mpWaitTurn")
-    });
-  $("die").textContent = formatMessage("mpDie", {
-    die: dice[state.phase] ? translate(dice[state.phase]) : state.phase
-  });
-  $("last-roll").textContent = formatMessage("mpLastRoll", {
-    face: lastFace
-      ? formatMessage("mpPlayerFace", lastFace)
-      : "—"
-  });
+  // Keep events recorded, but hide their narrative when commentary is OFF.
+  byId("match-events-list").closest(".match-events").hidden = !commentaryEnabled;
 
-  if (statusNotice) {
-    restoreNotice();
-  } else if (status === "completed") {
-    message(translate("mpCompleted"));
-  } else if (status === "waiting") {
-    message(translate("mpWaiting"));
-  } else {
-    message(formatMessage("mpActive", {
-      number: Math.max(0, snapshot.revision - 1)
-    }));
-  }
-}
+  // Rebuild presentation from canonical events on every locale change.
+  byId("match-events-heading").textContent = translate("eventBoardHeading");
+  byId("match-events-empty").textContent = translate("eventBoardEmpty");
+  byId("match-events-empty").hidden = matchEvents.length > 0;
 
-async function work(operation) {
-  if (busy) return;
-  busy = true;
-  render();
+  const eventKeys = {
+    goal: "eventGoal",
+    yellow: "eventYellow",
+    red: "eventRed",
+    substitution: "eventSubstitution"
+  };
 
-  try {
-    await operation();
-    statusNotice = null;
-  } catch (error) {
-    showError(error);
-  } finally {
-    busy = false;
-    render();
-  }
-}
+  byId("match-events-list").replaceChildren(
+    ...matchEvents.map(event => {
+      const item = document.createElement("li");
+      item.classList.add(event.team === 0 ? "event-home" : "event-away");
+      const minute = document.createElement("time");
+      minute.textContent = `${event.minute}′`;
+      minute.className = "event-minute";
 
-async function synchronize() {
-  if (!client.seatToken || polling || busy) return;
-  polling = true;
+      const descriptionStack = document.createElement("span");
+      descriptionStack.className = "event-description-stack";
 
-  try {
-    const next = await client.snapshot();
-    if (!snapshot || next.revision >= snapshot.revision) {
-      snapshot = next;
-      if (next.lastRoll) {
-        lastFace = {
-          player: next.lastRoll.seat + 1,
-          face: next.lastRoll.face
-        };
+      const description = document.createElement("span");
+      const reason = describeEventReason(event.reason, getLocale());
+      const eventDescription = event.classification === "narrative"
+        ? describeExtraordinaryEvent(event, getLocale())
+            .replace(/^\d+′\s*/, "")
+        : formatMessage(eventKeys[event.type], {
+            ...eventDisplayValues(event),
+            team: names[event.team],
+            reason: ""
+          });
+      description.textContent = eventDescription;
+      descriptionStack.append(description);
+
+      if ((event.type === "yellow" || event.type === "red") && reason) {
+        const reasonLine = document.createElement("span");
+        reasonLine.className = "event-reason";
+        reasonLine.textContent = `[${reason}]`;
+        descriptionStack.append(reasonLine);
       }
-      render();
-    }
-  } catch (error) {
-    showError(error);
-  } finally {
-    polling = false;
+
+      item.append(minute, descriptionStack);
+      return item;
+    })
+  );
+  const commentary = byId("commentary-text");
+  commentary.textContent = !commentaryEnabled
+    ? translate("commentaryDisabled")
+    : lastCommentary
+      ? [
+        describeRoll(
+          lastCommentary.event,
+          lastCommentary.before,
+          lastCommentary.after,
+          lastCommentary.names,
+          lastCommentary.index,
+          getLocale()
+        ),
+        lastGoalScorer !== null
+          ? formatMessage("goalScorerCall", { number: lastGoalScorer })
+          : null,
+        lastRefereeEvent
+          ? describeMatchEvent(lastRefereeEvent, names, getLocale())
+          : null,
+        lastExtraordinaryEvent
+          ? describeExtraordinaryEvent(
+              lastExtraordinaryEvent,
+              getLocale()
+            )
+          : null
+      ].filter(Boolean).join(" ")
+      : translate("commentaryReady");
+  byId("commentary-toggle").textContent = commentaryEnabled
+    ? "🎙️ ON"
+    : "🎙️ OFF";
+  byId("commentary-toggle").setAttribute(
+    "aria-pressed", String(commentaryEnabled)
+  );
+  const clock = matchClock(state);
+  const footballMinute = `${Math.floor(clock.seconds / 60)}′`;
+  byId("match-clock").textContent = clock.finished
+    ? formatMessage("finalClock", { time: footballMinute })
+    : formatMessage(clock.half === 1 ? "firstHalf" : "secondHalf",
+      { time: footballMinute });
+  byId("match-clock").classList.toggle("halftime", clock.halftime);
+  for (let player = 0; player < 2; player += 1) {
+    byId(`name-${player}`).textContent = names[player];
+    byId(`goals-${player}`).textContent = state.goals[player];
+    byId(`hands-${player}`).textContent =
+      formatMessage("handsProgress", {
+        done: state.hands[player], total: state.handsPerTeam
+      });
+    const panel = byId(`panel-${player}`);
+    const palette = visualTeamPalette(player);
+    panel.style.setProperty("--team-color", palette[0]);
+    panel.style.setProperty("--team-color-secondary", palette[1] ?? palette[0]);
+    panel.classList.toggle(
+      "active",
+      state.phase !== "finished" && state.player === player,
+    );
   }
+
+  for (let player = 0; player < 2; player += 1) {
+    const guide = byId(`guide-team-${player}`);
+    guide.textContent = names[player];
+    guide.style.borderLeft = `5px solid ${colors[player]}`;
+    guide.classList.toggle(
+      "active",
+      state.phase === "team" && state.player === player,
+    );
+  }
+
+  byId("guide-pink").classList.toggle("active", state.phase === "pink");
+  byId("guide-result").classList.toggle("active", state.phase === "result");
+
+  const [home, away] = matchStatistics(rollEvents);
+  const metrics = [
+    ["goals", "goals"],
+    ["shots", "shots"],
+    ["crosses", "crosses"],
+    ["passes", "passes"],
+    ["saves", "saves"],
+    ["woodwork", "woodwork"],
+    ["penalties", "penalties"],
+  ];
+  byId("match-stats").replaceChildren(
+    ...metrics.map(([label, key]) => {
+      const row = document.createElement("div");
+      row.className = "stat-row stat-comparison";
+
+      const values = document.createElement("div");
+      values.className = "stat-values";
+
+      const left = document.createElement("strong");
+      left.textContent = String(home[key]);
+
+      const name = document.createElement("span");
+      name.textContent = translate(label);
+
+      const right = document.createElement("strong");
+      right.textContent = String(away[key]);
+
+      values.append(left, name, right);
+
+      const bars = document.createElement("div");
+      bars.className = "stat-bars";
+      bars.setAttribute("aria-hidden", "true");
+
+      const total = home[key] + away[key];
+
+      for (const [value, color] of [
+        [home[key], colors[0]],
+        [away[key], colors[1]],
+      ]) {
+        const track = document.createElement("div");
+        track.className = "stat-track";
+
+        const fill = document.createElement("div");
+        fill.className = "stat-fill";
+        fill.style.width = total === 0
+          ? "0%"
+          : `${(value / total) * 100}%`;
+        fill.style.backgroundColor = color;
+
+        track.append(fill);
+        bars.append(track);
+      }
+
+      row.append(values, bars);
+      return row;
+    }),
+  );
+  byId("stats-team-0").textContent = names[0];
+  byId("stats-team-1").textContent = names[1];
+
+  const finished = state.phase === "finished";
+  const playing = matchStarted && !finished;
+
+  // Match configuration is immutable from kick-off to the final whistle.
+  byId("competition").disabled = playing;
+  byId("hands").disabled = playing;
+
+  for (const seat of [0, 1]) {
+    byId(`team-${seat}`).disabled = playing;
+    byId(`color-${seat}`).disabled = playing;
+    byId(`color-${seat}-enabled`).disabled = playing;
+    byId(`color-${seat}-secondary`).disabled =
+      playing || !byId(`color-${seat}-enabled`).checked;
+  }
+  byId("roll").disabled = !playing || isRolling;
+  byId("auto").disabled = !playing;
+  const selectedTeamIds = [0, 1].map(
+    seat => byId(`team-${seat}`).value
+  );
+  const sameSelectedTeam =
+    selectedTeamIds[0] !== "" &&
+    selectedTeamIds[0] === selectedTeamIds[1];
+
+  byId("phase").textContent = finished
+    ? translate("matchFinished")
+    : phaseName(state.phase);
+  byId("turn").textContent = finished
+    ? translate("finalWhistle")
+    : formatMessage("matchTurn", { name: names[state.player] });
+  byId("roll").textContent = finished
+    ? translate("matchFinished")
+    : isRolling
+      ? translate("rolling")
+      : formatMessage("rollPhase", { phase: phaseName(state.phase) });
 }
 
-$("login").addEventListener("click", () => work(async () => {
-  const response = await globalThis.fetch("/auth/guest", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-    },
-    credentials: "same-origin",
-    cache: "no-store",
-  });
-  const result = await response.json();
-  if (!response.ok || typeof result.csrfToken !== "string") {
-    throw new Error("Accesso non disponibile. Riprova più tardi.");
-  }
+let footballCatalogue = null;
+let selectedMatchTeams = [null, null];
+let managementState = createManagementDocument();
+let matchRecorded = false;
 
-  csrfToken = result.csrfToken;
-  authenticated = true;
-  $("auth-status").dataset.i18nDynamic = "mpAuthSuccess";
-  $("auth-status").textContent = translate("mpAuthSuccess");
-  $("login").disabled = true;
-  $("logout").disabled = false;
-  render();
-}));
-
-$("logout").addEventListener("click", () => work(async () => {
-  const response = await globalThis.fetch("/auth/logout", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "X-Dado-CSRF": csrfToken,
-    },
-    credentials: "same-origin",
-    cache: "no-store",
-  });
-  if (!response.ok) throw new Error("Impossibile terminare la sessione.");
-
-  csrfToken = null;
-  authenticated = false;
-  client.leave();
-  snapshot = null;
-  lastFace = null;
-  $("invite-code").value = "";
-  $("auth-status").dataset.i18nDynamic = "mpAuthEnded";
-  $("auth-status").textContent = translate("mpAuthEnded");
-  $("login").disabled = false;
-  $("logout").disabled = true;
-  render();
-}));
-
-$("create").addEventListener("click", () => work(async () => {
-  const raw = $("hands").value.trim();
-  if (!/^\d+$/.test(raw)) {
-    throw new RangeError("Numero di mani non valido");
-  }
-
-  const created = await client.create(Number(raw));
-  $("invite-code").value = encodeInvite(
-    created.matchId, created.inviteToken
-  );
-  snapshot = created.snapshot;
-  lastFace = null;
-  if ($("remember").checked) client.remember();
-}));
+try {
+  managementState = loadManagement(window.localStorage);
+} catch {
+  managementState = createManagementDocument();
+}
 
 
-$("join").addEventListener("click", () => work(async () => {
-  const { matchId, inviteToken } = decodeInvite(
-    $("invite-code").value
-  );
-  snapshot = await client.join(matchId, inviteToken);
-  lastFace = null;
-  if ($("remember").checked) client.remember();
-}));
 
-$("roll").addEventListener("click", () => work(async () => {
-  if (!snapshot || !Number.isSafeInteger(snapshot.revision)) {
-    throw new Error("Stato della partita non disponibile.");
-  }
+function recordCompletedMatch() {
+  if (matchRecorded || state.phase !== "finished") return;
 
-  const requestId = crypto.randomUUID();
-  const result = await client.roll(snapshot.revision, requestId);
+  // Management history is opt-in: at least one imported real team
+  // must have been selected for this match.
+  if (!selectedMatchTeams.some(Boolean)) return;
 
-  snapshot = {
-    ...snapshot,
-    revision: result.revision,
-    state: result.state,
-    status: result.status,
+  const teamSnapshot = (team, seat) => team ?? {
+    provider: "local",
+    providerTeamId: `local-${seat}`,
+    name: names[seat],
+    players: [],
   };
-  lastFace = {
-    player: client.seat + 1,
-    face: result.face
-  };
-}));
 
-$("invite-code").addEventListener("input", render);
+  const record = createMatchRecord({
+    matchId: crypto.randomUUID(),
+    playedAt: new Date().toISOString(),
+    home: teamSnapshot(selectedMatchTeams[0], 0),
+    away: teamSnapshot(selectedMatchTeams[1], 1),
+    homeGoals: state.goals[0],
+    awayGoals: state.goals[1],
+    events: matchEvents,
+    statistics: matchStatistics(rollEvents),
+    ratings: [],
+  });
 
-let copyResetTimer = null;
-
-$("copy-invite").addEventListener("click", async () => {
-  const button = $("copy-invite");
-  const code = $("invite-code").value.trim();
-
-  if (!code || busy) return;
-
-  if (copyResetTimer !== null) {
-    clearTimeout(copyResetTimer);
-    copyResetTimer = null;
-  }
-
-  button.classList.remove("copy-success");
-  button.dataset.i18n = "mpCopyInvite";
-  button.textContent = translate("mpCopyInvite");
+  const nextState = createManagementDocument({
+    ratings: managementState.ratings,
+    matches: [...managementState.matches, record],
+  });
 
   try {
-    await navigator.clipboard.writeText(code);
-    button.dataset.i18n = "mpCopied";
-    button.textContent = translate("mpCopied");
-    button.classList.add("copy-success");
-
-    copyResetTimer = setTimeout(() => {
-      button.dataset.i18n = "mpCopyInvite";
-  button.textContent = translate("mpCopyInvite");
-      button.classList.remove("copy-success");
-      copyResetTimer = null;
-      render();
-    }, 1300);
+    saveManagement(window.localStorage, nextState);
+    managementState = nextState;
+    matchRecorded = true;
   } catch {
-    showNotice("mpCopyFailed");
-  }
-});
-
-$("leave").addEventListener("click", () => {
-  if (busy) return;
-  client.leave();
-  snapshot = null;
-  lastFace = null;
-  $("invite-code").value = "";
-  $("remember").checked = false;
-  showNotice("mpLeft");
-  render();
-});
-
-$("remember").addEventListener("change", () => {
-  if (!$("remember").checked) {
-    try {
-      client.forget();
-    } catch (error) {
-      showError(error);
-    }
-    return;
-  }
-
-  if (client.seatToken) {
-    try {
-      client.remember();
-    } catch (error) {
-      $("remember").checked = false;
-      showError(error);
-    }
-  }
-});
-
-async function recoverOnLoad() {
-  try {
-    const restored = await client.restore();
-    if (!restored) return;
-    snapshot = restored;
-    lastFace = restored.lastRoll
-      ? {
-        player: restored.lastRoll.seat + 1,
-        face: restored.lastRoll.face
-      }
-      : null;
-    $("remember").checked = true;
-    $("invite-code").value = "";
-    render();
-  } catch (error) {
-    showError(error);
+    // Local persistence failure must never affect gameplay.
   }
 }
 
-initializeMultiplayerLocale(() => {
-  for (const element of document.querySelectorAll("[data-i18n-dynamic]")) {
-    element.textContent = translate(element.dataset.i18nDynamic);
+
+function catalogueTeam(selectId) {
+  if (!footballCatalogue) return null;
+
+  const value = byId(selectId).value;
+  if (value === "") return null;
+
+  return footballCatalogue.teams.find(
+    (team) => String(team.providerTeamId) === value
+  ) ?? null;
+}
+
+
+
+
+
+
+function renderCatalogueTeams() {
+  const teams = [...(footballCatalogue?.teams ?? [])].sort(
+    (left, right) => left.name.localeCompare(
+      right.name, undefined, { sensitivity: "base" }
+    )
+  );
+
+  for (let seat = 0; seat < 2; seat += 1) {
+    const select = byId(`team-${seat}`);
+    const current = select.value;
+    select.replaceChildren(new Option(`Squadra ${seat + 1}`, ""));
+
+    for (const team of teams) {
+      select.append(new Option(team.name, String(team.providerTeamId)));
+    }
+
+    if ([...select.options].some(option => option.value === current)) {
+      select.value = current;
+    }
+
+    renderSelectedTeamLogo(seat);
+  }
+}
+
+
+async function loadCatalogueFile(file) {
+  const source = await file.text();
+  footballCatalogue = importCatalogueJson(source);
+  renderCatalogueTeams();
+}
+
+const competitionsByLocale = Object.freeze({
+  it: Object.freeze([
+    Object.freeze({ value: "135:2024", label: "Serie A" }),
+    Object.freeze({ value: "136:2024", label: "Serie B" }),
+  ]),
+  en: Object.freeze([
+    Object.freeze({ value: "39:2024", label: "Premier League" }),
+    Object.freeze({ value: "40:2024", label: "Championship" }),
+  ]),
+});
+
+function syncCompetitionSelector() {
+  const selector = byId("competition");
+  const language = byId("language").value;
+  const competitions = competitionsByLocale[language] ??
+    competitionsByLocale.en;
+  const previous = selector.value;
+
+  selector.replaceChildren(
+    ...competitions.map(({ value, label }) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      return option;
+    }),
+  );
+
+  if (competitions.some(({ value }) => value === previous)) {
+    selector.value = previous;
+  }
+
+  if (selector.options.length !== competitions.length) {
+    throw new Error("Competition selector synchronization failed");
+  }
+}
+
+async function reloadLiveCatalogue() {
+  footballCatalogue = null;
+  renderCatalogueTeams();
+
+  try {
+    await loadLiveCatalogue();
+  } catch {
+    footballCatalogue = null;
+    renderCatalogueTeams();
+  }
+}
+
+async function loadLiveCatalogue() {
+  const [competitionId, season] = byId("competition").value.split(":");
+  const catalogueUrls = Object.freeze({
+    "135:2024": "./catalogues/serie-a-2024.json",
+    "136:2024": "./catalogues/serie-b-2024.json",
+    "39:2024": "./catalogues/premier-league-2024.json",
+    "40:2024": "./catalogues/championship-2024.json",
+  });
+  const catalogueUrl = catalogueUrls[`${competitionId}:${season}`];
+
+  if (!catalogueUrl) {
+    throw new Error(
+      `unsupported football catalogue ${competitionId}:${season}`
+    );
+  }
+
+  const response = await fetch(catalogueUrl);
+
+  if (!response.ok) {
+    throw new Error(`catalogue HTTP ${response.status}`);
+  }
+
+  footballCatalogue = importCatalogueJson(await response.text());
+  renderCatalogueTeams();
+}
+
+
+function manualTeamPalette(seat) {
+  const primary = byId(`color-${seat}`).value;
+  const enabled = byId(`color-${seat}-enabled`).checked;
+  return enabled
+    ? [primary, byId(`color-${seat}-secondary`).value]
+    : [primary];
+}
+
+function syncSecondaryColorControl(seat) {
+  const enabled = byId(`color-${seat}-enabled`).checked;
+  byId(`color-${seat}-secondary`).disabled = !enabled;
+}
+
+function selectedCatalogueTeam(seat) {
+  const teamId = byId(`team-${seat}`).value;
+
+  if (!teamId) {
+    return null;
+  }
+
+  return footballCatalogue?.teams.find(
+    candidate => String(candidate.providerTeamId) === String(teamId)
+  ) ?? null;
+}
+
+function renderSelectedTeamLogo(seat) {
+  const logo = byId(`team-logo-${seat}`);
+  const team = selectedCatalogueTeam(seat);
+
+  if (!team) {
+    logo.hidden = true;
+    logo.removeAttribute("src");
+    logo.alt = "";
+    return;
+  }
+
+  logo.src = team.logo;
+  logo.alt = team.name;
+  logo.hidden = false;
+}
+
+function capturePitchTeamLogos() {
+  for (const seat of [0, 1]) {
+    const logo = byId(`pitch-logo-${seat}`);
+    const team = selectedCatalogueTeam(seat);
+
+    if (!team) {
+      logo.hidden = true;
+      logo.removeAttribute("src");
+      logo.alt = "";
+      continue;
+    }
+
+    logo.src = team.logo;
+    logo.alt = team.name;
+    logo.hidden = false;
+  }
+}
+
+function applySelectedTeamColor(seat) {
+  const team = selectedCatalogueTeam(seat);
+
+  if (!team) {
+    teamPalettes[seat] = null;
+    renderSelectedTeamLogo(seat);
+    return;
+  }
+
+  const palette = [...team.colors];
+  teamPalettes[seat] = palette;
+  byId(`color-${seat}`).value = palette[0];
+  byId(`color-${seat}-enabled`).checked = palette.length === 2;
+  byId(`color-${seat}-secondary`).value = palette[1] ?? palette[0];
+  syncSecondaryColorControl(seat);
+  renderSelectedTeamLogo(seat);
+}
+
+byId("competition").addEventListener("change", () => {
+  void reloadLiveCatalogue();
+});
+
+for (const seat of [0, 1]) {
+  byId(`team-${seat}`).addEventListener("change", () => {
+    applySelectedTeamColor(seat);
+    render();
+  });
+  byId(`color-${seat}-enabled`).addEventListener(
+    "change", () => syncSecondaryColorControl(seat)
+  );
+  syncSecondaryColorControl(seat);
+}
+
+function palettesConflict(left, right) {
+  const normalizedLeft = new Set(
+    left.map(color => color.trim().toUpperCase())
+  );
+  return right.some(
+    color => normalizedLeft.has(color.trim().toUpperCase())
+  );
+}
+
+function start(activate = true) {
+  const rawHands = byId("hands").value;
+
+  if (activate) {
+    capturePitchTeamLogos();
+  }
+  const n = Number(rawHands);
+
+  if (
+    !/^\d+$/.test(rawHands.trim()) ||
+    !Number.isSafeInteger(n) ||
+    n < 1 ||
+    n > 1000
+  ) {
+    showMessage("invalidHands");
+    return;
+  }
+
+  const selectedTeamIds = [0, 1].map(
+    (i) => byId(`team-${i}`).value
+  );
+
+  if (activate &&
+      selectedTeamIds[0] !== "" &&
+      selectedTeamIds[0] === selectedTeamIds[1]) {
+    showMessage("sameTeamConflict");
+    render();
+    return;
+  }
+
+  const selectedTeams = [0, 1].map(
+    (i) => catalogueTeam(`team-${i}`)
+  );
+
+  names = [0, 1].map((i) =>
+    selectedTeams[i]?.name ||
+    byId(`team-${i}`).value.trim() ||
+    `Squadra ${i + 1}`
+  );
+  colors = [0, 1].map((i) => byId(`color-${i}`).value);
+
+  const candidatePalettes = [0, 1].map((seat) =>
+    selectedTeams[seat]
+      ? socialColors(selectedTeams[seat].providerTeamId)
+      : manualTeamPalette(seat)
+  );
+
+  const realTeamKitConflict =
+    selectedTeams.every(Boolean) &&
+    palettesConflict(candidatePalettes[0], candidatePalettes[1]);
+
+  if (activate && realTeamKitConflict) {
+    showMessage("kitColorConflict");
+    render();
+    return;
+  }
+
+  selectedMatchTeams = selectedTeams;
+  matchRecorded = false;
+
+  for (const seat of [0, 1]) {
+    teamPalettes[seat] = candidatePalettes[seat];
+  }
+
+  state = newMatch(n);
+  matchStarted = activate;
+  isRolling = false;
+  rollEvents = [];
+  matchEvents = [];
+  rosters = selectedTeams.map((team) =>
+    createMatchRoster({ team })
+  );
+  refereeStates = [createEventState(), createEventState()];
+  extraordinaryState = createExtraordinaryEventState();
+  lastCommentary = null;
+  lastRefereeEvent = null;
+  lastExtraordinaryEvent = null;
+  lastGoalScorer = null;
+
+  const die = byId("die");
+  die.classList.remove("rolling");
+  die.classList.add("kickoff-ball");
+  die.textContent = "⚽";
+  die.setAttribute("aria-label", "In attesa del primo lancio");
+  byId("result").textContent = "Calcio d'inizio!";
+  if (activate) {
+    showMessage("kickoffTurn", { name: names[0] });
+  } else {
+    showMessage("setupPrompt");
   }
   render();
-  restoreNotice();
-});
-void recoverOnLoad();
+}
 
-window.setInterval(() => {
-  if (client.seatToken &&
-      snapshot?.status !== "completed") {
-    void synchronize();
+async function animateRoll(phase, player, finalFace, durationMs = 700) {
+  const die = byId("die");
+  const finalIndex = diceFaces[phase].indexOf(finalFace);
+  if (finalIndex < 0) throw new RangeError("Unknown die result");
+
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+      durationMs > 0) {
+    const cube = buildDie3d(phase, player);
+    die.classList.add("rolling");
+    cube.classList.add("rolling");
+
+    await sleep(durationMs);
+
+    cube.classList.remove("rolling");
+    die.classList.remove("rolling");
   }
-}, 1500);
 
-render();
+  displayFace(phase, player, finalIndex);
+  byId("result").textContent = displayDieFace(finalFace);
+}
+
+async function roll() {
+  if (
+    !snapshot ||
+    snapshot.status !== "active" ||
+    state.phase === "finished" ||
+    isRolling ||
+    multiplayerBusy
+  ) {
+    return false;
+  }
+
+  const player = state.player;
+
+  isRolling = true;
+  multiplayerBusy = true;
+  render();
+
+  try {
+    const result = await multiplayerClient.roll(
+      snapshot.revision,
+      crypto.randomUUID()
+    );
+
+    await animateRoll(result.die, player, result.face);
+
+    snapshot = {
+      ...snapshot,
+      revision: result.revision,
+      status: result.status,
+      state: result.state,
+      lastRoll: {
+        revision: result.revision,
+        seat: player,
+        die: result.die,
+        face: result.face,
+      },
+    };
+
+    state = result.state;
+
+    const refreshedSnapshot = await multiplayerClient.snapshot();
+    adoptAuthoritativeSnapshot(refreshedSnapshot);
+
+    return state.phase === "finished" || state.player !== player;
+  } finally {
+    isRolling = false;
+    multiplayerBusy = false;
+    render();
+  }
+}
+
+
+function selectedMultiplayerTeam(seat) {
+  const team = selectedCatalogueTeam(seat);
+  if (!team || !footballCatalogue) {
+    throw new Error("Seleziona entrambe le squadre");
+  }
+
+  return {
+    provider: String(footballCatalogue.provider),
+    competitionId: String(footballCatalogue.competitionId),
+    season: String(footballCatalogue.season),
+    providerTeamId: String(team.providerTeamId),
+  };
+}
+
+function selectedMultiplayerTeams() {
+  const teams = [
+    selectedMultiplayerTeam(0),
+    selectedMultiplayerTeam(1),
+  ];
+
+  if (
+    teams[0].provider === teams[1].provider &&
+    teams[0].providerTeamId === teams[1].providerTeamId
+  ) {
+    throw new Error("Le due squadre devono essere diverse");
+  }
+
+  return teams;
+}
+
+function adoptAuthoritativeSnapshot(nextSnapshot) {
+  snapshot = nextSnapshot;
+  state = snapshot.state;
+  matchStarted = snapshot.status === "active" ||
+    snapshot.status === "finished";
+
+  rollEvents = Array.isArray(snapshot.rollEvents)
+    ? snapshot.rollEvents
+    : [];
+
+  matchEvents = rollEvents
+    .filter(event => event.matchEvent)
+    .map(event => event.matchEvent);
+
+  if (snapshot.matchEventContext?.rosters) {
+    rosters = snapshot.matchEventContext.rosters;
+  }
+
+  if (snapshot.matchEventContext?.refereeStates) {
+    refereeStates = snapshot.matchEventContext.refereeStates.map(
+      refereeState => ({
+        ...refereeState,
+        yellowed: new Set(refereeState.yellowed ?? []),
+      })
+    );
+  }
+
+  render();
+}
+
+let multiplayerSyncTimer = null;
+
+function startMultiplayerSync() {
+  if (multiplayerSyncTimer !== null) return;
+
+  multiplayerSyncTimer = window.setInterval(async () => {
+    if (!snapshot || multiplayerBusy || isRolling) return;
+
+    try {
+      const refreshed = await multiplayerClient.snapshot();
+      if (refreshed.revision !== snapshot.revision ||
+          refreshed.status !== snapshot.status) {
+        adoptAuthoritativeSnapshot(refreshed);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, 1000);
+}
+
+function stopMultiplayerSync() {
+  if (multiplayerSyncTimer === null) return;
+  window.clearInterval(multiplayerSyncTimer);
+  multiplayerSyncTimer = null;
+}
+
+async function multiplayerCreate() {
+  if (!authenticated || multiplayerBusy) return;
+
+  multiplayerBusy = true;
+  try {
+    const hands = Number(byId("hands").value);
+    if (!Number.isInteger(hands) || hands < 1) {
+      throw new RangeError("Numero di mani non valido");
+    }
+
+    const teamSelections = selectedMultiplayerTeams();
+    const created = await multiplayerClient.create(hands, teamSelections);
+
+    byId("invite-code").value = encodeInvite(
+      created.matchId,
+      created.inviteToken
+    );
+
+    if (byId("remember").checked) {
+      multiplayerClient.remember();
+    }
+
+    adoptAuthoritativeSnapshot(created.snapshot);
+    startMultiplayerSync();
+  } finally {
+    multiplayerBusy = false;
+  }
+}
+
+async function multiplayerJoin() {
+  if (!authenticated || multiplayerBusy) return;
+
+  multiplayerBusy = true;
+  try {
+    const { matchId, inviteToken } = decodeInvite(
+      byId("invite-code").value
+    );
+    const joined = await multiplayerClient.join(matchId, inviteToken);
+
+    if (byId("remember").checked) {
+      multiplayerClient.remember();
+    }
+
+    adoptAuthoritativeSnapshot(joined.snapshot);
+    startMultiplayerSync();
+  } finally {
+    multiplayerBusy = false;
+  }
+}
+
+async function multiplayerLogin() {
+  if (multiplayerBusy) return;
+  multiplayerBusy = true;
+  try {
+    const response = await fetch("/auth/guest", {
+      method: "POST",
+      credentials: "same-origin",
+    });
+    if (!response.ok) {
+      throw new Error(`Authentication failed (${response.status})`);
+    }
+    const result = await response.json();
+    csrfToken = result.csrfToken;
+    authenticated = true;
+    byId("auth-status").textContent = translate("mpAuthSuccess");
+    render();
+  } finally {
+    multiplayerBusy = false;
+  }
+}
+
+async function multiplayerLogout() {
+  if (multiplayerBusy) return;
+  multiplayerBusy = true;
+  try {
+    await fetch("/auth/logout", {
+      method: "POST",
+      headers: csrfToken ? { "X-Dado-CSRF": csrfToken } : {},
+      credentials: "same-origin",
+    });
+    csrfToken = null;
+    authenticated = false;
+    snapshot = null;
+    stopMultiplayerSync();
+    multiplayerClient.clear();
+    byId("auth-status").textContent = translate("mpAuthEnded");
+    render();
+  } finally {
+    multiplayerBusy = false;
+  }
+}
+
+function showMultiplayerError(error) {
+  const message = error instanceof MultiplayerAPIError
+    ? `${error.code}: ${error.message}`
+    : error?.message || String(error);
+
+  byId("auth-status").textContent = message;
+  console.error(error);
+}
+
+byId("create").addEventListener("click", () => {
+  void multiplayerCreate().catch(showMultiplayerError);
+});
+
+byId("join").addEventListener("click", () => {
+  void multiplayerJoin().catch(showMultiplayerError);
+});
+
+byId("copy-invite").addEventListener("click", async () => {
+  const invite = byId("invite-code").value.trim();
+  if (!invite) return;
+
+  try {
+    await navigator.clipboard.writeText(invite);
+  } catch {
+    byId("invite-code").select();
+  }
+});
+
+byId("login").addEventListener("click", () => {
+  void multiplayerLogin().catch(showMultiplayerError);
+});
+
+byId("logout").addEventListener("click", () => {
+  void multiplayerLogout().catch(showMultiplayerError);
+});
+
+byId("roll").addEventListener("click", () => {
+  void roll().catch(showMultiplayerError);
+});
+
+initializeLocale(() => {
+  syncCompetitionSelector();
+  render();
+  void reloadLiveCatalogue();
+});
+
+syncCompetitionSelector();
+void reloadLiveCatalogue();

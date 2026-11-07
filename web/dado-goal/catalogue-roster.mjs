@@ -15,18 +15,8 @@ export function createCatalogueRoster(team) {
 
   const numbered = team.players.map((player, index) => ({
     ...player,
-    matchNumber: player.shirtNumber ?? index + 1,
+    matchNumber: index + 1,
   }));
-
-  const numbers = new Set();
-  for (const player of numbered) {
-    if (!Number.isInteger(player.matchNumber) ||
-        player.matchNumber <= 0 ||
-        numbers.has(player.matchNumber)) {
-      throw new TypeError("catalogue roster requires unique positive match numbers");
-    }
-    numbers.add(player.matchNumber);
-  }
 
   const activePlayers = numbered.slice(0, 11);
   const benchPlayers = numbered.slice(11, 20);
@@ -36,6 +26,7 @@ export function createCatalogueRoster(team) {
     bench: benchPlayers.map((player) => player.matchNumber),
     departed: [],
     sentOff: [],
+    substitutesIn: [],
     substitutions: 0,
     identities: Object.fromEntries(
       numbered.map((player) => [

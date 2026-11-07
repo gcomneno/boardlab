@@ -25,6 +25,41 @@ test("substitution commentary preserves outgoing and incoming players", () => {
   assert.notEqual(italian, english);
 });
 
+test("disciplinary and injury reasons are rendered bilingually", () => {
+  const yellow = {
+    type: "yellow",
+    team: 0,
+    minute: 12,
+    number: 8,
+    reason: "reckless-challenge",
+  };
+  const injury = {
+    type: "substitution",
+    team: 1,
+    minute: 18,
+    out: 9,
+    in: 27,
+    reason: "injury",
+  };
+
+  assert.match(
+    describeMatchEvent(yellow, teams, "it"),
+    /intervento imprudente/
+  );
+  assert.match(
+    describeMatchEvent(yellow, teams, "en"),
+    /reckless challenge/
+  );
+  assert.match(
+    describeMatchEvent(injury, teams, "it"),
+    /infortunio/
+  );
+  assert.match(
+    describeMatchEvent(injury, teams, "en"),
+    /injury/
+  );
+});
+
 test("commentary does not mutate referee events", () => {
   const event = Object.freeze({
     type: "yellow", team: 0, minute: 30, number: 11

@@ -30,26 +30,48 @@ export function createRoster(random = Math.random) {
     bench: numbers.slice(11, 20),
     departed: [],
     sentOff: [],
+    substitutesIn: [],
     substitutions: 0
   };
 }
 
-export function substitute(roster, random = Math.random) {
+export function substitute(
+  roster,
+  random = Math.random,
+  { allowSubstituteOut = false } = {},
+) {
   if (roster.substitutions >= 5 ||
       roster.active.length === 0 ||
       roster.bench.length === 0) {
     return null;
   }
 
-  const outgoing = pickIndex(roster.active.length, random);
-  const incoming = pickIndex(roster.bench.length, random);
+  const eligibleOutgoing = allowSubstituteOut
+    ? roster.active
+    : roster.active.filter(
+        number => !roster.substitutesIn.includes(number)
+      );
 
-  const out = roster.active[outgoing];
-  const into = roster.bench[incoming];
+  if (eligibleOutgoing.length === 0) return null;
+
+  const out = eligibleOutgoing[pickIndex(eligibleOutgoing.length, random)];
+  const outgoingPosition = roster.identities?.[out]?.position;
+  const eligibleIncoming = outgoingPosition === "Goalkeeper"
+    ? roster.bench.filter(
+        number => roster.identities?.[number]?.position === "Goalkeeper"
+      )
+    : roster.bench;
+
+  if (eligibleIncoming.length === 0) return null;
+
+  const into = eligibleIncoming[pickIndex(eligibleIncoming.length, random)];
+  const incoming = roster.bench.indexOf(into);
+  const outgoing = roster.active.indexOf(out);
 
   roster.active.splice(outgoing, 1, into);
   roster.bench.splice(incoming, 1);
   roster.departed.push(out);
+  roster.substitutesIn.push(into);
   roster.substitutions += 1;
 
   return { out, in: into };
@@ -59,13 +81,33 @@ export function substitute(roster, random = Math.random) {
  * Pick a goalscorer from players currently on the pitch.
  * The selected shirt number is stored with the goal event.
  */
-export function pickScorer(roster, random = Math.random) {
+export function pickScorer(roster, random = Math.random, minute = 0) {
   if (!roster || !Array.isArray(roster.active) ||
       roster.active.length === 0) {
     return null;
   }
 
-  return roster.active[pickIndex(roster.active.length, random)];
+  const identities = roster.identities;
+  if (!identities) {
+    return roster.active[pickIndex(roster.active.length, random)];
+  }
+
+  const goalkeepers = roster.active.filter(
+    number => identities[number]?.position === "Goalkeeper"
+  );
+  const outfield = roster.active.filter(
+    number => identities[number]?.position !== "Goalkeeper"
+  );
+
+  if (outfield.length === 0) {
+    return roster.active[pickIndex(roster.active.length, random)];
+  }
+
+  if (minute >= 85 && goalkeepers.length > 0 && random() < 0.01) {
+    return goalkeepers[pickIndex(goalkeepers.length, random)];
+  }
+
+  return outfield[pickIndex(outfield.length, random)];
 }
 
 export function sendOff(roster, random = Math.random) {

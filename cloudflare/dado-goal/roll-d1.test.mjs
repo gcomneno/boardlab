@@ -193,6 +193,75 @@ test("M2A: authoritative goal, durable event and idempotent replay", async () =>
   }
 });
 
+test("#69: extraordinary narrative event persists once and replays without roster mutation", async () => {
+  let state = initialState(5);
+  state = applyRoll(state, "Tiro in porta!");
+  state = applyRoll(state, "Mezza rovesciata");
+  assert.equal(state.phase, "result");
+
+  const seat = state.player;
+  const rosters = [createRoster(() => 0.5), createRoster(() => 0.5)];
+  const originalRosters = structuredClone(rosters);
+  const d1 = fakeD1(state, seat, rosters);
+  const originalCrypto = globalThis.crypto;
+  const originalRandom = Math.random;
+  let draws = 0;
+
+  try {
+    Math.random = () => {
+      draws++;
+      return draws === 1 ? 0.99 : 0;
+    };
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        getRandomValues(bytes) {
+          bytes.fill(1);
+          return bytes;
+        },
+      },
+    });
+
+    const first = await rollAuthorized(
+      d1.authority, "match-69", "seat-token", "dg69-extraordinary", 0
+    );
+
+    assert.equal(first.duplicate, false);
+    assert.equal(d1.events.length, 2);
+
+    const event = d1.events[1].matchEvent;
+    assert.equal(event.type, "light-knock");
+    assert.equal(event.family, "injury");
+    assert.equal(event.classification, "narrative");
+    assert.equal(event.team, seat);
+
+    const context = replayMatchEvents(
+      d1.events.map(item => ({ event_json: JSON.stringify(item) }))
+    );
+
+    assert.deepEqual(context.rosters, originalRosters);
+    assert.ok(context.extraordinaryState.occurredTypes.has("light-knock"));
+    assert.equal(context.extraordinaryState.occurredFamilies.size, 0);
+
+    const retry = await rollAuthorized(
+      d1.authority, "match-69", "seat-token", "dg69-extraordinary", 0
+    );
+    assert.equal(retry.duplicate, true);
+    assert.equal(d1.events.length, 2);
+    assert.equal(d1.batches, 1);
+  } finally {
+    Math.random = originalRandom;
+    if (originalCrypto === undefined) {
+      delete globalThis.crypto;
+    } else {
+      Object.defineProperty(globalThis, "crypto", {
+        configurable: true,
+        value: originalCrypto,
+      });
+    }
+  }
+});
+
 test("M2D: yellow card persists once and replays after retry", async () => {
   let state = initialState(5);
   state = applyRoll(state, "Tiro in porta!");

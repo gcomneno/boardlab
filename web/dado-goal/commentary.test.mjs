@@ -94,3 +94,27 @@ test("both locales cover every canonical dice face", async () => {
     }
   }
 });
+
+test("penalty is always explicitly announced by radio commentary", () => {
+  const before = newMatch(1);
+  const shot = applyRoll(before, "Tiro in porta!");
+  const attack = applyRoll(shot, "Colpo di testa");
+  const afterPenalty = applyRoll(attack, "RIGORE");
+  const event = {
+    seat: attack.player,
+    die: attack.phase,
+    face: "RIGORE",
+  };
+
+  const italian = describeRoll(
+    event, attack, afterPenalty, ["Gialli", "Blu"], 0, "it"
+  );
+  const english = describeRoll(
+    event, attack, afterPenalty, ["Gialli", "Blu"], 0, "en"
+  );
+
+  assert.match(italian, /RIGORE|dischetto/i);
+  assert.match(english, /PENALTY|spot/i);
+  assert.equal(afterPenalty.phase, "result");
+  assert.equal(afterPenalty.player, attack.player);
+});

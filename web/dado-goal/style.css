@@ -45,7 +45,12 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .team {
   flex: 1;
   min-width: 0;
-  border-top: 6px solid var(--team-color);
+  border-top: 6px solid transparent;
+  border-image: linear-gradient(
+    90deg,
+    var(--team-color) 0 50%,
+    var(--team-color-secondary, var(--team-color)) 50% 100%
+  ) 1;
   padding: 12px 6px;
   text-align: center;
   opacity: .65;
@@ -67,31 +72,76 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 }
 .turn { font-size: 1.4rem; font-weight: bold; }
 .die {
-  font-size: 4rem;
-  min-height: 176px;
+  --die-size: min(176px, 44vw);
+  --die-half: calc(var(--die-size) / 2);
+  min-height: 210px;
   display: grid;
   place-items: center;
+  perspective: 720px;
 }
-.die svg {
+
+.die-cube {
+  position: relative;
+  width: var(--die-size);
+  height: var(--die-size);
+  transform-style: preserve-3d;
+  transform: rotateX(-8deg) rotateY(0deg);
+  transition: transform .24s cubic-bezier(.2, .75, .25, 1);
+  will-change: transform;
+}
+
+.die-face {
+  position: absolute;
+  inset: 0;
+  width: var(--die-size);
+  height: var(--die-size);
+  backface-visibility: hidden;
+}
+
+.die-face svg {
   display: block;
-  width: min(220px, 55vw);
-  height: auto;
-  filter: drop-shadow(5px 9px 5px #0005);
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(2px 4px 3px #0005);
 }
-.die.rolling {
-  animation: die-roll 0.14s linear infinite;
+
+.die-cube.rolling {
+  animation: die-roll-3d .7s cubic-bezier(.2, .65, .3, 1);
 }
-@keyframes die-roll {
-  0% { transform: scale(1) rotate(0deg); filter: brightness(1); }
-  50% { transform: scale(1.08) rotate(3deg); filter: brightness(1.08); }
-  100% { transform: scale(1) rotate(-3deg); filter: brightness(1); }
+
+@keyframes die-roll-3d {
+  0% {
+    transform: translate3d(-28px, -4px, 0)
+      rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+  }
+  24% {
+    transform: translate3d(24px, -30px, 18px)
+      rotateX(205deg) rotateY(155deg) rotateZ(28deg);
+  }
+  52% {
+    transform: translate3d(-14px, -10px, 5px)
+      rotateX(430deg) rotateY(370deg) rotateZ(-18deg);
+  }
+  78% {
+    transform: translate3d(8px, -4px, 0)
+      rotateX(635deg) rotateY(590deg) rotateZ(9deg);
+  }
+  100% {
+    transform: translate3d(0, 0, 0)
+      rotateX(720deg) rotateY(720deg) rotateZ(0deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .die.rolling {
+  .die-cube {
+    transition: none;
+  }
+
+  .die-cube.rolling {
     animation: none;
   }
 }
+
 .dice-guide {
   display: flex;
   flex-wrap: wrap;
@@ -183,8 +233,10 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
     padding: 27px 12px 28px;
   }
   .turn { font-size: 1.1rem; margin: 4px 0; }
-  .die { min-height: 150px; }
-  .die svg { width: 150px; }
+  .die {
+    --die-size: min(150px, 42vw);
+    min-height: 170px;
+  }
 
   .dice-guide { margin: 5px 0; gap: 5px; }
   .dice-guide li { padding: 4px 7px; font-size: .78rem; }
@@ -400,12 +452,744 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   overflow-wrap: anywhere;
 }
 
-/* Dado Goal language layout fix */
-.settings > label[for="language"] {
+/* AUTO play configuration */
+.auto-config {
+  width: min(92vw, 440px);
+  max-height: 90vh;
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #172033;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.32),
+    0 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+.auto-config::backdrop {
+  background: rgba(10, 18, 32, 0.66);
+  backdrop-filter: blur(3px);
+}
+
+.auto-config form {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.auto-config h3 {
+  margin: -22px -22px 4px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #173f7a, #1e71b8);
+  color: #ffffff;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.auto-config h3::before {
+  content: "▶ ";
+}
+
+.auto-config label {
+  display: grid;
+  gap: 7px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.auto-config select,
+.auto-config input[type="number"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #c7cfdb;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #172033;
+  font: inherit;
+  font-weight: 500;
+}
+
+.auto-config select:focus,
+.auto-config input[type="number"]:focus {
+  outline: 3px solid rgba(30, 113, 184, 0.22);
+  border-color: #1e71b8;
+}
+
+.auto-config .roll-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.auto-config .roll-actions button {
+  min-height: 44px;
+  border-radius: 11px;
+  font-weight: 800;
+}
+
+#auto-cancel {
+  background: #eef1f5;
+  color: #344054;
+}
+
+#auto-start {
+  background: #173f7a;
+  color: #ffffff;
+}
+
+@media (max-width: 480px) {
+  .auto-config form {
+    gap: 13px;
+    padding: 18px;
+  }
+
+  .auto-config h3 {
+    margin: -18px -18px 2px;
+    padding: 16px 18px;
+  }
+}
+
+/* Compact team setup */
+.settings > .team-config {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #426650;
+  border-radius: 12px;
+  background: #173328;
+}
+
+.settings .team-config > label {
+  display: grid;
+  gap: 5px;
+}
+
+.team-colors {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) auto 54px;
+  gap: 10px;
+  align-items: end;
+}
+
+.settings .team-color-primary {
+  display: grid;
+  gap: 4px;
+}
+
+.settings .second-color-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  white-space: nowrap;
+  font-size: .82rem;
+  cursor: pointer;
+}
+
+.settings .second-color-toggle input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  accent-color: #f3c94c;
+}
+
+.settings .secondary-color {
+  width: 54px;
+  min-height: 34px;
+}
+
+.settings .secondary-color:disabled {
+  opacity: .28;
+}
+
+@media (max-width: 699px) {
+  .settings > .team-config {
+    flex-basis: 100%;
+  }
+
+  .team-colors {
+    grid-template-columns: minmax(90px, 1fr) auto 54px;
+  }
+}
+
+/* Final compact setup controls */
+.team-colors {
+  grid-template-columns: minmax(90px, 1fr) 24px 54px;
+}
+
+.settings .second-color-toggle {
+  justify-content: center;
+  min-height: 34px;
+}
+
+.settings .secondary-color:disabled {
+  opacity: 1;
+  filter: grayscale(1);
+  background: #8b949e;
+  border-color: #6b7280;
+}
+
+.settings > .match-actions {
   flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: 1fr minmax(110px, 150px) 1fr;
+  gap: 14px;
+  align-items: end;
+}
+
+.settings .roll-count {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+
+.settings .roll-count input {
+  text-align: center;
+}
+
+.settings .match-actions > button,
+.settings .match-actions > .multiplayer-button {
+  width: 100%;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .settings > .match-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .settings .roll-count {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: center;
+    width: 130px;
+  }
+}
+
+/* Secondary colour: make the inactive state unmistakable */
+.settings .second-color-toggle input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #7f8b84;
+  border-radius: 4px;
+  background: #8b949e;
+  cursor: pointer;
+}
+
+.settings .second-color-toggle input[type="checkbox"]:checked {
+  border-color: #f3c94c;
+  background: #f3c94c;
+}
+
+.settings .second-color-toggle input[type="checkbox"]:checked::after {
+  content: "✓";
+  display: block;
+  color: #17241d;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 14px;
+  text-align: center;
+}
+
+.settings .secondary-color:disabled {
+  opacity: .45;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+/* Secondary colour final state:
+   keep the chosen colour; grey only communicates disabled state. */
+.settings .second-color-toggle input[type="checkbox"] {
+  appearance: auto;
+  width: auto;
+  height: auto;
+  border: initial;
+  border-radius: initial;
+  background: initial;
+  cursor: pointer;
+  accent-color: #f3c94c;
+}
+
+.settings .second-color-toggle input[type="checkbox"]:checked::after {
+  content: none;
+}
+
+.settings .secondary-color:disabled {
+  opacity: .45;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.settings .secondary-color:not(:disabled) {
+  opacity: 1;
+  filter: none;
+  cursor: pointer;
+}
+
+/* Primary and secondary team colours have equal visual weight. */
+.team-colors {
+  grid-template-columns: 54px 24px 54px;
+  justify-content: start;
+}
+
+.settings .team-color-primary {
+  width: 54px;
+}
+
+.settings .team-color-primary input[type="color"],
+.settings .secondary-color {
+  width: 54px;
+}
+
+/* Primary and secondary team colours have equal visual weight. */
+.team-colors {
+  grid-template-columns: 54px 24px 54px;
+  justify-content: start;
+}
+
+.settings .team-color-primary {
+  width: 54px;
+}
+
+.settings .team-color-primary input[type="color"],
+.settings .secondary-color {
+  width: 54px;
+}
+
+/* Social colours: large enough to read the actual team palette. */
+.team-colors {
+  grid-template-columns: 90px 24px 90px;
+}
+
+.settings .team-color-primary {
+  width: 90px;
+}
+
+.settings .team-color-primary input[type="color"],
+.settings .secondary-color {
+  width: 90px;
+}
+
+/* #76 social colours: readable without overflowing the team card. */
+.team-colors {
+  grid-template-columns: 90px 24px 90px;
+  justify-content: start;
+  max-width: 100%;
+}
+
+.settings .team-color-primary {
+  width: 90px;
+}
+
+.settings .team-color-primary input[type="color"],
+.settings .secondary-color {
+  box-sizing: border-box;
+  width: 90px;
+  max-width: 100%;
+}
+
+/* AUTO belongs visually to the Dado Goal pitch, not to a generic web form. */
+.auto-config {
+  border: 2px solid #426650;
+  border-radius: 14px;
+  background: #173328;
+  color: #f7f3df;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .48);
+}
+
+.auto-config::backdrop {
+  background: rgba(5, 18, 12, .76);
+  backdrop-filter: blur(3px);
+}
+
+.auto-config h3 {
+  background: #214735;
+  color: #f3c94c;
+  border-bottom: 1px solid #426650;
+  text-shadow: 0 1px 0 #000;
+}
+
+.auto-config label {
+  color: #f7f3df;
+}
+
+.auto-config select,
+.auto-config input[type="number"] {
+  border: 1px solid #5d8069;
+  background: #10281e;
+  color: #ffffff;
+}
+
+.auto-config select:focus,
+.auto-config input[type="number"]:focus {
+  outline: 3px solid rgba(243, 201, 76, .22);
+  border-color: #f3c94c;
+}
+
+#auto-cancel {
+  border: 1px solid #6d8375;
+  background: #29483a;
+  color: #f7f3df;
+}
+
+#auto-start {
+  border: 1px solid #f3c94c;
+  background: #f3c94c;
+  color: #17271f;
+}
+
+#auto-start:hover {
+  filter: brightness(1.07);
+}
+
+/* Match settings: explicit two-column structure. */
+.settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.settings > .locale-setting {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  width: 100%;
   max-width: none;
 }
 
-.settings > label[for="language"] select {
-  max-width: 14rem;
+.settings > .locale-setting select {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+}
+
+.settings > .team-config {
+  min-width: 0;
+  width: auto;
+}
+
+.settings > .match-actions {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 699px) {
+  .settings {
+    grid-template-columns: 1fr;
+  }
+
+  .settings > .match-actions {
+    grid-column: 1;
+  }
+}
+
+/* Card rationale: subordinate line beneath the event description. */
+.event-reason {
+  display: block;
+  grid-column: 2;
+  font-size: .85em;
+  opacity: .82;
+}\n
+/* #76 team palette: wider primary and secondary colour controls. */
+.team-colors {
+  grid-template-columns: 120px 24px 120px;
+  justify-content: start;
+  max-width: 100%;
+}
+
+.settings .team-color-primary {
+  width: 120px;
+}
+
+.settings .team-color-primary input[type="color"],
+.settings .secondary-color {
+  box-sizing: border-box;
+  width: 120px;
+  max-width: 100%;
+}\n
+/* #76 final palette sizing: secondary matches primary exactly. */
+.settings .team-colors {
+  grid-template-columns: 120px 24px 120px;
+  width: 264px;
+  max-width: 100%;
+}
+
+.settings .team-color-primary,
+.settings .team-color-primary input[type="color"],
+.settings input.secondary-color {
+  box-sizing: border-box;
+  width: 120px;
+  min-width: 120px;
+}
+
+/* #76 palette layout: secondary controls align to the right edge. */
+.settings .team-colors {
+  grid-template-columns: 120px 24px 120px;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 100%;
+}
+
+.settings .second-color-toggle {
+  justify-self: end;
+}
+
+.settings input.secondary-color {
+  justify-self: end;
+}
+
+/* #76 palette layout: checkbox belongs visually to secondary colour. */
+.settings .second-color-toggle {
+  position: relative;
+  left: 24px;
+  justify-self: end;
+}
+
+/* #76 final palette alignment: checkbox hugs the secondary colour. */
+.settings .team-colors {
+  grid-template-columns: 120px 1fr 120px;
+  width: 100%;
+}
+
+.settings .second-color-toggle {
+  position: relative;
+  left: auto;
+  justify-self: end;
+  margin-right: -1px;
+}
+
+.settings input.secondary-color {
+  justify-self: end;
+}
+
+/* #76 final palette alignment: checkbox hugs the secondary colour. */
+.settings .team-colors {
+  grid-template-columns: 120px 1fr 120px;
+  width: 100%;
+}
+
+.settings .second-color-toggle {
+  position: relative;
+  left: auto;
+  justify-self: end;
+  margin-right: -1px;
+}
+
+.settings input.secondary-color {
+  justify-self: end;
+}
+
+/* #76 kickoff presentation: larger ball before the first die roll. */
+.die.kickoff-ball {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+
+/* #76 card rationale: always below the card notification. */
+.event-description-stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.event-reason {
+  display: block;
+  grid-column: auto;
+  margin-top: 2px;
+  font-size: .85em;
+  opacity: .82;
+}
+
+
+/* Official team branding beside native selectors. */
+.team-select-with-logo {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.team-select-with-logo > select {
+  width: 100%;
+  min-width: 0;
+}
+
+.team-logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  justify-self: center;
+}
+
+.team-logo[hidden] {
+  visibility: hidden;
+}
+
+/* Keep team selectors full-width before and after catalogue selection. */
+.team-select-with-logo {
+  width: 100%;
+}
+
+.team-select-with-logo > select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+
+/* Fixed match branding around the central game die. */
+.pitch-branding {
+  display: grid;
+  grid-template-columns: minmax(64px, 1fr) auto minmax(64px, 1fr);
+  width: 100%;
+  align-items: center;
+  justify-items: center;
+}
+
+.pitch-branding > .die {
+  grid-column: 2;
+}
+
+.pitch-team-logo {
+  width: clamp(52px, 8vw, 82px);
+  height: clamp(52px, 8vw, 82px);
+  object-fit: contain;
+}
+
+#pitch-logo-0 {
+  grid-column: 1;
+}
+
+#pitch-logo-1 {
+  grid-column: 3;
+}
+
+.pitch-team-logo[hidden] {
+  visibility: hidden;
+}
+
+@media (max-width: 520px) {
+  .pitch-branding {
+    grid-template-columns: minmax(42px, 1fr) auto minmax(42px, 1fr);
+  }
+
+  .pitch-team-logo {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Stable team-selector geometry, including the initial empty state. */
+.settings .team-config > label {
+  width: 100%;
+  min-width: 0;
+}
+
+.settings .team-select-with-logo {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
+}
+
+.settings .team-select-with-logo > select {
+  grid-column: 2;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  justify-self: stretch;
+}
+
+.settings .team-select-with-logo > .team-logo {
+  grid-column: 1;
+}
+
+/* Keep match crests toward the outer edges, with the die isolated centrally. */
+.pitch-branding {
+  grid-template-columns: 1fr auto 1fr;
+}
+
+#pitch-logo-0 {
+  justify-self: start;
+  margin-left: clamp(12px, 4vw, 42px);
+}
+
+#pitch-logo-1 {
+  justify-self: end;
+  margin-right: clamp(12px, 4vw, 42px);
+}
+
+/* No empty crest gutter before a real team has been selected. */
+.settings .team-select-with-logo:has(.team-logo[hidden]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.settings .team-select-with-logo:has(.team-logo[hidden]) > select {
+  grid-column: 1;
+}
+
+.settings .team-select-with-logo:not(:has(.team-logo[hidden])) {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.settings .team-select-with-logo:not(:has(.team-logo[hidden])) > select {
+  grid-column: 2;
+}
+
+/* Prominent broadcast-style presentation of the latest die outcome. */
+.play .result {
+  width: min(92%, 620px);
+  box-sizing: border-box;
+  margin: 10px auto 14px;
+  padding: 10px 18px;
+  min-height: 0;
+  border: 2px solid currentColor;
+  border-radius: 12px;
+  background: rgba(5, 31, 20, .72);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, .28),
+    inset 0 0 18px rgba(255, 255, 255, .05);
+  font-size: clamp(1.55rem, 3.2vw, 2.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: .025em;
+  text-align: center;
+  text-wrap: balance;
+}
+
+
+/* DG69 multiplayer setup controls */
+.settings .multiplayer-remember {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  min-width: 0;
+  width: 100%;
+  padding: 8px 0;
+  text-align: left;
+  line-height: 1.35;
+}
+.settings .multiplayer-remember input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.settings .team-select-with-logo > select {
+  appearance: auto;
+  -webkit-appearance: menulist;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
