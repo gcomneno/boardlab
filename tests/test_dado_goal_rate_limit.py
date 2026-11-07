@@ -6,6 +6,7 @@ import http.client
 import json
 import threading
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -91,7 +92,7 @@ def test_http_429_for_create_join_and_roll(tmp_path: Path) -> None:
             "POST",
             f"/api/v1/matches/{match_id}/roll",
             {"requestId": "r1", "expectedRevision": 1},
-            created["hostToken"],
+            cast(str, created["hostToken"]),
         )
         assert status == 200
 
@@ -99,13 +100,13 @@ def test_http_429_for_create_join_and_roll(tmp_path: Path) -> None:
             "POST",
             f"/api/v1/matches/{match_id}/roll",
             {"requestId": "r1", "expectedRevision": 1},
-            created["hostToken"],
+            cast(str, created["hostToken"]),
         )
         assert status == 200
 
         status, payload = request("POST", "/api/v1/matches", {"handsPerTeam": 2})
         assert status == 429
-        assert payload["error"]["code"] == "RATE_LIMITED"
+        assert cast(dict[str, object], payload["error"])["code"] == "RATE_LIMITED"
 
         clock.value = 60
         status, _ = request("POST", "/api/v1/matches", {"handsPerTeam": 2})

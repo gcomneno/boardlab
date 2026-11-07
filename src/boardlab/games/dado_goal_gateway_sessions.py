@@ -45,11 +45,7 @@ class GatewaySessions:
         return float(value)
 
     def _cleanup(self, now: float) -> None:
-        expired = [
-            token
-            for token, deadline in self._sessions.items()
-            if deadline <= now
-        ]
+        expired = [token for token, deadline in self._sessions.items() if deadline <= now]
         for token in expired:
             del self._sessions[token]
 
@@ -74,10 +70,7 @@ class GatewaySessions:
         with self._lock:
             now = self._now()
             self._cleanup(now)
-            return any(
-                hmac.compare_digest(token, active)
-                for active in self._sessions
-            )
+            return any(hmac.compare_digest(token, active) for active in self._sessions)
 
     def revoke(self, token: str) -> bool:
         if not isinstance(token, str):
@@ -98,7 +91,5 @@ def session_cookie(token: str, max_age: int) -> str:
         raise ValueError("Invalid cookie lifetime")
 
     return (
-        f"__Host-dado-session={token}; "
-        "Path=/; Secure; HttpOnly; SameSite=Strict; "
-        f"Max-Age={max_age}"
+        f"__Host-dado-session={token}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age={max_age}"
     )

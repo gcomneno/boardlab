@@ -59,16 +59,12 @@ class DurableCredentials:
                 version = db.execute("PRAGMA user_version").fetchone()[0]
 
                 if version != 2:
-                    raise CredentialError(
-                        "Unsupported schema: explicit migration required"
-                    )
+                    raise CredentialError("Unsupported schema: explicit migration required")
 
                 required = {"credential_matches", "credential_seats"}
                 found = {
-                    row[0] for row in db.execute(
-                        "SELECT name FROM sqlite_master "
-                        "WHERE type='table'"
-                    )
+                    row[0]
+                    for row in db.execute("SELECT name FROM sqlite_master WHERE type='table'")
                 }
 
                 if not required.issubset(found):
@@ -109,10 +105,7 @@ class DurableCredentials:
                 raise
 
     def create(self, hands_per_team: int) -> dict[str, str]:
-        if (
-            type(hands_per_team) is not int
-            or not 1 <= hands_per_team <= 1000
-        ):
+        if type(hands_per_team) is not int or not 1 <= hands_per_team <= 1000:
             raise CredentialError("Invalid match length")
 
         match_id = _new_token()
@@ -127,8 +120,7 @@ class DurableCredentials:
             try:
                 db.execute("BEGIN IMMEDIATE")
                 db.execute(
-                    "INSERT INTO credential_matches VALUES "
-                    "(?, 'waiting', 0, ?, ?, 0)",
+                    "INSERT INTO credential_matches VALUES (?, 'waiting', 0, ?, ?, 0)",
                     (match_id, state, _digest(invite)),
                 )
                 db.execute(
@@ -161,9 +153,7 @@ class DurableCredentials:
                 if row is None or row[0] != "waiting" or row[2]:
                     raise CredentialError("Match not joinable")
 
-                if row[1] is None or not hmac.compare_digest(
-                    bytes(row[1]), provided
-                ):
+                if row[1] is None or not hmac.compare_digest(bytes(row[1]), provided):
                     raise CredentialError("Invalid invitation")
 
                 guest = _new_token()
@@ -199,20 +189,16 @@ class DurableCredentials:
 
         with self._connect() as db:
             row = db.execute(
-                "SELECT token_digest FROM credential_seats "
-                "WHERE match_id=? AND seat=?",
+                "SELECT token_digest FROM credential_seats WHERE match_id=? AND seat=?",
                 (match_id, seat),
             ).fetchone()
 
-        return row is not None and hmac.compare_digest(
-            bytes(row[0]), digest
-        )
+        return row is not None and hmac.compare_digest(bytes(row[0]), digest)
 
     def snapshot(self, match_id: str) -> dict[str, object]:
         with self._connect() as db:
             row = db.execute(
-                "SELECT status, revision, state_json "
-                "FROM credential_matches WHERE match_id=?",
+                "SELECT status, revision, state_json FROM credential_matches WHERE match_id=?",
                 (match_id,),
             ).fetchone()
 

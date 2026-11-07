@@ -83,6 +83,9 @@ class BrowserAuthHandler(BaseHTTPRequestHandler):
                 return
 
             key = data.get("accessKey")
+            if not isinstance(key, str):
+                self._reply(403, {"error": "ACCESS_DENIED"})
+                return
             session = self.server.auth.login(key)
             if session is None:
                 self._reply(403, {"error": "ACCESS_DENIED"})
@@ -98,9 +101,7 @@ class BrowserAuthHandler(BaseHTTPRequestHandler):
         cookie = self.headers.get("Cookie")
         csrf = self.headers.get("X-Dado-CSRF")
 
-        if not self.server.auth.authenticate(
-            cookie, csrf_header=csrf, mutation=True
-        ):
+        if not self.server.auth.authenticate(cookie, csrf_header=csrf, mutation=True):
             self._reply(403, {"error": "SESSION_DENIED"})
             return
 
@@ -109,8 +110,7 @@ class BrowserAuthHandler(BaseHTTPRequestHandler):
             self._reply(
                 200,
                 {"loggedOut": True},
-                "__Host-dado-session=; Path=/; Secure; HttpOnly; "
-                "SameSite=Strict; Max-Age=0",
+                "__Host-dado-session=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0",
             )
             return
 

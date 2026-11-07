@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 from boardlab.games.dado_goal_durable import DurableMatchManager
@@ -54,7 +55,7 @@ else:
 
 
 class ProcessCrashTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
 
@@ -72,7 +73,7 @@ class ProcessCrashTests(unittest.TestCase):
             created["inviteToken"],
         )
 
-    def subprocess_crash(self, mode, request_id):
+    def subprocess_crash(self, mode: Any, request_id: Any) -> Any:
         payload = {
             "mode": mode,
             "path": str(self.path),
@@ -102,7 +103,7 @@ class ProcessCrashTests(unittest.TestCase):
             msg=process.stderr,
         )
 
-    def test_crash_before_commit_rolls_back(self):
+    def test_crash_before_commit_rolls_back(self) -> None:
         before = self.manager.snapshot(self.match_id, self.host)
         before_counts = self.manager.counts(self.match_id)
 
@@ -120,7 +121,7 @@ class ProcessCrashTests(unittest.TestCase):
             before_counts,
         )
 
-    def test_crash_after_commit_preserves_receipt(self):
+    def test_crash_after_commit_preserves_receipt(self) -> None:
         self.subprocess_crash("after_commit", "committed-request")
 
         recovered = DurableMatchManager(self.path)
@@ -149,7 +150,7 @@ class ProcessCrashTests(unittest.TestCase):
             (2, 1),
         )
 
-    def test_recovered_authorization(self):
+    def test_recovered_authorization(self) -> None:
         self.subprocess_crash("after_commit", "authorized-request")
 
         recovered = DurableMatchManager(self.path)
@@ -159,7 +160,7 @@ class ProcessCrashTests(unittest.TestCase):
 
         self.assertEqual(snapshot["seat"], 0)
 
-    def test_database_integrity_after_crash(self):
+    def test_database_integrity_after_crash(self) -> None:
         self.subprocess_crash("before_commit", "integrity-request")
 
         import sqlite3

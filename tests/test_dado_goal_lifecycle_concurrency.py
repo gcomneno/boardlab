@@ -5,7 +5,9 @@ from __future__ import annotations
 import multiprocessing as mp
 import os
 import sqlite3
+from multiprocessing.synchronize import Event as EventType
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -27,7 +29,7 @@ def worker_roll(
     match_id: str,
     token: str,
     request_id: str,
-    queue: mp.Queue,
+    queue: mp.Queue[Any],
 ) -> None:
     manager = authority(path)
     try:
@@ -39,7 +41,7 @@ def worker_roll(
         queue.put(("ERROR", repr(exc)))
 
 
-def worker_cleanup(path: str, queue: mp.Queue) -> None:
+def worker_cleanup(path: str, queue: mp.Queue[Any]) -> None:
     manager = authority(path, 1120)
     try:
         queue.put(("PASS", manager.cleanup_expired(limit=10)))
@@ -53,7 +55,7 @@ def match(tmp_path: Path) -> tuple[str, dict[str, object]]:
     manager = authority(path)
     manager.initialize()
     created = manager.create(2)
-    manager.join(created["matchId"], created["inviteToken"])
+    manager.join(cast(str, created["matchId"]), created["inviteToken"])
     return path, created
 
 
@@ -69,8 +71,8 @@ def test_two_processes_one_authoritative_roll(
             target=worker_roll,
             args=(
                 path,
-                created["matchId"],
-                created["hostToken"],
+                cast(str, created["matchId"]),
+                cast(str, created["hostToken"]),
                 f"request-{index}",
                 queue,
             ),
@@ -131,14 +133,14 @@ def test_crash_before_commit_preserves_revision(
     assert process.exitcode is not None
 
     manager = authority(path)
-    snapshot = manager.snapshot(created["matchId"], created["hostToken"])
+    snapshot = manager.snapshot(cast(str, created["matchId"]), cast(str, created["hostToken"]))
     assert snapshot["revision"] == 1
 
     with sqlite3.connect(path) as db:
         assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
 
 
-def uncommitted_writer(path: str, ready: mp.Event) -> None:
+def uncommitted_writer(path: str, ready: EventType) -> None:
     db = sqlite3.connect(path, isolation_level=None)
     db.execute("BEGIN IMMEDIATE")
     db.execute("UPDATE lifecycle_matches SET revision=99 WHERE status='active'")
@@ -151,7 +153,7 @@ def worker_roll_commit_then_exit(
     path: str,
     match_id: str,
     token: str,
-    ready: mp.Event,
+    ready: EventType,
 ) -> None:
     """Simulate losing the response after durable commit."""
     manager = authority(path)
@@ -171,8 +173,8 @@ def test_post_commit_crash_preserves_receipt(
         target=worker_roll_commit_then_exit,
         args=(
             path,
-            created["matchId"],
-            created["hostToken"],
+            cast(str, created["matchId"]),
+            cast(str, created["hostToken"]),
             ready,
         ),
     )
@@ -191,15 +193,20 @@ def test_post_commit_crash_preserves_receipt(
     recovered.initialize()
 
     replay = recovered.roll(
-        created["matchId"],
-        created["hostToken"],
+        cast(str, created["matchId"]),
+        cast(str, created["hostToken"]),
         "lost-response-1",
         1,
     )
 
     assert replay["duplicate"] is True
     assert replay["revision"] == 2
-    assert recovered.snapshot(created["matchId"], created["hostToken"])["revision"] == 2
+    assert (
+        recovered.snapshot(cast(str, created["matchId"]), cast(str, created["hostToken"]))[
+            "revision"
+        ]
+        == 2
+    )
 
     with sqlite3.connect(path) as db:
         assert db.execute("SELECT COUNT(*) FROM lifecycle_receipts").fetchone()[0] == 1

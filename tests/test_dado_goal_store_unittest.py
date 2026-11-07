@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
 from boardlab.games.dado_goal import initial_state
 from boardlab.games.dado_goal_store import (
@@ -14,7 +15,7 @@ from boardlab.games.dado_goal_store import (
 
 
 class StoreTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "matches.sqlite3"
@@ -23,7 +24,7 @@ class StoreTests(unittest.TestCase):
         self.store.create("match-one", initial_state(1))
         self.store.activate("match-one")
 
-    def test_explicit_creation_and_restart(self):
+    def test_explicit_creation_and_restart(self) -> None:
         self.assertTrue(self.path.is_file())
 
         reopened = MatchStore(self.path)
@@ -33,7 +34,7 @@ class StoreTests(unittest.TestCase):
         )
         self.assertTrue(reopened.integrity())
 
-    def test_durable_roll_and_receipt(self):
+    def test_durable_roll_and_receipt(self) -> None:
         first = self.store.roll(
             "match-one",
             0,
@@ -60,7 +61,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(duplicate["state"], first["state"])
         self.assertEqual(reopened.counts("match-one"), (2, 1))
 
-    def test_completed_match_survives_restart(self):
+    def test_completed_match_survives_restart(self) -> None:
         self.store.roll(
             "match-one",
             0,
@@ -83,7 +84,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(snap["state"]["phase"], "finished")
         self.assertEqual(reopened.counts("match-one"), (3, 2))
 
-    def test_invalid_face_rolls_back(self):
+    def test_invalid_face_rolls_back(self) -> None:
         before = self.store.snapshot("match-one")
         counts = self.store.counts("match-one")
 
@@ -93,7 +94,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(self.store.snapshot("match-one"), before)
         self.assertEqual(self.store.counts("match-one"), counts)
 
-    def test_stale_revision_rolls_back(self):
+    def test_stale_revision_rolls_back(self) -> None:
         with self.assertRaises(StorageConflict):
             self.store.roll(
                 "match-one",
@@ -104,8 +105,8 @@ class StoreTests(unittest.TestCase):
             )
         self.assertEqual(self.store.counts("match-one"), (1, 0))
 
-    def test_concurrent_writers_one_winner(self):
-        def submit(i):
+    def test_concurrent_writers_one_winner(self) -> Any:
+        def submit(i: Any) -> Any:
             candidate = MatchStore(self.path)
             try:
                 return candidate.roll(
@@ -128,7 +129,7 @@ class StoreTests(unittest.TestCase):
             2,
         )
 
-    def test_failed_receipt_insert_rolls_back_all(self):
+    def test_failed_receipt_insert_rolls_back_all(self) -> None:
         with sqlite3.connect(self.path) as db:
             db.execute("""
                 CREATE TRIGGER deny_receipt
@@ -154,7 +155,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(reopened.counts("match-one"), (1, 0))
         self.assertTrue(reopened.integrity())
 
-    def test_schema_version_rejected(self):
+    def test_schema_version_rejected(self) -> None:
         with sqlite3.connect(self.path) as db:
             db.execute("UPDATE schema_meta SET version=999")
 

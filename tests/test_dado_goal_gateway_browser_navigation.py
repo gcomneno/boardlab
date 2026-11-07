@@ -5,6 +5,7 @@ from __future__ import annotations
 import http.client
 import json
 from threading import Thread
+from typing import Any
 
 from boardlab.games.dado_goal_gateway_authenticated import (
     AuthenticatedGatewayServer,
@@ -35,11 +36,9 @@ def test_browser_navigation_and_mutation_origin_policy() -> None:
         origin: str | None = None,
         cookie: str | None = None,
         csrf: str | None = None,
-        body: dict | None = None,
+        body: dict[str, Any] | None = None,
     ) -> tuple[int, bytes, str | None]:
-        connection = http.client.HTTPConnection(
-            "127.0.0.1", gateway.server_port, timeout=5
-        )
+        connection = http.client.HTTPConnection("127.0.0.1", gateway.server_port, timeout=5)
         host = f"127.0.0.1:{gateway.server_port}"
         headers = {"Host": host}
         if origin is not None:
@@ -85,9 +84,7 @@ def test_browser_navigation_and_mutation_origin_policy() -> None:
         csrf = json.loads(body)["csrfToken"]
         cookie = set_cookie.split(";", 1)[0]
 
-        status, page, _ = request(
-            "GET", "/multiplayer.html", cookie=cookie
-        )
+        status, page, _ = request("GET", "/multiplayer.html", cookie=cookie)
         assert status == 200
         assert b"html" in page.lower()
 
