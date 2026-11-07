@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import http.client
 from threading import Thread
-from typing import Any
 
 import pytest
 
@@ -15,12 +14,12 @@ KEY = "a" * 48
 
 
 @pytest.mark.parametrize("invalid", ["", "short", "x" * 257, "è" * 48])
-def test_invalid_access_key(invalid: Any) -> None:
+def test_invalid_access_key(invalid):
     with pytest.raises(ValueError):
         GatewayServer(1, access_key=invalid)
 
 
-def test_access_key_required_when_configured() -> None:
+def test_access_key_required_when_configured():
     upstream = create_local_server()
     gateway = GatewayServer(upstream.server_port, access_key=KEY)
 

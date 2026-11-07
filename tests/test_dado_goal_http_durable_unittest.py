@@ -6,7 +6,6 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
-from typing import Any
 from unittest.mock import patch
 
 from boardlab.games.dado_goal_http import (
@@ -17,15 +16,15 @@ from boardlab.games.dado_goal_match import MatchManager
 
 
 class DurableHTTPTests(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "match.sqlite3"
-        self.server: Any = None
-        self.thread: Any = None
+        self.server = None
+        self.thread = None
         self.start()
 
-    def start(self) -> None:
+    def start(self):
         self.server = create_durable_local_server(self.path)
         self.thread = threading.Thread(
             target=self.server.serve_forever,
@@ -33,7 +32,7 @@ class DurableHTTPTests(unittest.TestCase):
         )
         self.thread.start()
 
-    def stop(self) -> None:
+    def stop(self):
         if self.server is not None:
             self.server.shutdown()
             self.server.server_close()
@@ -41,10 +40,10 @@ class DurableHTTPTests(unittest.TestCase):
             self.server = None
             self.thread = None
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.stop()
 
-    def request(self, method: Any, path: Any, body: Any = None, token: Any = None) -> Any:
+    def request(self, method, path, body=None, token=None):
         assert self.server is not None
 
         connection = http.client.HTTPConnection(
@@ -70,7 +69,7 @@ class DurableHTTPTests(unittest.TestCase):
         finally:
             connection.close()
 
-    def create_and_join(self) -> Any:
+    def create_and_join(self):
         status, created = self.request("POST", "/api/v1/matches", {"handsPerTeam": 1})
         self.assertEqual(status, 201)
 
@@ -85,7 +84,7 @@ class DurableHTTPTests(unittest.TestCase):
         self.assertEqual(status, 200)
         return created, guest, path
 
-    def test_default_factory_remains_memory_based(self) -> None:
+    def test_default_factory_remains_memory_based(self):
         server = create_local_server()
         try:
             self.assertIsInstance(server.manager, MatchManager)
@@ -93,7 +92,7 @@ class DurableHTTPTests(unittest.TestCase):
         finally:
             server.server_close()
 
-    def test_recover_authenticated_seats_after_restart(self) -> None:
+    def test_recover_authenticated_seats_after_restart(self):
         created, guest, path = self.create_and_join()
 
         self.stop()
@@ -110,7 +109,7 @@ class DurableHTTPTests(unittest.TestCase):
                 self.assertEqual(snapshot["revision"], 1)
                 self.assertEqual(snapshot["status"], "active")
 
-    def test_roll_replay_after_server_restart(self) -> None:
+    def test_roll_replay_after_server_restart(self):
         created, guest, path = self.create_and_join()
 
         with patch(
@@ -150,7 +149,7 @@ class DurableHTTPTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(completed["revision"], 3)
 
-    def test_invitation_cannot_authenticate(self) -> None:
+    def test_invitation_cannot_authenticate(self):
         created, _, path = self.create_and_join()
 
         status, error = self.request(
@@ -161,7 +160,7 @@ class DurableHTTPTests(unittest.TestCase):
         self.assertEqual(status, 401)
         self.assertEqual(error["error"]["code"], "UNAUTHORIZED")
 
-    def test_out_of_turn_rejected(self) -> None:
+    def test_out_of_turn_rejected(self):
         _, guest, path = self.create_and_join()
 
         status, error = self.request(
@@ -173,7 +172,7 @@ class DurableHTTPTests(unittest.TestCase):
         self.assertEqual(status, 403)
         self.assertEqual(error["error"]["code"], "NOT_YOUR_TURN")
 
-    def test_legacy_schema_rejected_without_mutation(self) -> None:
+    def test_legacy_schema_rejected_without_mutation(self):
         self.stop()
         import sqlite3
 

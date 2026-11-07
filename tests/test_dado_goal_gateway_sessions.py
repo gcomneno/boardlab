@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from boardlab.games.dado_goal_gateway_sessions import (
@@ -19,7 +17,7 @@ class Clock:
         return self.value
 
 
-def test_issue_validate_and_revoke() -> None:
+def test_issue_validate_and_revoke():
     sessions = GatewaySessions()
     token = sessions.create()
     assert sessions.valid(token)
@@ -28,7 +26,7 @@ def test_issue_validate_and_revoke() -> None:
     assert not sessions.valid(token)
 
 
-def test_expiry() -> None:
+def test_expiry():
     clock = Clock()
     sessions = GatewaySessions(ttl_seconds=10, clock=clock)
     token = sessions.create()
@@ -38,7 +36,7 @@ def test_expiry() -> None:
     assert not sessions.valid(token)
 
 
-def test_capacity_and_expired_cleanup() -> None:
+def test_capacity_and_expired_cleanup():
     clock = Clock()
     sessions = GatewaySessions(ttl_seconds=10, max_sessions=1, clock=clock)
     first = sessions.create()
@@ -50,7 +48,7 @@ def test_capacity_and_expired_cleanup() -> None:
     assert sessions.valid(second)
 
 
-def test_cookie_security_attributes() -> None:
+def test_cookie_security_attributes():
     token = GatewaySessions().create()
     cookie = session_cookie(token, 3600)
     assert cookie.startswith("__Host-dado-session=")
@@ -63,12 +61,12 @@ def test_cookie_security_attributes() -> None:
 
 
 @pytest.mark.parametrize("ttl", [0, -1, True, 86401])
-def test_invalid_ttl(ttl: Any) -> None:
+def test_invalid_ttl(ttl):
     with pytest.raises(ValueError):
         GatewaySessions(ttl_seconds=ttl)
 
 
 @pytest.mark.parametrize("capacity", [0, -1, True, 10001])
-def test_invalid_capacity(capacity: Any) -> None:
+def test_invalid_capacity(capacity):
     with pytest.raises(ValueError):
         GatewaySessions(max_sessions=capacity)

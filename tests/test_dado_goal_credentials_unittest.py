@@ -5,7 +5,6 @@ import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
 
 from boardlab.games.dado_goal_credentials import (
     CredentialError,
@@ -14,14 +13,14 @@ from boardlab.games.dado_goal_credentials import (
 
 
 class DurableCredentialTests(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "credentials.sqlite3"
         self.store = DurableCredentials(self.path)
         self.store.initialize()
 
-    def test_creation_and_restart(self) -> None:
+    def test_creation_and_restart(self):
         created = self.store.create(2)
         restored = DurableCredentials(self.path)
 
@@ -30,12 +29,12 @@ class DurableCredentialTests(unittest.TestCase):
         self.assertTrue(restored.verify_seat(created["matchId"], 0, created["hostToken"]))
         self.assertEqual(restored.snapshot(created["matchId"])["revision"], 0)
 
-    def test_invitation_is_not_seat_credential(self) -> None:
+    def test_invitation_is_not_seat_credential(self):
         created = self.store.create(1)
 
         self.assertFalse(self.store.verify_seat(created["matchId"], 0, created["inviteToken"]))
 
-    def test_guest_join_survives_restart(self) -> None:
+    def test_guest_join_survives_restart(self):
         created = self.store.create(1)
 
         guest = self.store.join(created["matchId"], created["inviteToken"])
@@ -48,10 +47,10 @@ class DurableCredentialTests(unittest.TestCase):
         with self.assertRaises(CredentialError):
             reopened.join(created["matchId"], created["inviteToken"])
 
-    def test_concurrent_join_one_winner(self) -> Any:
+    def test_concurrent_join_one_winner(self):
         created = self.store.create(1)
 
-        def attempt(_: Any) -> Any:
+        def attempt(_):
             try:
                 return self.store.join(created["matchId"], created["inviteToken"])
             except CredentialError:
@@ -65,7 +64,7 @@ class DurableCredentialTests(unittest.TestCase):
         self.assertEqual(len(accepted), 1)
         self.assertEqual(self.store.snapshot(created["matchId"])["revision"], 1)
 
-    def test_database_contains_no_plaintext_tokens(self) -> None:
+    def test_database_contains_no_plaintext_tokens(self):
         created = self.store.create(1)
         guest = self.store.join(created["matchId"], created["inviteToken"])
 
@@ -81,7 +80,7 @@ class DurableCredentialTests(unittest.TestCase):
         ):
             self.assertNotIn(token, dump)
 
-    def test_existing_v1_database_refused(self) -> None:
+    def test_existing_v1_database_refused(self):
         path = Path(self.temp.name) / "old.sqlite3"
 
         with sqlite3.connect(path) as db:
@@ -91,7 +90,7 @@ class DurableCredentialTests(unittest.TestCase):
         with self.assertRaisesRegex(CredentialError, "migration required"):
             DurableCredentials(path).initialize()
 
-    def test_no_database_on_construction(self) -> None:
+    def test_no_database_on_construction(self):
         path = Path(self.temp.name) / "unused.sqlite3"
         DurableCredentials(path)
         self.assertFalse(path.exists())

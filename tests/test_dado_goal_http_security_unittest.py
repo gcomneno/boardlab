@@ -4,13 +4,12 @@ import http.client
 import json
 import threading
 import unittest
-from typing import Any
 
 from boardlab.games.dado_goal_http import create_local_server
 
 
 class HTTPSecurityTests(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.server = create_local_server()
         self.thread = threading.Thread(
             target=self.server.serve_forever,
@@ -18,12 +17,12 @@ class HTTPSecurityTests(unittest.TestCase):
         )
         self.thread.start()
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.server.shutdown()
         self.server.server_close()
         self.thread.join(timeout=5)
 
-    def request(self, method: Any, path: Any, body: Any = None, headers: Any = None) -> Any:
+    def request(self, method, path, body=None, headers=None):
         conn = http.client.HTTPConnection(
             "127.0.0.1",
             self.server.server_port,
@@ -43,13 +42,13 @@ class HTTPSecurityTests(unittest.TestCase):
         finally:
             conn.close()
 
-    def test_loopback_binding(self) -> None:
+    def test_loopback_binding(self):
         self.assertEqual(
             self.server.server_address[0],
             "127.0.0.1",
         )
 
-    def test_unknown_routes(self) -> None:
+    def test_unknown_routes(self):
         for path in (
             "/",
             "/api/v1/unknown",
@@ -60,7 +59,7 @@ class HTTPSecurityTests(unittest.TestCase):
                 self.assertEqual(status, 404)
                 self.assertIn("error", body)
 
-    def test_query_string_rejected(self) -> None:
+    def test_query_string_rejected(self):
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches?token=secret",
@@ -70,7 +69,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(body["error"]["code"], "BAD_REQUEST")
 
-    def test_duplicate_json_keys_rejected(self) -> None:
+    def test_duplicate_json_keys_rejected(self):
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -80,7 +79,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(body["error"]["code"], "BAD_REQUEST")
 
-    def test_nonfinite_json_rejected(self) -> None:
+    def test_nonfinite_json_rejected(self):
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -90,7 +89,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(body["error"]["code"], "BAD_REQUEST")
 
-    def test_wrong_origin_rejected(self) -> None:
+    def test_wrong_origin_rejected(self):
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -103,7 +102,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 403)
         self.assertEqual(body["error"]["code"], "ORIGIN_DENIED")
 
-    def test_oversized_json_rejected(self) -> None:
+    def test_oversized_json_rejected(self):
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -113,7 +112,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 413)
         self.assertEqual(body["error"]["code"], "PAYLOAD_TOO_LARGE")
 
-    def test_replies_are_not_cacheable(self) -> None:
+    def test_replies_are_not_cacheable(self):
         status, body, headers = self.request(
             "POST",
             "/api/v1/matches",
@@ -128,7 +127,7 @@ class HTTPSecurityTests(unittest.TestCase):
             "nosniff",
         )
 
-    def test_invitation_is_not_authorization(self) -> None:
+    def test_invitation_is_not_authorization(self):
         status, created, _ = self.request(
             "POST",
             "/api/v1/matches",
@@ -147,7 +146,7 @@ class HTTPSecurityTests(unittest.TestCase):
         self.assertEqual(status, 401)
         self.assertEqual(body["error"]["code"], "UNAUTHORIZED")
 
-    def test_unknown_json_properties_rejected(self) -> None:
+    def test_unknown_json_properties_rejected(self):
         status, body, _ = self.request(
             "POST",
             "/api/v1/matches",

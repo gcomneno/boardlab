@@ -6,14 +6,13 @@ import http.client
 import json
 from pathlib import Path
 from threading import Thread
-from typing import Any
 
 from boardlab.games.dado_goal_gateway import GatewayServer
 from boardlab.games.dado_goal_http import create_lifecycle_local_server
 from boardlab.games.dado_goal_lifecycle import LifecyclePolicy
 
 
-def exchange(port: Any, method: Any, path: Any, payload: Any = None, token: Any = None) -> Any:
+def exchange(port, method, path, payload=None, token=None):
     connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
     headers = {
         "Host": f"127.0.0.1:{port}",
@@ -34,7 +33,7 @@ def exchange(port: Any, method: Any, path: Any, payload: Any = None, token: Any 
         connection.close()
 
 
-def test_two_players_share_authoritative_v4_match(tmp_path: Path) -> None:
+def test_two_players_share_authoritative_v4_match(tmp_path: Path):
     authority = create_lifecycle_local_server(
         tmp_path / "gateway-e2e.sqlite",
         LifecyclePolicy(60, 120, 300),

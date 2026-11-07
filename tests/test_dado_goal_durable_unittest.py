@@ -5,7 +5,6 @@ import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
 from unittest.mock import patch
 
 from boardlab.games.dado_goal_durable import (
@@ -15,7 +14,7 @@ from boardlab.games.dado_goal_durable import (
 
 
 class DurableAuthorityTests(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / "match.sqlite3"
@@ -26,28 +25,28 @@ class DurableAuthorityTests(unittest.TestCase):
         self.host = self.created["hostToken"]
         self.invite = self.created["inviteToken"]
 
-    def reopen(self) -> Any:
+    def reopen(self):
         restored = DurableMatchManager(self.path)
         restored.initialize()
         return restored
 
-    def join(self) -> Any:
+    def join(self):
         return self.manager.join(self.match_id, self.invite)
 
-    def test_initialization_and_recovery(self) -> None:
+    def test_initialization_and_recovery(self):
         self.assertEqual(self.reopen().snapshot(self.match_id, self.host)["revision"], 0)
 
-    def test_invite_is_not_host_token(self) -> None:
+    def test_invite_is_not_host_token(self):
         with self.assertRaises(DurableMatchError):
             self.manager.snapshot(self.match_id, self.invite)
 
-    def test_redeem_once_and_recover_guest(self) -> None:
+    def test_redeem_once_and_recover_guest(self):
         guest = self.join()["guestToken"]
         self.assertEqual(self.reopen().snapshot(self.match_id, guest)["seat"], 1)
         with self.assertRaises(DurableMatchError):
             self.join()
 
-    def test_authoritative_roll_and_durable_replay(self) -> None:
+    def test_authoritative_roll_and_durable_replay(self):
         self.join()
 
         with patch(
@@ -63,7 +62,7 @@ class DurableAuthorityTests(unittest.TestCase):
         self.assertEqual(result["state"], duplicate["state"])
         self.assertEqual(self.manager.counts(self.match_id), (2, 1))
 
-    def test_complete_match_survives_restart(self) -> None:
+    def test_complete_match_survives_restart(self):
         guest = self.join()["guestToken"]
 
         with patch(
@@ -77,7 +76,7 @@ class DurableAuthorityTests(unittest.TestCase):
         self.assertEqual(second["status"], "completed")
         self.assertEqual(self.reopen().snapshot(self.match_id, self.host)["status"], "completed")
 
-    def test_wrong_seat_rejected(self) -> None:
+    def test_wrong_seat_rejected(self):
         guest = self.join()["guestToken"]
         before = self.manager.counts(self.match_id)
 
@@ -86,8 +85,8 @@ class DurableAuthorityTests(unittest.TestCase):
 
         self.assertEqual(self.manager.counts(self.match_id), before)
 
-    def test_concurrent_join_one_winner(self) -> Any:
-        def attempt(_: Any) -> Any:
+    def test_concurrent_join_one_winner(self):
+        def attempt(_):
             try:
                 return self.reopen().join(self.match_id, self.invite)
             except DurableMatchError:
@@ -98,10 +97,10 @@ class DurableAuthorityTests(unittest.TestCase):
 
         self.assertEqual(sum(result is not None for result in results), 1)
 
-    def test_concurrent_roll_one_winner(self) -> Any:
+    def test_concurrent_roll_one_winner(self):
         self.join()
 
-        def attempt(i: Any) -> Any:
+        def attempt(i):
             try:
                 return self.reopen().roll(
                     self.match_id,
@@ -118,7 +117,7 @@ class DurableAuthorityTests(unittest.TestCase):
         self.assertEqual(sum(result is not None for result in results), 1)
         self.assertEqual(self.manager.counts(self.match_id), (2, 1))
 
-    def test_receipt_failure_rolls_back_state(self) -> None:
+    def test_receipt_failure_rolls_back_state(self):
         self.join()
         before = self.manager.snapshot(self.match_id, self.host)
 
@@ -140,7 +139,7 @@ class DurableAuthorityTests(unittest.TestCase):
         )
         self.assertEqual(self.manager.counts(self.match_id), (1, 0))
 
-    def test_no_plaintext_credentials_in_database(self) -> None:
+    def test_no_plaintext_credentials_in_database(self):
         guest = self.join()["guestToken"]
 
         with sqlite3.connect(self.path) as db:
@@ -149,7 +148,7 @@ class DurableAuthorityTests(unittest.TestCase):
         for token in (self.host, self.invite, guest):
             self.assertNotIn(token, dump)
 
-    def test_reject_legacy_database(self) -> None:
+    def test_reject_legacy_database(self):
         other = Path(self.temp.name) / "legacy.sqlite3"
         with sqlite3.connect(other) as db:
             db.execute("PRAGMA user_version=2")
@@ -158,7 +157,7 @@ class DurableAuthorityTests(unittest.TestCase):
         with self.assertRaises(DurableMatchError):
             DurableMatchManager(other).initialize()
 
-    def test_no_database_created_by_constructor(self) -> None:
+    def test_no_database_created_by_constructor(self):
         path = Path(self.temp.name) / "unused.sqlite3"
         DurableMatchManager(path)
         self.assertFalse(path.exists())

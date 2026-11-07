@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import http.client
 import json
-from collections.abc import Iterator
 from threading import Thread
-from typing import Any
 
 import pytest
 
@@ -16,7 +14,7 @@ KEY = "a" * 48
 
 
 @pytest.fixture
-def server() -> Iterator[Any]:
+def server():
     instance = BrowserAuthServer(KEY)
     thread = Thread(target=instance.serve_forever, daemon=True)
     thread.start()
@@ -28,15 +26,7 @@ def server() -> Iterator[Any]:
         thread.join(timeout=5)
 
 
-def request(
-    server: Any,
-    path: Any,
-    payload: Any = None,
-    *,
-    cookie: Any = None,
-    csrf: Any = None,
-    origin: Any = None,
-) -> Any:
+def request(server, path, payload=None, *, cookie=None, csrf=None, origin=None):
     connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=5)
     headers = {
         "Host": f"127.0.0.1:{server.server_port}",
@@ -62,7 +52,7 @@ def request(
         connection.close()
 
 
-def test_complete_login_csrf_logout_flow(server: Any) -> None:
+def test_complete_login_csrf_logout_flow(server):
     status, _, _ = request(server, "/auth/login", {"accessKey": "wrong"})
     assert status == 403
 
@@ -93,7 +83,7 @@ def test_complete_login_csrf_logout_flow(server: Any) -> None:
     assert status == 403
 
 
-def test_cross_origin_login_rejected(server: Any) -> None:
+def test_cross_origin_login_rejected(server):
     status, _, cookie = request(
         server,
         "/auth/login",
@@ -104,6 +94,6 @@ def test_cross_origin_login_rejected(server: Any) -> None:
     assert cookie is None
 
 
-def test_unknown_route_requires_authentication(server: Any) -> None:
+def test_unknown_route_requires_authentication(server):
     status, _, _ = request(server, "/unknown")
     assert status == 403

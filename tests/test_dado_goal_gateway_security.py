@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import http.client
-from collections.abc import Iterator
 from threading import Thread
-from typing import Any
 
 import pytest
 
@@ -14,7 +12,7 @@ from boardlab.games.dado_goal_http import create_local_server
 
 
 @pytest.fixture
-def gateway_pair() -> Iterator[Any]:
+def gateway_pair():
     upstream = create_local_server()
     gateway = GatewayServer(upstream.server_port)
     threads = [
@@ -33,7 +31,7 @@ def gateway_pair() -> Iterator[Any]:
             thread.join(timeout=5)
 
 
-def request(gateway: Any, method: Any, path: Any, headers: Any = None, body: Any = None) -> Any:
+def request(gateway, method, path, headers=None, body=None):
     connection = http.client.HTTPConnection("127.0.0.1", gateway.server_port, timeout=5)
     values = {"Host": f"127.0.0.1:{gateway.server_port}"}
     values.update(headers or {})
@@ -53,7 +51,7 @@ def request(gateway: Any, method: Any, path: Any, headers: Any = None, body: Any
         ("Origin", "null", 403),
     ],
 )
-def test_host_origin_rejection(gateway_pair: Any, header: Any, value: Any, expected: Any) -> None:
+def test_host_origin_rejection(gateway_pair, header, value, expected):
     status, _ = request(gateway_pair, "GET", "/multiplayer.html", {header: value})
     assert status == expected
 
@@ -62,7 +60,7 @@ def test_host_origin_rejection(gateway_pair: Any, header: Any, value: Any, expec
     "header",
     ["X-Forwarded-Host", "X-Forwarded-Proto", "Forwarded"],
 )
-def test_forwarded_headers_do_not_override_origin(gateway_pair: Any, header: Any) -> None:
+def test_forwarded_headers_do_not_override_origin(gateway_pair, header):
     status, body = request(
         gateway_pair,
         "GET",
@@ -74,12 +72,12 @@ def test_forwarded_headers_do_not_override_origin(gateway_pair: Any, header: Any
 
 
 @pytest.mark.parametrize("method", ["PUT", "DELETE", "PATCH"])
-def test_unsupported_methods_rejected(gateway_pair: Any, method: Any) -> None:
+def test_unsupported_methods_rejected(gateway_pair, method):
     status, _ = request(gateway_pair, method, "/api/v1/matches")
     assert status in (405, 501)
 
 
-def test_body_limit(gateway_pair: Any) -> None:
+def test_body_limit(gateway_pair):
     status, _ = request(
         gateway_pair,
         "POST",
@@ -90,7 +88,7 @@ def test_body_limit(gateway_pair: Any) -> None:
     assert status == 413
 
 
-def test_upstream_unavailable() -> None:
+def test_upstream_unavailable():
     gateway = GatewayServer(1)
     thread = Thread(target=gateway.serve_forever, daemon=True)
     thread.start()

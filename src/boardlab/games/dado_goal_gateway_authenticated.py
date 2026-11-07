@@ -32,7 +32,9 @@ class AuthenticatedGatewayServer(GatewayServer):
                 access_key=access_key,
                 sessions=GatewaySessions(),
             )
-            self.login_limiter = RateLimiter(limit=10, window_seconds=60)
+            self.login_limiter = RateLimiter(
+                limit=10, window_seconds=60
+            )
             self.RequestHandlerClass = AuthenticatedGatewayHandler
         except BaseException:
             self.server_close()
@@ -75,7 +77,10 @@ class AuthenticatedGatewayHandler(GatewayHandler):
             if self.server.public_origin is not None
             else f"127.0.0.1:{self.server.server_port}"
         )
-        expected_origin = self.server.public_origin or f"http://{expected_host}"
+        expected_origin = (
+            self.server.public_origin
+            or f"http://{expected_host}"
+        )
         if self._single_header("Host") != expected_host:
             return False
 
@@ -83,7 +88,9 @@ class AuthenticatedGatewayHandler(GatewayHandler):
         if self.command == "GET":
             # Top-level browser navigation normally omits Origin.
             # Explicitly supplied origins must still match.
-            return not origins or (len(origins) == 1 and origins[0] == expected_origin)
+            return not origins or (
+                len(origins) == 1 and origins[0] == expected_origin
+            )
 
         # State-changing requests require one exact trusted Origin.
         return len(origins) == 1 and origins[0] == expected_origin
@@ -138,8 +145,23 @@ class AuthenticatedGatewayHandler(GatewayHandler):
         )
 
     def _handle(self) -> None:
-        # Require exact Host and Origin before authentication.
-        # For this laboratory adapter, even GET requests require Origin.
+        public_assets = {
+            "/multiplayer.html",
+            "/multiplayer-play.mjs",
+            "/multiplayer-client.mjs",
+            "/multiplayer-theme.css",
+            "/dado-goal-handmade-dice.png",
+        }
+
+        if self.command == "GET" and self.path in public_assets:
+            origin = self._single_header("Origin")
+            if origin is not None and not self._boundary_valid():
+                self._json_reply(403, {"error": "BOUNDARY_DENIED"})
+                return
+            super()._handle()
+            return
+
+        # Authenticated routes require the exact Host/Origin boundary.
         if not self._boundary_valid():
             self._json_reply(403, {"error": "BOUNDARY_DENIED"})
             return
@@ -148,20 +170,17 @@ class AuthenticatedGatewayHandler(GatewayHandler):
             self._login()
             return
 
-        public_assets = {
-            "/multiplayer.html",
-            "/multiplayer-play.mjs",
-            "/multiplayer-client.mjs",
-            "/multiplayer-theme.css",
-            "/dado-goal-handmade-dice.png",
-        }
-        if self.command == "GET" and self.path in public_assets:
-            super()._handle()
-            return
-
         cookie = self._single_header("Cookie")
         csrf = self._single_header("X-Dado-CSRF")
         mutation = self.command != "GET"
+
+        if self.command == "GET" and self.path == "/auth/session":
+            value = self.server.browser_auth.csrf_for(cookie)
+            if value is None:
+                self._json_reply(403, {"error": "SESSION_DENIED"})
+            else:
+                self._json_reply(200, {"csrfToken": value})
+            return
 
         if not self.server.browser_auth.authenticate(
             cookie,
@@ -177,7 +196,8 @@ class AuthenticatedGatewayHandler(GatewayHandler):
                 200,
                 {"loggedOut": True},
                 cookie=(
-                    "__Host-dado-session=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0"
+                    "__Host-dado-session=; Path=/; Secure; "
+                    "HttpOnly; SameSite=Strict; Max-Age=0"
                 ),
             )
             return

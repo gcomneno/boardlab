@@ -4,34 +4,33 @@ import http.client
 import json
 import threading
 import unittest
-from typing import Any
 from unittest.mock import patch
 
 from boardlab.games.dado_goal_http import create_local_server
 
 
 class HTTPTests(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.server = create_local_server()
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.server.shutdown()
         self.server.server_close()
         self.thread.join(timeout=5)
 
     def request(
         self,
-        method: Any,
-        path: Any,
-        body: Any = None,
-        token: Any = None,
+        method,
+        path,
+        body=None,
+        token=None,
         *,
-        origin: Any = None,
-        host: Any = None,
-        content_type: Any = "application/json",
-    ) -> Any:
+        origin=None,
+        host=None,
+        content_type="application/json",
+    ):
         conn = http.client.HTTPConnection("127.0.0.1", self.server.server_port, timeout=5)
         headers = {"Content-Type": content_type}
         if token:
@@ -53,13 +52,13 @@ class HTTPTests(unittest.TestCase):
         finally:
             conn.close()
 
-    def create(self) -> Any:
+    def create(self):
         status, created, headers = self.request("POST", "/api/v1/matches", {"handsPerTeam": 1})
         self.assertEqual(status, 201)
         self.assertEqual(headers["Cache-Control"], "no-store")
         return created
 
-    def test_full_match_and_replay(self) -> None:
+    def test_full_match_and_replay(self):
         created = self.create()
         mid = created["matchId"]
         host = created["hostToken"]
@@ -114,7 +113,7 @@ class HTTPTests(unittest.TestCase):
             self.assertEqual(snapshot["state"], last["state"])
             self.assertEqual(snapshot["revision"], 3)
 
-    def test_authentication_and_invitation(self) -> None:
+    def test_authentication_and_invitation(self):
         created = self.create()
         path = f"/api/v1/matches/{created['matchId']}"
 
@@ -125,7 +124,7 @@ class HTTPTests(unittest.TestCase):
         status, _, _ = self.request("POST", f"{path}/join", {"inviteToken": "wrong"})
         self.assertEqual(status, 401)
 
-    def test_bad_input_and_origin(self) -> None:
+    def test_bad_input_and_origin(self):
         status, _, _ = self.request("POST", "/api/v1/matches", {"handsPerTeam": True})
         self.assertEqual(status, 400)
 
@@ -149,7 +148,7 @@ class HTTPTests(unittest.TestCase):
         )
         self.assertEqual(status, 415)
 
-    def test_wrong_turn_and_stale_revision(self) -> None:
+    def test_wrong_turn_and_stale_revision(self):
         created = self.create()
         mid = created["matchId"]
         _, joined, _ = self.request(

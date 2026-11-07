@@ -2,28 +2,26 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from boardlab.games.dado_goal_gateway_browser import BrowserAuthentication
 from boardlab.games.dado_goal_gateway_sessions import GatewaySessions
 
 KEY = "a" * 48
 
 
-def make_auth() -> Any:
+def make_auth():
     return BrowserAuthentication(
         access_key=KEY,
         sessions=GatewaySessions(),
     )
 
 
-def test_login_requires_correct_key() -> None:
+def test_login_requires_correct_key():
     auth = make_auth()
     assert auth.login("wrong") is None
     assert auth.login(KEY) is not None
 
 
-def test_session_auth_and_csrf() -> None:
+def test_session_auth_and_csrf():
     auth = make_auth()
     session = auth.login(KEY)
     assert session is not None
@@ -40,7 +38,7 @@ def test_session_auth_and_csrf() -> None:
     )
 
 
-def test_logout_revokes_session() -> None:
+def test_logout_revokes_session():
     auth = make_auth()
     session = auth.login(KEY)
     assert session is not None
@@ -52,7 +50,7 @@ def test_logout_revokes_session() -> None:
     assert not auth.authenticate(cookie)
 
 
-def test_cookie_attributes() -> None:
+def test_cookie_attributes():
     auth = make_auth()
     session = auth.login(KEY)
     assert session is not None
@@ -66,7 +64,7 @@ def test_cookie_attributes() -> None:
     assert "Domain=" not in cookie
 
 
-def test_malformed_cookie_rejected() -> None:
+def test_malformed_cookie_rejected():
     auth = make_auth()
     assert not auth.authenticate(None)
     assert not auth.authenticate("x" * 5000)
