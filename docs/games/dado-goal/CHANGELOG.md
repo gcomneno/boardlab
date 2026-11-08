@@ -7,6 +7,12 @@ Format: https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Multiplayer
+
+- Online multiplayer evolution remains unreleased as a separate product track.
+- Issue #69 multiplayer extraordinary-event parity remains pending.
+- Multiplayer AUTO behaviour remains intentionally distinct from single-player.
+
 ### Added — Optional team management and real football catalogue (#29)
 
 - Added a replaceable real-football catalogue provider architecture.
@@ -91,6 +97,46 @@ on 2026-10-24 and subsequently verified publicly.
   at commit `9358399` (not pushed as part of M0).
 
 This release does not include online multiplayer.
+
+## [1.1.0] — 2026-11-08
+
+### Added — Single-player evolution
+
+- Added optional real-team and player catalogue support while preserving the
+  original quick-match fallback.
+- Added team selection, roster identity, match-local player mapping,
+  statistics and commentary.
+- Added configurable AUTO play with:
+  - all remaining hands;
+  - team-specific automation;
+  - bounded hand count;
+  - configurable die-roll delay;
+  - independent delay between completed hands;
+  - immediate interruption with resumable manual play.
+- Added match events for yellow cards, red cards, injuries and substitutions,
+  preserving the five-substitution limit and active-player invariants.
+- Added rare extraordinary narrative events for weather, external
+  interference and technical incidents.
+- Added narrative VAR review at 0.10% probability after an eligible goal or
+  resolved penalty; the original dice result and score remain authoritative.
+- Added equivalent Italian and English extraordinary-event commentary.
+- Added deterministic and statistical regression coverage for extraordinary
+  events and probability boundaries.
+
+### Fixed
+
+- Corrected the AUTO inter-hand default from 0.35 to 0.4 seconds so it is
+  valid for the configured HTML `step="0.1"`.
+
+### Qualification
+
+- Targeted single-player event tests: 40 passed.
+- Full repository validation: 689 pytest tests passed.
+- Ruff, mypy, bilingual documentation, public-content and whitespace gates:
+  PASS.
+- GitHub CI for the final road-test fix: 5/5 checks passed.
+- Manual single-player road test: PASS.
+- Multiplayer behaviour was not modified by this release.
 
 ## Historical evidence
 
