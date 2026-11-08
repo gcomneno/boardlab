@@ -55,4 +55,27 @@ I test automatici coprono modello a valori, azioni legali, catture avversariali,
 
 Sono verificate la riproducibilità di Monte Carlo Tree Search con seed e la concordanza fra Minimax e Alpha-Beta a determinate profondità di ricerca. Queste verifiche non dimostrano ottimalità strategica, equità o prestazioni con budget di ricerca maggiori.
 
-Questa specifica non include interfaccia grafica, cronologia persistente delle partite o varianti delle regole.
+## Interfaccia grafica locale
+
+Avvio dalla radice del repository dopo la preparazione standard di sviluppo:
+
+```bash
+uv run --no-sync python -m boardlab.gui.reversi
+```
+
+L'interfaccia richiede Tkinter e un desktop grafico. Tkinter deve essere
+disponibile nell'installazione Python; non servono pacchetti Python aggiuntivi.
+
+Due persone giocano localmente sullo stesso computer. I testi sono in italiano.
+Fare clic su una casella evidenziata per piazzare una pedina. Sono mostrati
+partecipante attivo, conteggio delle pedine e risultato finale. Il pulsante Passa
+è abilitato soltanto quando il passaggio è obbligatorio. Nuova partita ripristina
+immediatamente la posizione iniziale.
+
+L'interfaccia delega azioni legali, transizioni, terminazione ed esiti al gioco
+Python esistente. Non aggiunge avversario AI, cronologia salvata o varianti.
+
+Un controllo locale di integrazione ha azionato pulsanti Tk reali lungo 30
+partite complete con seed, comprendendo 18 passaggi obbligati, azioni illegali,
+controlli a fine partita e riavvio. Questo controllo integra i test del motore;
+non sostituisce la revisione manuale dell'usabilità.

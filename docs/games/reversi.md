@@ -55,4 +55,25 @@ Automated tests cover the value model, legal actions, adversarial captures, term
 
 Seeded Monte Carlo Tree Search reproducibility and agreement between Minimax and Alpha-Beta on selected search depths are tested. These checks do not establish strategic optimality, fairness, or performance at larger search budgets.
 
-No graphical interface, persistent game history, or rule variant is included in this specification.
+## Local graphical interface
+
+Launch from the repository root after the standard development setup:
+
+```bash
+uv run --no-sync python -m boardlab.gui.reversi
+```
+
+The interface requires Tkinter and a graphical desktop. Tkinter must be
+available in the Python installation; no additional Python package is required.
+
+Two people play locally on the same computer. The interface text is Italian.
+Click a highlighted cell to place a disc. The display shows the active player,
+disc counts, and final result. The Pass button is enabled only when passing is
+required. New Game restores the opening position immediately.
+
+The interface delegates legal actions, transitions, termination, and outcomes
+to the existing Python game. It adds no AI opponent, saved history, or rule variant.
+
+A local integration check exercised real Tk buttons through 30 seeded complete
+games, including 18 forced passes, illegal actions, terminal controls, and restart.
+This check complements the engine tests; it does not replace manual usability review.
