@@ -285,6 +285,54 @@ int chrono_m004_run(void)
 
     printf("\n%s al turno %u.\n",
            state.victory ? "VITTORIA!" : "SCONFITTA", state.turn);
+    if (state.victory) {
+        puts("\n1985 — A osservo' il distributore appena configurato.");
+        puts("\"Un impulso. Due collegamenti. Nessuna possibilita' di errore.\"");
+
+        puts("\n2025 — B guardo' il Faro illuminarsi mentre");
+        puts("il Registro riprendeva a funzionare.");
+        puts("\"Confermo. Funzionano entrambi.\"");
+        puts("\"Visto? Era semplicissimo.\"");
+        puts("\"Semplicissimo? Abbiamo dovuto certificare che");
+        puts("due eventi diversi dipendessero da qualcosa");
+        puts("che e' successo quarant'anni fa!\"");
+        puts("\"Appunto. Un solo problema amministrativo.\"");
+
+        puts("\nL'origine comune era finalmente dimostrata.");
+        puts("La cronologia risultava coerente.");
+
+        puts("\nMISSIONE COMPIUTA — Due eventi, una causa.");
+        puts("La burocrazia ne richiedera' tre copie.");
+    } else if (state.beacon_active != state.register_active) {
+        puts("\n2025 — B osservo' i risultati.");
+        puts("Un dispositivo funzionava perfettamente.");
+        puts("L'altro aveva deciso di non partecipare alla storia.");
+        puts("\"Abbiamo una buona notizia e una cattiva.\"");
+
+        puts("\n1985 — A sospiro'.");
+        puts("\"Comincia dalla buona.\"");
+        puts("\"La tua invenzione funziona.\"");
+        puts("\"E la cattiva?\"");
+        puts("\"Solo quando sceglie lei.\"");
+
+        puts("\nMISSIONE FALLITA — La causalita'");
+        puts("non accetta mezze porzioni.");
+    } else {
+        puts("\n1985 — A fisso' il distributore.");
+        puts("\"Il principio e' corretto.");
+        puts("Manca soltanto qualche dettaglio.\"");
+
+        puts("\n2025 — B consulto' il rapporto.");
+        puts("\"Qualche dettaglio? Mancano le prove");
+        puts("che tutta questa faccenda abbia un senso!\"");
+        puts("\"Quindi possiamo dichiarare il successo?\"");
+        puts("\"Possiamo dichiarare che il modulo per dichiararlo");
+        puts("non e' stato ancora inventato.\"");
+
+        puts("\nMISSIONE FALLITA — Il tempo e' finito.");
+        puts("La documentazione no.");
+    }
+
     puts("\n--- RIEPILOGO MISSIONE 004 ---");
     printf("Configurazione: %s\n", config_name(state.configuration));
     printf("Faro attivo: %s\n", yes_no(state.beacon_active));
