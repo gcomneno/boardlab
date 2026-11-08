@@ -281,6 +281,53 @@ int chrono_m005_run(void)
     printf("\n%s al turno %u.\n",
            state.victory ? "VITTORIA!" : "SCONFITTA", state.turn);
 
+    if (state.victory) {
+        puts("\n1985 — A fisso' l'orologio.");
+        puts("\"Abbiamo trovato il minuto mancante.\"");
+
+        puts("\n2025 — B scosse la testa.");
+        puts("\"Non mancava nessun minuto.");
+        puts("Era l'orologio a mentire.\"");
+        puts("\"Quindi il tempo e' innocente?\"");
+        puts("\"Per una volta, si'. E abbiamo anche le prove.\"");
+
+        puts("\nIl segnale aveva preceduto la risposta.");
+        puts("La testimonianza indipendente e la fonte originale");
+        puts("lo dimostravano, nonostante gli orari difettosi.");
+
+        puts("\nMISSIONE COMPIUTA — Il tempo e' assolto.");
+        puts("L'orologio verra' interrogato.");
+    } else if (state.superficial_correction) {
+        puts("\n2025 — B mostro' gli orari corretti.");
+        puts("\"Adesso i documenti sono perfettamente ordinati.\"");
+
+        puts("\n1985 — A sorrise.");
+        puts("\"Allora abbiamo risolto!\"");
+        puts("\"Non proprio. Non sappiamo ancora");
+        puts("cosa sia accaduto davvero.\"");
+        puts("\"Ma almeno i numeri tornano.\"");
+        puts("\"Anche una bugia, se la metti in ordine alfabetico.\"");
+
+        puts("\nMISSIONE FALLITA — Abbiamo corretto l'orologio.");
+        puts("Non la verita'.");
+    } else {
+        puts("\n1985 — A osservo' l'orologio fermarsi.");
+        puts("\"Ci serviva soltanto un minuto in piu'.\"");
+
+        puts("\n2025 — B chiuse l'archivio.");
+        puts("\"No. Ci serviva una prova in piu'.\"");
+        puts("\"Non possiamo tornare indietro?\"");
+        puts("\"Possiamo. Ma non possiamo convincere un documento");
+        puts("a ricordare qualcosa che non ha mai registrato.\"");
+
+        puts("\nIl segnale aveva preceduto la risposta.");
+        puts("La cronologia autentica era rimasta immutata,");
+        puts("ma non erano riusciti a dimostrarla.");
+
+        puts("\nMISSIONE FALLITA — La verita' esiste.");
+        puts("Il fascicolo e' incompleto.");
+    }
+
     puts("\n--- RIEPILOGO MISSIONE 005 ---");
     printf("Ordine reale preservato: %s\n",
            yes_no(state.signal_precedes_response));
