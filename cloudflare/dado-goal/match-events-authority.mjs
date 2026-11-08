@@ -26,7 +26,7 @@ export function createMatchEventContext(random = Math.random) {
 }
 
 export function evaluateCompletedHand(
-  before, after, context, random = Math.random
+  before, after, context, random = Math.random, { varEligible = false } = {}
 ) {
   const seat = before.player;
 
@@ -49,6 +49,7 @@ export function evaluateCompletedHand(
     context.extraordinaryState,
     minute,
     random,
+    { varEligible },
   );
 
   return extraordinaryEvent

@@ -100,7 +100,13 @@ export async function rollAuthorized(
 
     const context = replayMatchEvents(history);
     if (context) {
-      matchEvent = evaluateCompletedHand(state, next, context);
+      matchEvent = evaluateCompletedHand(
+        state,
+        next,
+        context,
+        Math.random,
+        { varEligible: Boolean(goal || penalty) },
+      );
     }
   }
 
