@@ -62,6 +62,7 @@
         "docs/games/dado-goal/multiplayer-protocol.md",
         "docs/games/dado-goal/remote-gateway-contract.md",
         "docs/games/dado-goal/wire-schema.md",
+        "docs/research/csp-pz-001f-findings.md",
         "examples/README.md",
         "src/boardlab/cli/README.md",
         "src/boardlab/engine/README.md",
@@ -69,6 +70,7 @@
         "tests/README.md"
     ],
     "excluded_documents": [
+        "CHANGELOG.md",
         "docs/games/dado-goal/CHANGELOG.md",
         "docs/games/reversi/CHANGELOG.md",
         "docs/games/tre-sigilli/CHANGELOG.md"
