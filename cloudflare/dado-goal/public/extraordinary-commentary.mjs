@@ -30,6 +30,9 @@ const TEXT = Object.freeze({
     "referee-equipment-problem":
       ({ minute }) =>
         `${minute}′ Problema tecnico per l'arbitro: attrezzatura sistemata e partita pronta a riprendere.`,
+    "var-review":
+      ({ minute }) =>
+        `${minute}′ Controllo VAR: l'azione viene rivista e la decisione originale resta confermata.`,
   }),
   en: Object.freeze({
     "light-knock":
@@ -62,6 +65,9 @@ const TEXT = Object.freeze({
     "referee-equipment-problem":
       ({ minute }) =>
         `${minute}′ The referee has an equipment problem: it is fixed and play can resume.`,
+    "var-review":
+      ({ minute }) =>
+        `${minute}′ VAR review: the action is checked and the original decision stands.`,
   }),
 });
 

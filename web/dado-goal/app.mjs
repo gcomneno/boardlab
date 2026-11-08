@@ -934,7 +934,12 @@ async function roll() {
         rosters[player],
         extraordinaryState,
         minute,
-        Math.random
+        Math.random,
+        {
+          varEligible:
+            penaltyResolved ||
+            state.goals[player] > before.goals[player]
+        }
       );
 
       if (extraordinaryEvent) {

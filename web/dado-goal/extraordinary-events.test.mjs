@@ -12,7 +12,7 @@ function roster() {
 }
 
 test("catalogue contains only narrative v1 events", () => {
-  assert.equal(extraordinaryEventCatalogue.length, 10);
+  assert.equal(extraordinaryEventCatalogue.length, 11);
   assert.ok(extraordinaryEventCatalogue.every(
     event => Number.isFinite(event.probability) && event.probability > 0
   ));
@@ -121,4 +121,31 @@ test("empty active roster excludes player-dependent events", () => {
 
   assert.equal(event.type, "heavy-rain");
   assert.equal(event.family, "weather");
+});
+
+
+test("VAR review requires an eligible preceding football action", () => {
+  const team = roster();
+  const state = createExtraordinaryEventState();
+
+  const withoutEligibleAction = evaluateExtraordinaryEvent(
+    team,
+    state,
+    62,
+    () => 0.012,
+  );
+
+  assert.equal(withoutEligibleAction, null);
+
+  const withEligibleAction = evaluateExtraordinaryEvent(
+    team,
+    state,
+    62,
+    () => 0.012,
+    { varEligible: true },
+  );
+
+  assert.equal(withEligibleAction.type, "var-review");
+  assert.equal(withEligibleAction.family, "technical");
+  assert.equal(withEligibleAction.classification, "narrative");
 });
