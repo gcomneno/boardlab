@@ -1007,7 +1007,8 @@ async function runAuto() {
         break;
       }
 
-
+      if (!await autoDelay.wait(autoConfig.handDelay)) break;
+      if (!autoRunning || state.phase === "finished") break;
     }
   }
 
@@ -1077,7 +1078,7 @@ byId("auto-config-form").addEventListener("submit", event => {
     mode: autoMode.value,
     handLimit,
     rollDelay: Math.round(Number(byId("auto-roll-delay").value) * 1000),
-    handDelay: 0
+    handDelay: Math.round(Number(byId("auto-hand-delay").value) * 1000)
   });
 
   autoDialog.close();
