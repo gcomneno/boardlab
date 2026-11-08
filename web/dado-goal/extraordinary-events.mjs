@@ -50,6 +50,12 @@ const EVENTS = Object.freeze([
     family: "technical",
     probability: 0.0003,
   }),
+  Object.freeze({
+    type: "var-review",
+    family: "technical",
+    probability: 0.001,
+    requiresVarEligible: true,
+  }),
 ]);
 
 export const extraordinaryEventCatalogue = EVENTS;
@@ -74,6 +80,7 @@ export function evaluateExtraordinaryEvent(
   state,
   minute,
   random = Math.random,
+  { varEligible = false } = {},
 ) {
   if (!roster || !Array.isArray(roster.active) ||
       !state || !(state.occurredFamilies instanceof Set) ||
@@ -91,6 +98,7 @@ export function evaluateExtraordinaryEvent(
     }
 
     if (event.requiresPlayer && roster.active.length === 0) return false;
+    if (event.requiresVarEligible && !varEligible) return false;
 
     return true;
   });

@@ -13,6 +13,7 @@ const TYPES = [
   "floodlight-failure",
   "damaged-goal-net",
   "referee-equipment-problem",
+  "var-review",
 ];
 
 test("all narrative v1 events have IT and EN commentary", () => {
