@@ -332,8 +332,35 @@ int chrono_m002_run(void)
         printf("\nVITTORIA! Cronofono riattivato al turno %u.\n",
                state.turn);
         puts("Debito causale ESTINTO. Origine storica confermata.");
+
+        puts("\n2025 — Il Cronofono riprese a funzionare.");
+        puts("B osservo' il modulo, poi la ricevuta del prestito.");
+        puts("\"Tecnicamente, l'ho preso prima che esistesse.\"");
+
+        puts("\n1985 — A contemplo' il progetto appena approvato.");
+        puts("\"Tecnicamente, l'ho inventato dopo che");
+        puts("qualcuno l'aveva gia' usato.\"");
+
+        puts("\nIl debito causale era estinto.");
+        puts("L'origine storica confermata.");
+        puts("La contabilita' temporale finalmente in ordine.");
+        puts("Nessuno dei due oso' chiedere gli interessi.");
+
+        puts("\nMISSIONE COMPIUTA — Il futuro ha restituito");
+        puts("il passato. Senza ricevuta fiscale.");
     } else {
         printf("\nSCONFITTA al turno %u.\n", state.turn);
+
+        puts("\n2025 — Il Cronofono rimase spento.");
+        puts("B fisso' il calendario.");
+        puts("Otto turni, un prestito temporale e nessuna soluzione.");
+        puts("\"Possiamo chiedere una proroga?\"");
+
+        puts("\n1985 — A consulto' il regolamento.");
+        puts("\"Certamente. Devi presentare la domanda ieri.\"");
+
+        puts("\nMISSIONE FALLITA — Il tempo e' scaduto.");
+        puts("Il debito, eventualmente, no.");
     }
 
     puts("\n--- RIEPILOGO MISSIONE 002 ---");
