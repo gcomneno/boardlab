@@ -21,10 +21,9 @@ test("fresh-state extraordinary frequency matches catalogue probability mass", (
   const samples = 100_000;
   let emitted = 0;
 
-  const expected = extraordinaryEventCatalogue.reduce(
-    (sum, event) => sum + event.probability,
-    0,
-  );
+  const expected = extraordinaryEventCatalogue
+    .filter(event => !event.requiresVarEligible)
+    .reduce((sum, event) => sum + event.probability, 0);
 
   for (let i = 0; i < samples; i += 1) {
     const roster = createRoster(() => 0.5);
@@ -84,10 +83,9 @@ test("family caps remove only their own eligible probability mass", () => {
   const weatherCapped = createExtraordinaryEventState();
   weatherCapped.occurredFamilies.add("weather");
 
-  const freshCatalogueMass = extraordinaryEventCatalogue.reduce(
-    (sum, event) => sum + event.probability,
-    0,
-  );
+  const freshCatalogueMass = extraordinaryEventCatalogue
+    .filter(event => !event.requiresVarEligible)
+    .reduce((sum, event) => sum + event.probability, 0);
 
   const weatherMass = extraordinaryEventCatalogue
     .filter(event => event.family === "weather")
@@ -131,6 +129,51 @@ test("family caps remove only their own eligible probability mass", () => {
 
   assert.ok(Math.abs(freshObserved - freshCatalogueMass) <= 0.00002);
   assert.ok(Math.abs(cappedObserved - expectedAfterCap) <= 0.00002);
+});
+
+test("VAR eligibility adds exactly its configured probability mass", () => {
+  const samples = 100_000;
+
+  const ordinaryMass = extraordinaryEventCatalogue
+    .filter(event => !event.requiresVarEligible)
+    .reduce((sum, event) => sum + event.probability, 0);
+
+  const eligibleMass = extraordinaryEventCatalogue.reduce(
+    (sum, event) => sum + event.probability,
+    0,
+  );
+
+  let emitted = 0;
+
+  for (let i = 0; i < samples; i += 1) {
+    const roster = createRoster(() => 0.5);
+    const state = createExtraordinaryEventState();
+    const draw = (i + 0.5) / samples;
+
+    const event = evaluateExtraordinaryEvent(
+      roster,
+      state,
+      60,
+      sequenceRandom([draw, 0.5]),
+      { varEligible: true },
+    );
+
+    if (event) emitted += 1;
+  }
+
+  const observed = emitted / samples;
+
+  assert.ok(
+    Math.abs(observed - eligibleMass) <= 0.00002,
+    `observed=${observed} expected=${eligibleMass}`,
+  );
+  const varProbability = extraordinaryEventCatalogue
+    .find(event => event.type === "var-review").probability;
+
+  assert.ok(
+    Math.abs((eligibleMass - ordinaryMass) - varProbability) <= 1e-12,
+    `delta=${eligibleMass - ordinaryMass} var=${varProbability}`,
+  );
 });
 
 test("extraordinary catalogue remains rare", () => {

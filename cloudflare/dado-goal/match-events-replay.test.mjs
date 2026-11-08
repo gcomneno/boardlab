@@ -206,3 +206,74 @@ test("#69: replay rejects goalkeeper replacement by an outfield player", () => {
     /Invalid goalkeeper substitution replay/,
   );
 });
+
+test("#69: multiplayer authority emits narrative VAR only when eligible", async () => {
+  const {
+    createMatchEventContext,
+    evaluateCompletedHand,
+  } = await import("./match-events-authority.mjs");
+
+  const before = {
+    handsPerTeam: 10,
+    hands: [4, 4],
+    player: 0,
+    phase: "result",
+  };
+  const after = {
+    ...before,
+    hands: [5, 4],
+    player: 1,
+  };
+
+  const context = createMatchEventContext(() => 0.5);
+  const draws = [0.999, 0.0125];
+
+  const event = evaluateCompletedHand(
+    before,
+    after,
+    context,
+    () => draws.shift() ?? 0.999,
+    { varEligible: true },
+  );
+
+  assert.ok(event);
+  assert.equal(event.type, "var-review");
+  assert.equal(event.family, "technical");
+  assert.equal(event.classification, "narrative");
+  assert.equal(event.team, 0);
+});
+
+test("#69: multiplayer authority suppresses VAR when preceding action is not eligible", async () => {
+  const {
+    createMatchEventContext,
+    evaluateCompletedHand,
+  } = await import("./match-events-authority.mjs");
+
+  const before = {
+    handsPerTeam: 10,
+    hands: [4, 4],
+    player: 0,
+    phase: "result",
+  };
+  const after = {
+    ...before,
+    hands: [5, 4],
+    player: 1,
+  };
+
+  const context = createMatchEventContext(() => 0.5);
+  const draws = [0.999, 0.0125];
+
+  const event = evaluateCompletedHand(
+    before,
+    after,
+    context,
+    () => draws.shift() ?? 0.999,
+  );
+
+  assert.equal(event, null);
+  assert.equal(
+    context.extraordinaryState.occurredTypes.has("var-review"),
+    false,
+  );
+});
