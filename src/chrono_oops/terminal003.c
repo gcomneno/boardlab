@@ -267,6 +267,48 @@ int chrono_m003_run(void)
 
     printf("\n%s al turno %u.\n",
            state.victory ? "VITTORIA!" : "SCONFITTA", state.turn);
+    if (state.victory) {
+        puts("\n1985 — La dimostrazione era terminata.");
+        puts("Nessun ferito. Nessuna tragedia.");
+        puts("A osservo' il registro delle testimonianze.");
+        puts("\"Abbiamo evitato un incidente grazie a un messaggio");
+        puts("che non avremmo dovuto ricevere.\"");
+
+        puts("\n2025 — B controllo' la provenienza dell'avvertimento.");
+        puts("\"Correzione: lo avete ricevuto perche'");
+        puts("avete evitato l'incidente.\"");
+        puts("Segui' un silenzio piuttosto lungo.");
+        puts("\"Quindi chi ci ha avvertiti?\"");
+        puts("\"Preferirei non aprire un'indagine.\"");
+
+        puts("\nMISSIONE COMPIUTA — Tutti salvi.");
+        puts("La logica chiede un giorno di ferie.");
+    } else if (state.demonstration_cancelled) {
+        puts("\n1985 — A annullo' la dimostrazione.");
+        puts("Nessuna dimostrazione. Nessuna testimonianza.");
+        puts("Nessun registro.");
+
+        puts("\n2025 — B cerco' l'origine del messaggio.");
+        puts("Il documento non esisteva piu'.");
+        puts("\"Ottimo. Abbiamo eliminato il problema.\"");
+        puts("\"Quale problema?\"");
+        puts("\"Precisamente.\"");
+
+        puts("\nMISSIONE FALLITA — Cancellata la testimonianza,");
+        puts("cancellata la soluzione.");
+    } else {
+        puts("\n2025 — B osservo' l'orologio.");
+        puts("\"Il messaggio era arrivato in anticipo.");
+        puts("Noi, invece, siamo riusciti ad arrivare in ritardo.\"");
+
+        puts("\n1985 — A sfoglio' inutilmente il registro.");
+        puts("\"Possiamo tornare indietro?\"");
+        puts("\"Siamo gia' indietro.\"");
+
+        puts("\nMISSIONE FALLITA — Il tempo non aspetta");
+        puts("nemmeno chi lo attraversa.");
+    }
+
     puts("\n--- RIEPILOGO MISSIONE 003 ---");
     printf("Persone al sicuro: %s\n", yes_no(state.people_safe));
     printf("Testimonianza valida: %s\n",
