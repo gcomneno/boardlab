@@ -20,6 +20,16 @@ const EXTRAORDINARY_TYPES = new Set([
   "referee-equipment-problem",
 ]);
 
+export function multiplayerMatchEvents(rollEvents) {
+  if (!Array.isArray(rollEvents)) return [];
+
+  return rollEvents.flatMap((event) => [
+    ...(event?.penalty ? [event.penalty] : []),
+    ...(event?.goal && !event.penalty ? [event.goal] : []),
+    ...(event?.matchEvent ? [event.matchEvent] : []),
+  ]);
+}
+
 export function describeMultiplayerRollEvent(
   roll,
   teamNames = ["Squadra 1", "Squadra 2"],

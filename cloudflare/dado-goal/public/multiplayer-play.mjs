@@ -42,6 +42,7 @@ import {
   describeRoll,
   describeMatchEvent
 } from "./commentary.mjs";
+import { multiplayerMatchEvents } from "./multiplayer-commentary.mjs";
 import { DICE_ART } from "./dice-art.mjs";
 import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
 import { socialColors } from "./team-colors.mjs";
@@ -1109,10 +1110,7 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
     ? snapshot.rollEvents
     : [];
 
-  matchEvents = rollEvents.flatMap(event => [
-    ...(event.penalty ? [event.penalty] : []),
-    ...(event.matchEvent ? [event.matchEvent] : []),
-  ]);
+  matchEvents = multiplayerMatchEvents(rollEvents);
 
   lastCommentary = null;
   if (rollEvents.length > 0) {

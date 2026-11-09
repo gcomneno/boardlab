@@ -159,11 +159,13 @@ test("M2A: authoritative goal, durable event and idempotent replay", async () =>
     assert.equal(first.state.goals[seat], beforeGoals + 1);
     assert.equal(d1.revision, 1);
     assert.equal(d1.events.length, 1);
-    assert.deepEqual(d1.events[0].goal, {
-      type: "goal",
-      team: seat,
-      minute: Math.floor(matchClock(first.state).seconds / 60),
-    });
+    assert.equal(d1.events[0].goal.type, "goal");
+    assert.equal(d1.events[0].goal.team, seat);
+    assert.equal(
+      d1.events[0].goal.minute,
+      Math.floor(matchClock(first.state).seconds / 60),
+    );
+    assert.equal(d1.events[0].goal.number, undefined);
     assert.ok(Number.isInteger(d1.events[0].goal.minute));
     assert.ok(d1.events[0].goal.minute >= 0);
 
@@ -260,6 +262,7 @@ test("penalty goal keeps one durable roll with taker and authoritative goal", as
       type: "goal",
       team: seat,
       minute: event.penalty.minute,
+      number: event.penalty.number,
     });
   } finally {
     Math.random = originalRandom;
