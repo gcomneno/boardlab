@@ -59,6 +59,22 @@ test("goal keeps canonical number and adds player identity", () => {
   assert.equal(event.player.providerPlayerId, "700");
 });
 
+test("penalty keeps canonical number and adds player identity", () => {
+  const event = enrichMatchEvent(roster, {
+    type: "penalty",
+    team: 0,
+    minute: 42,
+    number: 7,
+    outcome: "GOAL!",
+  });
+
+  assert.equal(event.type, "penalty");
+  assert.equal(event.number, 7);
+  assert.equal(event.outcome, "GOAL!");
+  assert.equal(event.player.name, "José Ángel");
+  assert.equal(event.player.providerPlayerId, "700");
+});
+
 test("cards receive player identity without changing event type", () => {
   const yellow = enrichMatchEvent(roster, {
     type: "yellow",
@@ -128,6 +144,20 @@ test("event display values map real goal identity", async () => {
     type: "goal",
     number: 7,
     player: { name: "José Ángel" },
+  });
+
+  assert.equal(values.number, "José Ángel (#7)");
+});
+
+test("event display values map real penalty identity", async () => {
+  const { eventDisplayValues } =
+    await import("./match-player-identity.mjs");
+
+  const values = eventDisplayValues({
+    type: "penalty",
+    number: 7,
+    player: { name: "José Ángel" },
+    outcome: "GOAL!",
   });
 
   assert.equal(values.number, "José Ángel (#7)");
