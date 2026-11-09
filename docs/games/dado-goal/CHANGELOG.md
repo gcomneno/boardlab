@@ -7,11 +7,35 @@ Format: https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
-### Multiplayer
+## [Multiplayer 1.0.0] — 2026-11-09
 
-- Online multiplayer evolution remains unreleased as a separate product track.
-- Issue #69 multiplayer extraordinary-event parity remains pending.
+### Added — Online multiplayer release
+
+- Released the authoritative two-player online multiplayer track.
+- Added durable Cloudflare D1 match lifecycle, recovery and authoritative
+  roll persistence.
+- Added real-team and player catalogue support for Serie A, Serie B,
+  Premier League and Championship 2024.
+- Added synchronized match commentary, statistics, disciplinary events,
+  substitutions and extraordinary narrative events.
+- Completed issue #69 multiplayer extraordinary-event parity, including
+  narrative VAR after eligible goals and resolved penalties.
+- Added penalty taker identity and authoritative goal-scorer identity to
+  the visible match chronicle.
+- Preserved scored penalties as a single visible penalty event while
+  retaining the authoritative goal object for score and statistics.
+- Qualified multiplayer control synchronization after live catalogue reloads.
 - Multiplayer AUTO behaviour remains intentionally distinct from single-player.
+
+### Qualification
+
+- Mandatory merged-code road test: PASS.
+- Match creation: HTTP 201.
+- Authoritative rolls: HTTP 200.
+- Goal chronicle rendering: PASS.
+- Penalty taker rendering: PASS.
+- Scored-penalty duplicate suppression: PASS.
+- CI for road-test fixes and goal-chronicle fix: PASS.
 
 ### Added — Optional team management and real football catalogue (#29)
 
