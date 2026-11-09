@@ -1090,10 +1090,24 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
       }
 
       const logo = byId(`pitch-logo-${seat}`);
-      if (logo && typeof team.logo === "string" && team.logo) {
-        logo.src = team.logo;
-        logo.alt = team.name ?? names[seat] ?? "";
-        logo.hidden = false;
+      if (logo) {
+        const selected = selectedCatalogueTeam(seat);
+        const fallbackLogo =
+          selected?.name === team.name ? selected.logo : null;
+        const logoUrl =
+          typeof team.logo === "string" && team.logo
+            ? team.logo
+            : fallbackLogo;
+
+        if (logoUrl) {
+          logo.src = logoUrl;
+          logo.alt = team.name ?? names[seat] ?? "";
+          logo.hidden = false;
+        } else {
+          logo.hidden = true;
+          logo.removeAttribute("src");
+          logo.alt = "";
+        }
       }
     });
   }
@@ -1110,7 +1124,13 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
     ? snapshot.rollEvents
     : [];
 
-  matchEvents = multiplayerMatchEvents(rollEvents);
+  if (snapshot.matchEventContext?.rosters) {
+    rosters = snapshot.matchEventContext.rosters;
+  }
+
+  matchEvents = multiplayerMatchEvents(rollEvents).map(event =>
+    enrichMatchEvent(rosters[event.team], event)
+  );
 
   lastCommentary = null;
   if (rollEvents.length > 0) {
@@ -1134,10 +1154,6 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
         };
       }
     });
-  }
-
-  if (snapshot.matchEventContext?.rosters) {
-    rosters = snapshot.matchEventContext.rosters;
   }
 
   if (snapshot.matchEventContext?.refereeStates) {
