@@ -892,24 +892,32 @@ async function roll() {
   if (handEnded) {
     const minute = Math.floor(matchClock(state).seconds / 60);
 
+    let penaltyTaker = null;
+
     if (penaltyResolved) {
-      matchEvents.push({
+      penaltyTaker = pickScorer(rosters[player], Math.random, minute);
+      matchEvents.push(enrichMatchEvent(rosters[player], {
         type: "penalty",
         team: player,
         minute,
-        outcome: face
-      });
+        outcome: face,
+        number: penaltyTaker
+      }));
     }
 
     // The score comes exclusively from the dice engine.
     if (state.goals[player] > before.goals[player]) {
-      lastGoalScorer = pickScorer(rosters[player], Math.random, minute);
-      matchEvents.push(enrichMatchEvent(rosters[player], {
-        type: "goal",
-        team: player,
-        minute,
-        number: lastGoalScorer
-      }));
+      lastGoalScorer = penaltyTaker ??
+        pickScorer(rosters[player], Math.random, minute);
+
+      if (!penaltyResolved) {
+        matchEvents.push(enrichMatchEvent(rosters[player], {
+          type: "goal",
+          team: player,
+          minute,
+          number: lastGoalScorer
+        }));
+      }
     }
 
     // Only the team completing its hand gets an event opportunity.

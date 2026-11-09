@@ -18,6 +18,7 @@ export function enrichMatchEvent(roster, event) {
   }
 
   if (event.type === "goal" ||
+      event.type === "penalty" ||
       event.type === "yellow" ||
       event.type === "red") {
     return {
@@ -47,6 +48,7 @@ export function eventDisplayValues(event) {
   }
 
   if (event.type === "goal" ||
+      event.type === "penalty" ||
       event.type === "yellow" ||
       event.type === "red") {
     return {

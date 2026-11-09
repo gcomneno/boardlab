@@ -193,6 +193,88 @@ test("M2A: authoritative goal, durable event and idempotent replay", async () =>
   }
 });
 
+test("penalty goal keeps one durable roll with taker and authoritative goal", async () => {
+  let state = initialState(5);
+  state = applyRoll(state, "Tiro in porta!");
+  state = applyRoll(state, "Mezza rovesciata");
+  assert.equal(state.phase, "result");
+
+  const seat = state.player;
+  state = applyRoll(state, "RIGORE");
+  assert.equal(state.phase, "result",
+    "Penalty fixture must require a second result roll");
+
+  const rosters = [createRoster(() => 0.5), createRoster(() => 0.5)];
+  const d1 = fakeD1(state, seat, rosters);
+
+  d1.events.push({
+    type: "roll",
+    seat,
+    die: "result",
+    face: "RIGORE",
+  });
+
+  const beforeEvents = d1.events.length;
+  const beforeGoals = state.goals[seat];
+  const originalCrypto = globalThis.crypto;
+  const originalRandom = Math.random;
+
+  try {
+    Math.random = () => 0;
+
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        getRandomValues(bytes) {
+          bytes.fill(1);
+          return bytes;
+        },
+      },
+    });
+
+    const result = await rollAuthorized(
+      d1.authority,
+      "match-penalty-goal",
+      "seat-token",
+      "penalty-goal",
+      0
+    );
+
+    assert.equal(result.face, "GOAL!");
+    assert.equal(result.state.goals[seat], beforeGoals + 1);
+    assert.equal(d1.events.length, beforeEvents + 1,
+      "Penalty goal must persist as one new roll event");
+
+    const event = d1.events.at(-1);
+
+    assert.equal(event.type, "roll");
+    assert.equal(event.face, "GOAL!");
+
+    assert.equal(event.penalty.type, "penalty");
+    assert.equal(event.penalty.team, seat);
+    assert.equal(event.penalty.outcome, "GOAL!");
+    assert.ok(Number.isInteger(event.penalty.number));
+    assert.ok(rosters[seat].active.includes(event.penalty.number));
+
+    assert.deepEqual(event.goal, {
+      type: "goal",
+      team: seat,
+      minute: event.penalty.minute,
+    });
+  } finally {
+    Math.random = originalRandom;
+
+    if (originalCrypto === undefined) {
+      delete globalThis.crypto;
+    } else {
+      Object.defineProperty(globalThis, "crypto", {
+        configurable: true,
+        value: originalCrypto,
+      });
+    }
+  }
+});
+
 test("#69: extraordinary narrative event persists once and replays without roster mutation", async () => {
   let state = initialState(5);
   state = applyRoll(state, "Tiro in porta!");

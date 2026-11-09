@@ -11,6 +11,7 @@ import { matchClock } from "./public/match-clock.mjs";
 import { commitRoll } from "./atomic.mjs";
 import { replayMatchEvents } from "./match-events-replay.mjs";
 import { evaluateCompletedHand } from "./match-events-authority.mjs";
+import { pickScorer } from "../../web/dado-goal/match-roster.mjs";
 
 function randomFace(phase) {
   const faces = FACES[phase];
@@ -86,19 +87,24 @@ export async function rollAuthorized(
       .map(entry => JSON.parse(entry.event_json))
       .find(event => event.type === "roll");
 
+    const context = replayMatchEvents(history);
+
     if (phase === "result" &&
         face !== "RIGORE" &&
         previousRoll?.die === "result" &&
         previousRoll?.face === "RIGORE") {
+      const minute = Math.floor(matchClock(next).seconds / 60);
       penalty = {
         type: "penalty",
         team: seat,
-        minute: Math.floor(matchClock(next).seconds / 60),
+        minute,
         outcome: face,
+        ...(context
+          ? { number: pickScorer(context.rosters[seat], Math.random, minute) }
+          : {}),
       };
     }
 
-    const context = replayMatchEvents(history);
     if (context) {
       matchEvent = evaluateCompletedHand(
         state,
