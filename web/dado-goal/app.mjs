@@ -260,6 +260,7 @@ function render() {
       const reason = describeEventReason(event.reason, getLocale());
       const eventDescription = event.type === "penalty"
         ? formatMessage("eventPenalty", {
+            ...eventDisplayValues(event),
             outcome: displayDieFace(event.outcome)
           })
         : event.classification === "narrative"
