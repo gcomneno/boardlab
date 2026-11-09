@@ -42,6 +42,7 @@ import {
   describeRoll,
   describeMatchEvent
 } from "./commentary.mjs";
+import { multiplayerMatchEvents } from "./multiplayer-commentary.mjs";
 import { DICE_ART } from "./dice-art.mjs";
 import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
 import { socialColors } from "./team-colors.mjs";
@@ -980,9 +981,7 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
     ? snapshot.rollEvents
     : [];
 
-  matchEvents = rollEvents
-    .filter(event => event.matchEvent)
-    .map(event => event.matchEvent);
+  matchEvents = multiplayerMatchEvents(rollEvents);
 
   if (snapshot.matchEventContext?.rosters) {
     rosters = snapshot.matchEventContext.rosters;

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   describeMultiplayerRollEvent,
+  multiplayerMatchEvents,
 } from "./multiplayer-commentary.mjs";
 
 test("multiplayer penalty is always explicitly announced in commentary", () => {
@@ -95,4 +96,56 @@ test("multiplayer commentary rejects mismatched goal ownership", () => {
     ),
     [],
   );
+});
+
+test("multiplayer match event projection includes ordinary authoritative goals", () => {
+  const events = multiplayerMatchEvents([
+    {
+      type: "roll",
+      seat: 0,
+      die: "result",
+      face: "GOAL!",
+      goal: {
+        type: "goal",
+        team: 0,
+        minute: 23,
+        number: 9,
+      },
+    },
+  ]);
+
+  assert.deepEqual(events, [{
+    type: "goal",
+    team: 0,
+    minute: 23,
+    number: 9,
+  }]);
+});
+
+test("multiplayer match event projection does not duplicate a scored penalty", () => {
+  const penalty = {
+    type: "penalty",
+    team: 1,
+    minute: 64,
+    outcome: "GOAL!",
+    number: 10,
+  };
+
+  const events = multiplayerMatchEvents([
+    {
+      type: "roll",
+      seat: 1,
+      die: "result",
+      face: "GOAL!",
+      penalty,
+      goal: {
+        type: "goal",
+        team: 1,
+        minute: 64,
+        number: 10,
+      },
+    },
+  ]);
+
+  assert.deepEqual(events, [penalty]);
 });

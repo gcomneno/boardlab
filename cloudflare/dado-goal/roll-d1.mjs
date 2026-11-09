@@ -71,7 +71,7 @@ export async function rollAuthorized(
   const phase = state.phase;
   const face = randomFace(phase);
   const next = applyRoll(state, face);
-  const goal = next.goals[seat] > state.goals[seat]
+  let goal = next.goals[seat] > state.goals[seat]
     ? { type: "goal", team: seat,
         minute: Math.floor(matchClock(next).seconds / 60) }
     : null;
@@ -113,6 +113,14 @@ export async function rollAuthorized(
         Math.random,
         { varEligible: Boolean(goal || penalty) },
       );
+
+      if (goal) {
+        goal = {
+          ...goal,
+          number: penalty?.number ??
+            pickScorer(context.rosters[seat], Math.random, goal.minute),
+        };
+      }
     }
   }
 
