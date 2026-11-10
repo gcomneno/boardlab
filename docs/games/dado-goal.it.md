@@ -148,3 +148,31 @@ segnato.
 Lo smoke browser è soltanto un guard automatico di rilascio. **Non sostituisce
 il road test manuale/operativo obbligatorio di Dado Goal**, che resta un gate
 necessario prima di ogni pubblicazione o release.
+
+### Validazione della distribuzione pubblica
+
+Dopo la pubblicazione o la modifica di una release di Dado Goal, della build
+itch.io, dell'endpoint multiplayer o dei riferimenti nel profilo/showcase,
+eseguire:
+
+```bash
+scripts/check-dado-goal-distribution.py
+```
+
+Il validator read-only usa
+`docs/games/dado-goal/distribution-contract.json` come contratto canonico della
+distribuzione e verifica riferimenti nel repository, stato e target delle
+release GitHub, build browser itch.io, showcase pubblico inglese e italiano,
+oltre all'entry point del Worker multiplayer stabile e agli asset client
+necessari.
+
+Per i soli controlli locali, senza richieste esterne:
+
+```bash
+scripts/check-dado-goal-distribution.py --offline
+```
+
+Un PASS completo conferma che gli entry point pubblici mantenuti di Dado Goal
+sono coerenti con il contratto di distribuzione corrente. Questa validazione
+post-pubblicazione integra, ma non sostituisce, il road test manuale/operativo
+obbligatorio prima di ogni pubblicazione o release.

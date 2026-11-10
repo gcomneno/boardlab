@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/gcomneno/boardlab",
+  "itch_page": "https://gcomneno.itch.io/dado-goal",
+  "stable_multiplayer": "https://dado-goal-multiplayer.giancarlo-cicellyn.workers.dev/multiplayer.html",
+  "stable_worker_origin": "https://dado-goal-multiplayer.giancarlo-cicellyn.workers.dev",
+  "worker_assets": [
+    "/multiplayer.html",
+    "/multiplayer-play.mjs",
+    "/multiplayer-theme.css"
+  ],
+  "releases": {
+    "single": "dado-goal-single-v1.1.1",
+    "multiplayer": "dado-goal-multiplayer-v1.0.1"
+  },
+  "showcase": {
+    "readme_en": "https://raw.githubusercontent.com/gcomneno/gcomneno/main/README.md",
+    "readme_it": "https://raw.githubusercontent.com/gcomneno/gcomneno/main/README.it.md"
+  },
+  "obsolete_current_references": [
+    "gh-pages/dado-goal",
+    "dado-goal-multiplayer-beta",
+    "dado-goal-beta"
+  ]
+}

@@ -144,3 +144,29 @@ event identity and scored-penalty de-duplication.
 The browser smoke suite is an automated release guard only. It does **not**
 replace the mandatory manual/operational Dado Goal road test, which remains a
 required gate before every publication or release.
+
+### Public distribution validation
+
+After publishing or changing a Dado Goal release, itch.io build, multiplayer
+endpoint, or profile/showcase reference, run:
+
+```bash
+scripts/check-dado-goal-distribution.py
+```
+
+The read-only validator uses
+`docs/games/dado-goal/distribution-contract.json` as the canonical distribution
+contract and checks repository references, GitHub release state and targets,
+the itch.io browser build, the English and Italian public showcase, and the
+stable multiplayer Worker entry point and required client assets.
+
+For repository-local checks without external requests:
+
+```bash
+scripts/check-dado-goal-distribution.py --offline
+```
+
+A full PASS answers that the maintained public Dado Goal entry points are
+consistent with the current distribution contract. This post-publication
+validation complements, and does not replace, the mandatory manual/operational
+road test required before publication or release.
