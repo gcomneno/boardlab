@@ -122,3 +122,25 @@ handmade dice.
 - Confirm the exact tocco counting convention if reproducing it digitally.
 - Do not infer the historical use of the current championship points system.
 - Preserve any newly recalled rules as author-confirmed additions.
+
+### Browser release smoke
+
+Dado Goal has a small browser-level release smoke suite covering the
+release-critical single-player and authoritative multiplayer surfaces.
+
+Run it from the repository root with:
+
+```bash
+tests/dado-goal-browser/run-smoke.sh
+```
+
+The suite exercises the single-player page and a local multiplayer Worker +
+D1 environment. It checks release-critical browser wiring such as match
+startup, pitch/team crests, authoritative host/join state, roll authority,
+state synchronization, statistics, and the stable multiplayer entry point.
+Deterministic lower-level tests retain detailed coverage for authoritative
+event identity and scored-penalty de-duplication.
+
+The browser smoke suite is an automated release guard only. It does **not**
+replace the mandatory manual/operational Dado Goal road test, which remains a
+required gate before every publication or release.

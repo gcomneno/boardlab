@@ -1,0 +1,13 @@
+{
+  "name": "dado-goal-browser-smoke",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke": "playwright test",
+    "smoke:single": "playwright test single-player.spec.mjs",
+    "smoke:multi": "playwright test multiplayer.spec.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

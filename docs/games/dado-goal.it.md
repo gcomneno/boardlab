@@ -125,3 +125,26 @@ dei dadi artigianali.
 - Confermare la conta esatta del tocco, se riprodotta digitalmente.
 - Non dedurre l'utilizzo storico dell'attuale punteggio dei campionati.
 - Conservare eventuali nuove regole ricordate come integrazioni confermate dall'autore.
+
+### Smoke test browser di rilascio
+
+Dado Goal dispone di una piccola suite smoke a livello browser per le
+superfici critiche di rilascio single-player e multiplayer autoritativo.
+
+Dalla radice del repository:
+
+```bash
+tests/dado-goal-browser/run-smoke.sh
+```
+
+La suite esercita la pagina single-player e un ambiente multiplayer locale
+Worker + D1. Verifica il wiring browser critico, tra cui avvio partita,
+campo/stemmi, host/join autoritativo, autorità del lancio, sincronizzazione
+dello stato, statistiche e collegamento stabile al multiplayer. I test
+deterministici di livello inferiore mantengono la copertura dettagliata
+dell'identità negli eventi autoritativi e della non duplicazione del rigore
+segnato.
+
+Lo smoke browser è soltanto un guard automatico di rilascio. **Non sostituisce
+il road test manuale/operativo obbligatorio di Dado Goal**, che resta un gate
+necessario prima di ogni pubblicazione o release.

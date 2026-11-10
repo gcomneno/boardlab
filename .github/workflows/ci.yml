@@ -171,3 +171,46 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
           retention-days: 7
+
+  dado-goal-browser-smoke:
+    name: Dado Goal browser smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install browser smoke dependencies
+        working-directory: tests/dado-goal-browser
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: tests/dado-goal-browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Apply local D1 migrations
+        working-directory: cloudflare/dado-goal
+        run: npx wrangler d1 migrations apply dado-goal-multiplayer --local
+
+      - name: Run Dado Goal browser smoke
+        working-directory: tests/dado-goal-browser
+        env:
+          CI: 'true'
+        run: ./run-smoke.sh
+
+      - name: Upload browser smoke diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dado-goal-browser-smoke-diagnostics
+          path: |
+            tests/dado-goal-browser/test-results/
+            tests/dado-goal-browser/playwright-report/
+          if-no-files-found: warn
+          retention-days: 7
