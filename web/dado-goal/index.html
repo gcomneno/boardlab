@@ -17,6 +17,75 @@
       <p>Quattro dadi. Due squadre. Un solo obiettivo: GOAL!</p>
     </header>
 
+    <section id="manager-panel" class="panel manager-panel"
+             aria-labelledby="manager-title">
+      <div class="manager-heading">
+        <div>
+          <p class="manager-kicker">Dado Goal!</p>
+          <h2 id="manager-title">Manager</h2>
+        </div>
+        <label class="manager-mode-toggle">
+          <input id="manager-enabled" type="checkbox">
+          <span>Modalità Manager</span>
+        </label>
+      </div>
+
+      <div id="manager-empty" class="manager-empty">
+        <p>
+          Attiva Manager e scegli una squadra reale come Squadra 1
+          per iniziare una gestione persistente.
+        </p>
+      </div>
+
+      <div id="manager-dashboard" hidden>
+        <div class="manager-summary">
+          <div>
+            <span class="manager-label">Club</span>
+            <strong id="manager-club-name">—</strong>
+          </div>
+          <div>
+            <span class="manager-label">Partite registrate</span>
+            <strong id="manager-match-count">0</strong>
+          </div>
+          <div>
+            <span class="manager-label">Prossima azione</span>
+            <strong id="manager-next-action">Configura la formazione</strong>
+          </div>
+        </div>
+
+        <div class="manager-roster-grid">
+          <section aria-labelledby="manager-lineup-title">
+            <h3 id="manager-lineup-title">XI titolare</h3>
+            <ol id="manager-lineup" class="manager-player-list"></ol>
+          </section>
+
+          <section aria-labelledby="manager-bench-title">
+            <h3 id="manager-bench-title">Panchina</h3>
+            <ol id="manager-bench" class="manager-player-list"></ol>
+          </section>
+        </div>
+
+        <section class="manager-history" aria-labelledby="manager-history-title">
+          <h3 id="manager-history-title">Risultati recenti</h3>
+          <ol id="manager-history" class="manager-history-list"></ol>
+        </section>
+
+        <div class="manager-actions">
+          <button id="manager-edit" type="button">
+            Modifica formazione
+          </button>
+          <button id="manager-export" type="button">
+            Esporta salvataggio
+          </button>
+          <button id="manager-import" type="button">
+            Importa salvataggio
+          </button>
+          <input id="manager-import-file" type="file"
+                 accept="application/json,.json" hidden>
+        </div>
+      </div>
+    </section>
+
     <section class="panel settings" aria-label="Impostazioni partita">
       <label for="language" class="locale-setting">
         <span data-i18n="language">Lingua</span>

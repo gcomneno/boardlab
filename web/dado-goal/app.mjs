@@ -12,6 +12,18 @@ import { matchClock } from "./match-clock.mjs";
 import { createRoster, pickScorer } from "./match-roster.mjs";
 import { importCatalogueJson } from "./catalogue-json.mjs";
 import { createMatchRoster } from "./catalogue-roster.mjs";
+import {
+  createManagerClub,
+  managerClubMatchTeam,
+  updateManagerSelection,
+} from "./manager-profile.mjs";
+import {
+  createManagerDocument,
+  exportManagerJson,
+  importManagerJson,
+  loadManager,
+  saveManager,
+} from "./manager-store.mjs";
 import { createMatchRecord } from "./team-history.mjs";
 import {
   createPlayerRatings,
@@ -467,12 +479,19 @@ function render() {
 let footballCatalogue = null;
 let selectedMatchTeams = [null, null];
 let managementState = createManagementDocument();
+let managerState = null;
 let matchRecorded = false;
 
 try {
   managementState = loadManagement(window.localStorage);
 } catch {
   managementState = createManagementDocument();
+}
+
+try {
+  managerState = loadManager(window.localStorage);
+} catch {
+  managerState = null;
 }
 
 
@@ -515,6 +534,285 @@ function recordCompletedMatch() {
   } catch {
     // Local persistence failure must never affect gameplay.
   }
+
+  if (managerState &&
+      byId("manager-enabled").checked &&
+      selectedMatchTeams.some(team =>
+        team &&
+        String(team.providerTeamId) ===
+          String(managerState.club.providerTeamId)
+      )) {
+    try {
+      managerState = createManagerDocument({
+        club: managerState.club,
+        management: createManagementDocument({
+          ratings: managerState.management.ratings,
+          matches: [...managerState.management.matches, record],
+        }),
+      });
+      saveManager(window.localStorage, managerState);
+    } catch {
+      // Manager persistence failure must never affect gameplay.
+    }
+  }
+
+  renderManagerDashboard();
+}
+
+
+function managerPlayerLabel(player) {
+  const shirt = player.shirtNumber == null ? "—" : player.shirtNumber;
+  const position = player.position ? ` · ${player.position}` : "";
+  return `#${shirt} ${player.name}${position}`;
+}
+
+function managerClubMatches() {
+  if (!managerState) return [];
+
+  const teamId = String(managerState.club.providerTeamId);
+  return managerState.management.matches.filter(match =>
+    String(match.home?.providerTeamId) === teamId ||
+    String(match.away?.providerTeamId) === teamId
+  );
+}
+
+function renderManagerDashboard() {
+  const enabled = byId("manager-enabled").checked;
+  const club = managerState?.club ?? null;
+
+  byId("manager-empty").hidden = enabled && Boolean(club);
+  byId("manager-dashboard").hidden = !enabled || !club;
+
+  if (!enabled || !club) return;
+
+  byId("manager-club-name").textContent = club.name;
+
+  const matches = managerClubMatches();
+  byId("manager-match-count").textContent = String(matches.length);
+  byId("manager-next-action").textContent = "Configura la formazione";
+
+  const players = new Map(
+    club.players.map(player => [String(player.providerPlayerId), player])
+  );
+
+  const renderPlayers = (elementId, playerIds) => {
+    const list = byId(elementId);
+    list.replaceChildren();
+
+    for (const playerId of playerIds) {
+      const player = players.get(String(playerId));
+      if (!player) continue;
+
+      const item = document.createElement("li");
+      item.textContent = managerPlayerLabel(player);
+      list.append(item);
+    }
+  };
+
+  renderPlayers("manager-lineup", club.lineup);
+  renderPlayers("manager-bench", club.bench);
+
+  const history = byId("manager-history");
+  history.replaceChildren();
+
+  for (const match of matches.slice(-5).reverse()) {
+    const item = document.createElement("li");
+    item.textContent =
+      `${match.home.name} ${match.score.home}–${match.score.away} ` +
+      `${match.away.name}`;
+    history.append(item);
+  }
+
+  if (history.childElementCount === 0) {
+    const item = document.createElement("li");
+    item.textContent = "Nessuna partita registrata.";
+    history.append(item);
+  }
+}
+
+function persistManagerState() {
+  if (!managerState) return;
+  saveManager(window.localStorage, managerState);
+  renderManagerDashboard();
+}
+
+function editManagerSelection() {
+  const club = managerState?.club ?? null;
+  if (!club) return;
+
+  const currentLineup = new Set(club.lineup.map(String));
+  const currentBench = new Set(club.bench.map(String));
+
+  const dialog = document.createElement("dialog");
+  dialog.className = "manager-editor";
+
+  const form = document.createElement("form");
+  form.method = "dialog";
+
+  const title = document.createElement("h3");
+  title.textContent = `Formazione · ${club.name}`;
+  form.append(title);
+
+  const hint = document.createElement("p");
+  hint.textContent =
+    "Seleziona esattamente 11 titolari e fino a 9 giocatori in panchina.";
+  form.append(hint);
+
+  const rows = document.createElement("div");
+  rows.className = "manager-editor-players";
+
+  for (const player of club.players) {
+    const row = document.createElement("div");
+    row.className = "manager-editor-player";
+
+    const label = document.createElement("span");
+    label.textContent = managerPlayerLabel(player);
+
+    const role = document.createElement("select");
+    role.dataset.playerId = String(player.providerPlayerId);
+
+    for (const [value, caption] of [
+      ["out", "Fuori rosa partita"],
+      ["lineup", "Titolare"],
+      ["bench", "Panchina"],
+    ]) {
+      role.append(new Option(caption, value));
+    }
+
+    const playerId = String(player.providerPlayerId);
+    role.value = currentLineup.has(playerId)
+      ? "lineup"
+      : currentBench.has(playerId)
+        ? "bench"
+        : "out";
+
+    row.append(label, role);
+    rows.append(row);
+  }
+
+  form.append(rows);
+
+  const error = document.createElement("p");
+  error.className = "manager-editor-error";
+  error.setAttribute("role", "alert");
+  form.append(error);
+
+  const actions = document.createElement("div");
+  actions.className = "manager-actions";
+
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.textContent = "Annulla";
+  cancel.addEventListener("click", () => dialog.close());
+
+  const save = document.createElement("button");
+  save.type = "button";
+  save.textContent = "Salva formazione";
+  save.addEventListener("click", () => {
+    const lineup = [];
+    const bench = [];
+
+    for (const select of rows.querySelectorAll("select[data-player-id]")) {
+      if (select.value === "lineup") lineup.push(select.dataset.playerId);
+      if (select.value === "bench") bench.push(select.dataset.playerId);
+    }
+
+    try {
+      const nextClub = updateManagerSelection(club, { lineup, bench });
+      managerState = createManagerDocument({
+        club: nextClub,
+        management: managerState.management,
+      });
+      persistManagerState();
+      dialog.close();
+    } catch (caught) {
+      error.textContent = caught instanceof Error
+        ? caught.message
+        : "Formazione non valida.";
+    }
+  });
+
+  actions.append(cancel, save);
+  form.append(actions);
+  dialog.append(form);
+  document.body.append(dialog);
+
+  dialog.addEventListener("close", () => dialog.remove(), { once: true });
+  dialog.showModal();
+}
+
+function exportManagerSave() {
+  if (!managerState) return;
+
+  const source = exportManagerJson(managerState);
+  const blob = new Blob([source], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "dado-goal-manager.json";
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+async function importManagerSave(file) {
+  if (!file) return;
+
+  const imported = importManagerJson(await file.text());
+
+  managerState = imported;
+  persistManagerState();
+  byId("manager-enabled").checked = true;
+  renderManagerDashboard();
+}
+
+function initializeManagerUi() {
+  const toggle = byId("manager-enabled");
+
+  toggle.addEventListener("change", () => {
+    if (toggle.checked && !managerState) {
+      const team = catalogueTeam("team-0");
+
+      if (team) {
+        managerState = createManagerDocument({
+          club: createManagerClub(team),
+          management: createManagementDocument(),
+        });
+
+        try {
+          persistManagerState();
+        } catch {
+          // Manager persistence failure must never block quick match.
+        }
+      }
+    }
+
+    renderManagerDashboard();
+  });
+
+  byId("manager-edit").addEventListener("click", editManagerSelection);
+  byId("manager-export").addEventListener("click", exportManagerSave);
+
+  byId("manager-import").addEventListener("click", () => {
+    byId("manager-import-file").click();
+  });
+
+  byId("manager-import-file").addEventListener("change", async event => {
+    try {
+      await importManagerSave(event.target.files?.[0]);
+    } catch (caught) {
+      window.alert(
+        caught instanceof Error
+          ? caught.message
+          : "Salvataggio Manager non valido."
+      );
+    } finally {
+      event.target.value = "";
+    }
+  });
+
+  renderManagerDashboard();
 }
 
 
@@ -798,7 +1096,33 @@ function start(activate = true) {
     return;
   }
 
-  selectedMatchTeams = selectedTeams;
+  if (activate &&
+      managerState &&
+      byId("manager-enabled").checked) {
+    const selectedManagedTeam = selectedTeams.find(team =>
+      team &&
+      String(team.providerTeamId) ===
+        String(managerState.club.providerTeamId)
+    );
+
+    if (selectedManagedTeam) {
+      try {
+        saveManager(window.localStorage, managerState);
+      } catch {
+        // Manager persistence failure must never affect gameplay.
+      }
+    }
+  }
+
+  selectedMatchTeams = selectedTeams.map(team => {
+    if (!team || !managerState) return team;
+
+    return byId("manager-enabled").checked &&
+      String(team.providerTeamId) ===
+        String(managerState.club.providerTeamId)
+      ? managerClubMatchTeam(managerState.club)
+      : team;
+  });
   matchRecorded = false;
 
   for (const seat of [0, 1]) {
@@ -811,7 +1135,7 @@ function start(activate = true) {
   isRolling = false;
   rollEvents = [];
   matchEvents = [];
-  rosters = selectedTeams.map((team) =>
+  rosters = selectedMatchTeams.map((team) =>
     createMatchRoster({ team })
   );
   refereeStates = [createEventState(), createEventState()];
@@ -1155,6 +1479,7 @@ document.querySelector(".multiplayer-button").addEventListener("click", event =>
 byId("roll").addEventListener("click", () => {
   void roll();
 });
+initializeManagerUi();
 start(false);
 initializeLocale(() => {
   syncCompetitionSelector();

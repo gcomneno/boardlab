@@ -1193,3 +1193,160 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   z-index: 1;
   pointer-events: auto;
 }
+
+/* Dado Goal Manager M1: persistent context around the normal match. */
+.manager-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.manager-heading,
+.manager-summary,
+.manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.manager-heading {
+  justify-content: space-between;
+}
+
+.manager-heading h2,
+.manager-heading p,
+.manager-roster-grid h3,
+.manager-history h3 {
+  margin: 0;
+}
+
+.manager-kicker,
+.manager-label {
+  color: #c4e1a4;
+  font-size: .78rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.manager-mode-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 800;
+}
+
+.manager-mode-toggle input {
+  width: auto;
+}
+
+.manager-empty {
+  color: #b7cbbf;
+}
+
+.manager-empty p {
+  margin: 0;
+}
+
+.manager-summary {
+  align-items: stretch;
+}
+
+.manager-summary > div {
+  flex: 1 1 160px;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #426650;
+  border-radius: 10px;
+  background: #173328;
+}
+
+.manager-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.manager-roster-grid > section,
+.manager-history {
+  padding: 12px;
+  border: 1px solid #426650;
+  border-radius: 12px;
+  background: #173328;
+}
+
+.manager-player-list,
+.manager-history-list {
+  margin: 8px 0 0;
+  padding-left: 24px;
+}
+
+.manager-player-list li,
+.manager-history-list li {
+  padding: 3px 0;
+}
+
+.manager-actions button {
+  flex: 1 1 150px;
+}
+
+@media (max-width: 600px) {
+  .manager-roster-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.manager-editor {
+  width: min(720px, calc(100vw - 32px));
+  max-height: 88vh;
+  border: 1px solid #92ad99;
+  border-radius: 14px;
+  background: #173328;
+  color: inherit;
+}
+
+.manager-editor::backdrop {
+  background: rgb(0 0 0 / .65);
+}
+
+.manager-editor form {
+  display: grid;
+  gap: 14px;
+}
+
+.manager-editor h3,
+.manager-editor p {
+  margin: 0;
+}
+
+.manager-editor-players {
+  display: grid;
+  gap: 6px;
+  max-height: 55vh;
+  overflow: auto;
+}
+
+.manager-editor-player {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 190px);
+  gap: 10px;
+  align-items: center;
+}
+
+.manager-editor-player select {
+  width: 100%;
+  padding: 7px;
+  border-radius: 7px;
+}
+
+.manager-editor-error {
+  min-height: 1.4em;
+  color: #ffe08a;
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .manager-editor-player {
+    grid-template-columns: 1fr;
+  }
+}
