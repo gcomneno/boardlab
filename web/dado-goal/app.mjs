@@ -16,13 +16,16 @@ import {
   createManagerClub,
   managerClubMatchTeam,
   updateManagerSelection,
+  updateManagerPlayers,
 } from "./manager-profile.mjs";
+import { createNextMatch } from "./manager-next-match.mjs";
 import {
   createManagerDocument,
   exportManagerJson,
   importManagerJson,
   loadManager,
   saveManager,
+  clearManager,
 } from "./manager-store.mjs";
 import { createMatchRecord } from "./team-history.mjs";
 import {
@@ -55,7 +58,8 @@ import {
 import {
   describeEventReason,
   describeRoll,
-  describeMatchEvent
+  describeMatchEvent,
+  describeFinalWhistle
 } from "./commentary.mjs";
 import { DICE_ART } from "./dice-art.mjs";
 import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
@@ -241,6 +245,9 @@ function sleep(ms) {
 function render() {
   byId("message").textContent = formatMessage(messageKey, messageValues);
 
+  byId("manager-enabled").disabled =
+    matchStarted && state.phase !== "finished";
+
   // Keep events recorded, but hide their narrative when commentary is OFF.
   byId("match-events-list").closest(".match-events").hidden = !commentaryEnabled;
 
@@ -321,8 +328,15 @@ function render() {
               lastExtraordinaryEvent,
               getLocale()
             )
+          : null,
+        lastCommentary.after.phase === "finished"
+          ? describeFinalWhistle(
+              lastCommentary.after,
+              lastCommentary.names,
+              getLocale()
+            )
           : null
-      ].filter(Boolean).join(" ")
+      ].filter(Boolean).join("\n")
       : translate("commentaryReady");
   byId("commentary-toggle").textContent = commentaryEnabled
     ? "🎙️ ON"
@@ -527,10 +541,13 @@ function recordCompletedMatch() {
     matches: [...managementState.matches, record],
   });
 
+  // A completed match is processed at most once even when persistence
+  // is unavailable. Generic and Manager saves remain independent.
+  matchRecorded = true;
+
   try {
     saveManagement(window.localStorage, nextState);
     managementState = nextState;
-    matchRecorded = true;
   } catch {
     // Local persistence failure must never affect gameplay.
   }
@@ -549,6 +566,7 @@ function recordCompletedMatch() {
           ratings: managerState.management.ratings,
           matches: [...managerState.management.matches, record],
         }),
+        nextMatch: null,
       });
       saveManager(window.localStorage, managerState);
     } catch {
@@ -560,9 +578,24 @@ function recordCompletedMatch() {
 }
 
 
+function managerPlayerPosition(position) {
+  if (!position) return "";
+
+  const key = {
+    Goalkeeper: "playerPositionGoalkeeper",
+    Defender: "playerPositionDefender",
+    Midfielder: "playerPositionMidfielder",
+    Attacker: "playerPositionAttacker",
+  }[position];
+
+  return key ? translate(key) : position;
+}
+
 function managerPlayerLabel(player) {
   const shirt = player.shirtNumber == null ? "—" : player.shirtNumber;
-  const position = player.position ? ` · ${player.position}` : "";
+  const position = player.position
+    ? ` · ${managerPlayerPosition(player.position)}`
+    : "";
   return `#${shirt} ${player.name}${position}`;
 }
 
@@ -580,6 +613,8 @@ function renderManagerDashboard() {
   const enabled = byId("manager-enabled").checked;
   const club = managerState?.club ?? null;
 
+  syncNewManagerControls();
+
   byId("manager-empty").hidden = enabled && Boolean(club);
   byId("manager-dashboard").hidden = !enabled || !club;
 
@@ -589,7 +624,33 @@ function renderManagerDashboard() {
 
   const matches = managerClubMatches();
   byId("manager-match-count").textContent = String(matches.length);
-  byId("manager-next-action").textContent = "Configura la formazione";
+
+  const opponentSelect = byId("manager-opponent");
+  const preparedOpponentId =
+    managerState.nextMatch?.opponentProviderTeamId ?? "";
+
+  opponentSelect.replaceChildren(
+    new Option("Scegli un avversario", "")
+  );
+
+  for (const team of [...(footballCatalogue?.teams ?? [])]
+      .sort((left, right) => left.name.localeCompare(right.name, "it"))) {
+    if (String(team.providerTeamId) === String(club.providerTeamId)) {
+      continue;
+    }
+
+    opponentSelect.append(
+      new Option(team.name, String(team.providerTeamId))
+    );
+  }
+
+  opponentSelect.value = preparedOpponentId;
+  const hasPreparedOpponent = opponentSelect.value !== "";
+
+  byId("manager-play-next").disabled = !hasPreparedOpponent;
+  byId("manager-next-action").textContent = hasPreparedOpponent
+    ? "Gioca la prossima partita"
+    : "Scegli il prossimo avversario";
 
   const players = new Map(
     club.players.map(player => [String(player.providerPlayerId), player])
@@ -604,7 +665,41 @@ function renderManagerDashboard() {
       if (!player) continue;
 
       const item = document.createElement("li");
-      item.textContent = managerPlayerLabel(player);
+      item.className = "manager-player-row";
+
+      const identity = document.createElement("span");
+      identity.className = "manager-player-identity";
+
+      const number = document.createElement("span");
+      number.className = "manager-shirt-number";
+      number.textContent = player.shirtNumber == null
+        ? "—"
+        : String(player.shirtNumber);
+
+      const name = document.createElement("span");
+      name.className = "manager-player-name";
+      name.textContent = player.name;
+
+      identity.append(number, name);
+
+      const role = document.createElement("span");
+      role.className = "manager-player-role";
+
+      const roleIcon = document.createElement("span");
+      roleIcon.className = "manager-role-icon";
+      roleIcon.setAttribute("aria-hidden", "true");
+      roleIcon.textContent = {
+        Goalkeeper: "◆",
+        Defender: "⬟",
+        Midfielder: "●",
+        Attacker: "▲",
+      }[player.position] ?? "•";
+
+      const roleText = document.createElement("span");
+      roleText.textContent = managerPlayerPosition(player.position);
+
+      role.append(roleIcon, roleText);
+      item.append(identity, role);
       list.append(item);
     }
   };
@@ -661,34 +756,105 @@ function editManagerSelection() {
   const rows = document.createElement("div");
   rows.className = "manager-editor-players";
 
+  const header = document.createElement("div");
+  header.className = "manager-editor-player manager-editor-header";
+
+  for (const caption of ["Giocatore", "N°", "Ruolo", "Impiego"]) {
+    const cell = document.createElement("strong");
+    cell.textContent = caption;
+    header.append(cell);
+  }
+
+  rows.append(header);
+
   for (const player of club.players) {
     const row = document.createElement("div");
     row.className = "manager-editor-player";
 
-    const label = document.createElement("span");
-    label.textContent = managerPlayerLabel(player);
+    const playerId = String(player.providerPlayerId);
 
-    const role = document.createElement("select");
-    role.dataset.playerId = String(player.providerPlayerId);
+    const name = document.createElement("input");
+    name.type = "text";
+    name.value = player.name;
+    name.dataset.playerName = playerId;
+    name.setAttribute("aria-label", `Nome ${player.name}`);
+
+    const shirtNumber = document.createElement("input");
+    shirtNumber.type = "number";
+    shirtNumber.min = "1";
+    shirtNumber.max = "99";
+    shirtNumber.step = "1";
+    shirtNumber.value = player.shirtNumber ?? "";
+    shirtNumber.dataset.playerShirtNumber = playerId;
+    shirtNumber.setAttribute(
+      "aria-label",
+      `Numero di maglia ${player.name}`
+    );
+
+    const position = document.createElement("select");
+    position.dataset.playerPosition = playerId;
+    position.setAttribute("aria-label", `Ruolo ${player.name}`);
+
+    for (const value of [
+      "Goalkeeper",
+      "Defender",
+      "Midfielder",
+      "Attacker",
+    ]) {
+      position.append(
+        new Option(managerPlayerPosition(value), value)
+      );
+    }
+    position.value = player.position;
+
+    const assignment = document.createElement("select");
+    assignment.dataset.playerId = playerId;
+    assignment.setAttribute("aria-label", `Impiego ${player.name}`);
 
     for (const [value, caption] of [
       ["out", "Fuori rosa partita"],
       ["lineup", "Titolare"],
       ["bench", "Panchina"],
     ]) {
-      role.append(new Option(caption, value));
+      assignment.append(new Option(caption, value));
     }
 
-    const playerId = String(player.providerPlayerId);
-    role.value = currentLineup.has(playerId)
+    assignment.value = currentLineup.has(playerId)
       ? "lineup"
       : currentBench.has(playerId)
         ? "bench"
         : "out";
 
-    row.append(label, role);
+    row.append(name, shirtNumber, position, assignment);
     rows.append(row);
   }
+
+  const refreshLineupNumbers = () => {
+    let lineupNumber = 0;
+
+    for (const select of rows.querySelectorAll("select[data-player-id]")) {
+      const lineupOption = [...select.options].find(
+        option => option.value === "lineup"
+      );
+
+      if (!lineupOption) continue;
+
+      if (select.value === "lineup") {
+        lineupNumber += 1;
+        lineupOption.textContent = `Titolare ${lineupNumber}`;
+      } else {
+        lineupOption.textContent = "Titolare";
+      }
+    }
+  };
+
+  rows.addEventListener("change", event => {
+    if (event.target.matches("select[data-player-id]")) {
+      refreshLineupNumbers();
+    }
+  });
+
+  refreshLineupNumbers();
 
   form.append(rows);
 
@@ -707,7 +873,7 @@ function editManagerSelection() {
 
   const save = document.createElement("button");
   save.type = "button";
-  save.textContent = "Salva formazione";
+  save.textContent = "Salva rosa e formazione";
   save.addEventListener("click", () => {
     const lineup = [];
     const bench = [];
@@ -718,17 +884,53 @@ function editManagerSelection() {
     }
 
     try {
-      const nextClub = updateManagerSelection(club, { lineup, bench });
+      const edits = club.players.map(player => {
+        const playerId = String(player.providerPlayerId);
+
+        return {
+          providerPlayerId: playerId,
+          name: rows.querySelector(
+            `[data-player-name="${playerId}"]`
+          ).value,
+          shirtNumber: rows.querySelector(
+            `[data-player-shirt-number="${playerId}"]`
+          ).value,
+          position: rows.querySelector(
+            `[data-player-position="${playerId}"]`
+          ).value,
+        };
+      });
+
+      const editedClub = updateManagerPlayers(club, edits);
+      const nextClub = updateManagerSelection(
+        editedClub,
+        { lineup, bench }
+      );
+
       managerState = createManagerDocument({
         club: nextClub,
         management: managerState.management,
+        nextMatch: managerState.nextMatch,
       });
       persistManagerState();
       dialog.close();
     } catch (caught) {
-      error.textContent = caught instanceof Error
+      const message = caught instanceof Error
         ? caught.message
         : "Formazione non valida.";
+
+      const italianErrors = {
+        "manager lineup must contain exactly 11 players":
+          "La formazione deve contenere esattamente 11 titolari.",
+        "manager bench cannot contain more than 9 players":
+          "La panchina non può contenere più di 9 giocatori.",
+        "lineup and bench must not overlap":
+          "Un giocatore non può essere contemporaneamente titolare e in panchina.",
+      };
+
+      error.textContent = document.documentElement.lang === "it"
+        ? (italianErrors[message] ?? message)
+        : message;
     }
   });
 
@@ -741,6 +943,33 @@ function editManagerSelection() {
   dialog.showModal();
 }
 
+function syncNewManagerControls() {
+  const managerEnabled = byId("manager-enabled").checked;
+
+  for (const seat of [0, 1]) {
+    const button = byId(`manager-new-${seat}`);
+    button.hidden = managerEnabled;
+    button.disabled =
+      managerEnabled || catalogueTeam(`team-${seat}`) === null;
+  }
+}
+
+function newManagerCareer(seat) {
+  const team = catalogueTeam(`team-${seat}`);
+  if (!team) return;
+
+  clearManager(window.localStorage);
+
+  managerState = createManagerDocument({
+    club: createManagerClub(team),
+    management: createManagementDocument(),
+  });
+
+  persistManagerState();
+  byId("manager-enabled").checked = true;
+  renderManagerDashboard();
+}
+
 function exportManagerSave() {
   if (!managerState) return;
 
@@ -749,8 +978,15 @@ function exportManagerSave() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
 
+  const clubSlug = managerState.club.name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "squadra";
+
   link.href = url;
-  link.download = "dado-goal-manager.json";
+  link.download = `dado-goal-manager-${clubSlug}.json`;
   link.click();
 
   URL.revokeObjectURL(url);
@@ -760,11 +996,107 @@ async function importManagerSave(file) {
   if (!file) return;
 
   const imported = importManagerJson(await file.text());
+  const managedId = String(imported.club.providerTeamId);
+  const managedTeam = allCatalogueTeams().find(
+    team => String(team.providerTeamId) === managedId
+  );
+
+  if (!managedTeam) {
+    throw new Error(
+      "La squadra del salvataggio Manager non è disponibile nei cataloghi."
+    );
+  }
 
   managerState = imported;
-  persistManagerState();
+  saveManager(window.localStorage, managerState);
+
   byId("manager-enabled").checked = true;
+
+  const competitionValue =
+    `${managedTeam.competitionId}:${managedTeam.season}`;
+
+  if (competitions.some(({ value }) => value === competitionValue)) {
+    byId("competition").value = competitionValue;
+  }
+
+  renderCatalogueTeams();
+
+  const managedSelect = byId("team-0");
+  if (![...managedSelect.options].some(option => option.value === managedId)) {
+    managedSelect.append(new Option(managedTeam.name, managedId));
+  }
+  managedSelect.value = managedId;
+
+  applySelectedTeamColor(0);
+  syncNewManagerControls();
+
+  // A Manager save stores the career, not an in-progress match.
+  // Reset the match presentation so no pre-import state remains visible.
+  start(false);
+
+  render();
   renderManagerDashboard();
+}
+
+function prepareManagerOpponent() {
+  if (!managerState) return;
+
+  const opponentProviderTeamId = byId("manager-opponent").value;
+
+  managerState = createManagerDocument({
+    club: managerState.club,
+    management: managerState.management,
+    nextMatch: opponentProviderTeamId === ""
+      ? null
+      : createNextMatch({
+          managedProviderTeamId: managerState.club.providerTeamId,
+          opponentProviderTeamId,
+        }),
+  });
+
+  persistManagerState();
+}
+
+function playManagerNextMatch() {
+  if (!managerState?.nextMatch) return;
+
+  const managedId = String(managerState.club.providerTeamId);
+  const opponentId = String(
+    managerState.nextMatch.opponentProviderTeamId
+  );
+
+  const managedTeam = footballCatalogue?.teams.find(
+    team => String(team.providerTeamId) === managedId
+  );
+  const opponentTeam = footballCatalogue?.teams.find(
+    team => String(team.providerTeamId) === opponentId
+  );
+
+  if (!managedTeam || !opponentTeam) {
+    window.alert(
+      "Squadra Manager o avversario non disponibili nel catalogo."
+    );
+    return;
+  }
+
+  for (const [seat, team] of [
+    [0, managedTeam],
+    [1, opponentTeam],
+  ]) {
+    const select = byId(`team-${seat}`);
+    const teamId = String(team.providerTeamId);
+
+    if (![...select.options].some(option => option.value === teamId)) {
+      select.append(new Option(team.name, teamId));
+    }
+
+    select.value = teamId;
+  }
+
+  applySelectedTeamColor(0);
+  applySelectedTeamColor(1);
+
+  start(true);
 }
 
 function initializeManagerUi() {
@@ -792,6 +1124,20 @@ function initializeManagerUi() {
   });
 
   byId("manager-edit").addEventListener("click", editManagerSelection);
+  byId("manager-opponent").addEventListener(
+    "change",
+    prepareManagerOpponent
+  );
+  byId("manager-play-next").addEventListener(
+    "click",
+    playManagerNextMatch
+  );
+  for (const seat of [0, 1]) {
+  byId(`manager-new-${seat}`).addEventListener(
+    "click",
+    () => newManagerCareer(seat)
+  );
+}
   byId("manager-export").addEventListener("click", exportManagerSave);
 
   byId("manager-import").addEventListener("click", () => {
@@ -832,53 +1178,33 @@ function catalogueTeam(selectId) {
 
 
 
-function renderCatalogueTeams() {
-  const teams = [...(footballCatalogue?.teams ?? [])].sort(
-    (left, right) => left.name.localeCompare(
-      right.name, undefined, { sensitivity: "base" }
-    )
-  );
+const competitions = Object.freeze([
+  Object.freeze({
+    value: "135:2024",
+    label: "Serie A",
+    url: "./catalogues/serie-a-2024.json",
+  }),
+  Object.freeze({
+    value: "136:2024",
+    label: "Serie B",
+    url: "./catalogues/serie-b-2024.json",
+  }),
+  Object.freeze({
+    value: "39:2024",
+    label: "Premier League",
+    url: "./catalogues/premier-league-2024.json",
+  }),
+  Object.freeze({
+    value: "40:2024",
+    label: "Championship",
+    url: "./catalogues/championship-2024.json",
+  }),
+]);
 
-  for (let seat = 0; seat < 2; seat += 1) {
-    const select = byId(`team-${seat}`);
-    const current = select.value;
-    select.replaceChildren(new Option(`Squadra ${seat + 1}`, ""));
-
-    for (const team of teams) {
-      select.append(new Option(team.name, String(team.providerTeamId)));
-    }
-
-    if ([...select.options].some(option => option.value === current)) {
-      select.value = current;
-    }
-
-    renderSelectedTeamLogo(seat);
-  }
-}
-
-
-async function loadCatalogueFile(file) {
-  const source = await file.text();
-  footballCatalogue = importCatalogueJson(source);
-  renderCatalogueTeams();
-}
-
-const competitionsByLocale = Object.freeze({
-  it: Object.freeze([
-    Object.freeze({ value: "135:2024", label: "Serie A" }),
-    Object.freeze({ value: "136:2024", label: "Serie B" }),
-  ]),
-  en: Object.freeze([
-    Object.freeze({ value: "39:2024", label: "Premier League" }),
-    Object.freeze({ value: "40:2024", label: "Championship" }),
-  ]),
-});
+let footballCatalogues = [];
 
 function syncCompetitionSelector() {
   const selector = byId("competition");
-  const language = byId("language").value;
-  const competitions = competitionsByLocale[language] ??
-    competitionsByLocale.en;
   const previous = selector.value;
 
   selector.replaceChildren(
@@ -899,42 +1225,121 @@ function syncCompetitionSelector() {
   }
 }
 
+function allCatalogueTeams() {
+  return footballCatalogues.flatMap(catalogue => catalogue.teams);
+}
+
+function selectedCompetitionTeams() {
+  const selected = byId("competition").value;
+  const [competitionId, season] = selected.split(":");
+
+  return allCatalogueTeams().filter(team =>
+    String(team.competitionId) === String(competitionId) &&
+    String(team.season) === String(season)
+  );
+}
+
+function renderCatalogueTeams() {
+  const filteredTeams = selectedCompetitionTeams().sort(
+    (left, right) => left.name.localeCompare(
+      right.name, undefined, { sensitivity: "base" }
+    )
+  );
+  const allTeams = allCatalogueTeams();
+
+  for (let seat = 0; seat < 2; seat += 1) {
+    const select = byId(`team-${seat}`);
+    const current = select.value;
+    const currentTeam = allTeams.find(team =>
+      String(team.providerTeamId) === current
+    );
+
+    const visibleTeams = [...filteredTeams];
+
+    // Preserve an already-selected team from another competition so the
+    // two seats may intentionally represent different championships.
+    if (currentTeam &&
+        !visibleTeams.some(team =>
+          String(team.providerTeamId) === String(currentTeam.providerTeamId)
+        )) {
+      visibleTeams.push(currentTeam);
+    }
+
+    visibleTeams.sort(
+      (left, right) => left.name.localeCompare(
+        right.name, undefined, { sensitivity: "base" }
+      )
+    );
+
+    select.replaceChildren(new Option(`Squadra ${seat + 1}`, ""));
+
+    for (const team of visibleTeams) {
+      select.append(new Option(team.name, String(team.providerTeamId)));
+    }
+
+    if ([...select.options].some(option => option.value === current)) {
+      select.value = current;
+    }
+
+    renderSelectedTeamLogo(seat);
+  }
+}
+
+async function loadCatalogueFile(file) {
+  const source = await file.text();
+  const catalogue = importCatalogueJson(source);
+  footballCatalogues = [catalogue];
+  footballCatalogue = {
+    ...catalogue,
+    teams: [...catalogue.teams],
+  };
+  renderCatalogueTeams();
+}
+
 async function reloadLiveCatalogue() {
   footballCatalogue = null;
+  footballCatalogues = [];
   renderCatalogueTeams();
 
   try {
     await loadLiveCatalogue();
   } catch {
     footballCatalogue = null;
+    footballCatalogues = [];
     renderCatalogueTeams();
   }
 }
 
 async function loadLiveCatalogue() {
-  const [competitionId, season] = byId("competition").value.split(":");
-  const catalogueUrls = Object.freeze({
-    "135:2024": "./catalogues/serie-a-2024.json",
-    "136:2024": "./catalogues/serie-b-2024.json",
-    "39:2024": "./catalogues/premier-league-2024.json",
-    "40:2024": "./catalogues/championship-2024.json",
-  });
-  const catalogueUrl = catalogueUrls[`${competitionId}:${season}`];
+  const loaded = await Promise.all(
+    competitions.map(async ({ url }) => {
+      const response = await fetch(url);
 
-  if (!catalogueUrl) {
-    throw new Error(
-      `unsupported football catalogue ${competitionId}:${season}`
-    );
+      if (!response.ok) {
+        throw new Error(`catalogue HTTP ${response.status}`);
+      }
+
+      return importCatalogueJson(await response.text());
+    })
+  );
+
+  footballCatalogues = loaded;
+
+  const teams = allCatalogueTeams();
+  const ids = new Set(teams.map(team => String(team.providerTeamId)));
+
+  if (ids.size !== teams.length) {
+    throw new Error("duplicate provider team id across catalogues");
   }
 
-  const response = await fetch(catalogueUrl);
+  footballCatalogue = {
+    schemaVersion: loaded[0]?.schemaVersion ?? 1,
+    teams,
+  };
 
-  if (!response.ok) {
-    throw new Error(`catalogue HTTP ${response.status}`);
-  }
-
-  footballCatalogue = importCatalogueJson(await response.text());
   renderCatalogueTeams();
+  syncNewManagerControls();
+  renderManagerDashboard();
 }
 
 
@@ -1016,12 +1421,15 @@ function applySelectedTeamColor(seat) {
 }
 
 byId("competition").addEventListener("change", () => {
-  void reloadLiveCatalogue();
+  renderCatalogueTeams();
+  syncNewManagerControls();
+  renderManagerDashboard();
 });
 
 for (const seat of [0, 1]) {
   byId(`team-${seat}`).addEventListener("change", () => {
     applySelectedTeamColor(seat);
+    syncNewManagerControls();
     render();
   });
   byId(`color-${seat}-enabled`).addEventListener(
@@ -1072,6 +1480,15 @@ function start(activate = true) {
   const selectedTeams = [0, 1].map(
     (i) => catalogueTeam(`team-${i}`)
   );
+
+  const mixedCatalogueMatch =
+    selectedTeams.some(Boolean) && !selectedTeams.every(Boolean);
+
+  if (activate && mixedCatalogueMatch) {
+    showMessage("mixedTeamConflict");
+    render();
+    return;
+  }
 
   names = [0, 1].map((i) =>
     selectedTeams[i]?.name ||
@@ -1484,7 +1901,7 @@ start(false);
 initializeLocale(() => {
   syncCompetitionSelector();
   render();
-  void reloadLiveCatalogue();
+  renderManagerDashboard();
 });
 
 syncCompetitionSelector();

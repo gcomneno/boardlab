@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { newMatch, applyRoll } from "./engine.mjs";
-import { describeRoll } from "./commentary.mjs";
+import {
+  describeFinalWhistle,
+  describeRoll,
+} from "./commentary.mjs";
 
 test("recorded game produces deterministic commentary without altering state", () => {
   let state = newMatch(1);
@@ -24,7 +27,15 @@ test("recorded game produces deterministic commentary without altering state", (
   }
 
   assert.match(transcript[2], /Segna Gialli/);
-  assert.match(transcript[3], /Triplice fischio/);
+  assert.doesNotMatch(transcript[3], /Triplice fischio/);
+  assert.match(
+    describeFinalWhistle(state, ["Gialli", "Blu"], "it"),
+    /Triplice fischio/
+  );
+  assert.match(
+    describeFinalWhistle(state, ["Gialli", "Blu"], "en"),
+    /Final whistle/
+  );
   assert.deepEqual(state.goals, [1, 0]);
 });
 

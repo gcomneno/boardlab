@@ -150,23 +150,37 @@ export function describeRoll(event, before, after, teamNames = ["Squadra 1", "Sq
   const name = teamNames[event.seat];
   const phrase = describeFace(event.face, index, locale);
 
-  if (after.phase === "finished") {
-    const [a, b] = after.goals;
-    const ending = locale === "it"
-      ? (a === b
-        ? `Triplice fischio! Pareggio ${a} a ${b}!`
-        : `Triplice fischio! Vince ${teamNames[a > b ? 0 : 1]}! ${a} a ${b}!`)
-      : (a === b
-        ? `Final whistle! A ${a}-${b} draw!`
-        : `Final whistle! ${teamNames[a > b ? 0 : 1]} win! ${a}-${b}!`);
-    return `${phrase} ${ending}`;
-  }
-
   if (event.face === "GOAL!" && after.goals[event.seat] > before.goals[event.seat]) {
     return locale === "it" ? `${phrase} Segna ${name}!` : `${phrase} ${name} scores!`;
   }
 
   return `${name}: ${phrase}`;
+}
+
+export function describeFinalWhistle(
+  state,
+  teamNames = ["Squadra 1", "Squadra 2"],
+  locale = "it"
+) {
+  if (!state || state.phase !== "finished" ||
+      !Array.isArray(state.goals) || state.goals.length !== 2 ||
+      !state.goals.every(Number.isSafeInteger) ||
+      !Array.isArray(teamNames) || teamNames.length !== 2 ||
+      !teamNames.every(name => typeof name === "string")) {
+    throw new RangeError("Invalid final whistle input");
+  }
+
+  const [a, b] = state.goals;
+
+  if (locale === "en") {
+    return a === b
+      ? `Final whistle! A ${a}-${b} draw!`
+      : `Final whistle! ${teamNames[a > b ? 0 : 1]} win! ${a}-${b}!`;
+  }
+
+  return a === b
+    ? `Triplice fischio! Pareggio ${a} a ${b}!`
+    : `Triplice fischio! Vince ${teamNames[a > b ? 0 : 1]}! ${a} a ${b}!`;
 }
 
 /**

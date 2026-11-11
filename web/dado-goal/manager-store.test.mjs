@@ -23,7 +23,12 @@ function team() {
       provider: "test",
       providerPlayerId: `p-${index + 1}`,
       name: `Player ${index + 1}`,
-      position: index === 0 ? "GK" : "MF",
+      position:
+        index === 0 ? "Goalkeeper" :
+        index <= 4 ? "Defender" :
+        index <= 8 ? "Midfielder" :
+        index <= 10 ? "Attacker" :
+        "Midfielder",
       shirtNumber: index + 1,
     })),
   };
@@ -122,4 +127,44 @@ test("manager store contains no implicit career systems", () => {
   ]) {
     assert.equal(Object.hasOwn(document, field), false);
   }
+});
+
+test("manager save persists an optional prepared next match", () => {
+  const club = createManagerClub(team());
+  const document = createManagerDocument({
+    club,
+    nextMatch: {
+      opponentProviderTeamId: "opponent-2",
+    },
+  });
+
+  const restored = importManagerJson(exportManagerJson(document));
+
+  assert.deepEqual(restored.nextMatch, {
+    opponentProviderTeamId: "opponent-2",
+  });
+});
+
+test("legacy Manager M1 saves load with no prepared next match", () => {
+  const club = createManagerClub(team());
+  const legacy = JSON.stringify({
+    schemaVersion: MANAGER_SCHEMA_VERSION,
+    club,
+    management: createManagementDocument(),
+  });
+
+  const restored = importManagerJson(legacy);
+
+  assert.equal(restored.nextMatch, null);
+});
+
+test("manager save rejects the managed club as next opponent", () => {
+  const club = createManagerClub(team());
+
+  assert.throws(() => createManagerDocument({
+    club,
+    nextMatch: {
+      opponentProviderTeamId: club.providerTeamId,
+    },
+  }), /cannot play itself/);
 });

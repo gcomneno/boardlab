@@ -89,3 +89,153 @@ test("Manager persists an isolated catalogue-backed squad and launches normal pl
 
   expect(runtimeErrors).toEqual([]);
 });
+
+test("Manager prepares and launches the next match through the normal engine", async ({ page }) => {
+  const runtimeErrors = [];
+  page.on("pageerror", error => runtimeErrors.push(error.message));
+
+  await page.goto(GAME_URL);
+
+  await expect.poll(async () =>
+    page.locator("#team-0 option").count()
+  ).toBeGreaterThan(2);
+
+  const managedId = await page.locator("#team-0 option")
+    .nth(1)
+    .getAttribute("value");
+
+  expect(managedId).toBeTruthy();
+
+  await page.locator("#team-0").selectOption(managedId);
+  await page.locator("#manager-enabled").check();
+
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
+  await expect.poll(async () =>
+    page.locator("#manager-opponent option").count()
+  ).toBeGreaterThan(1);
+
+  const opponentOptions = page.locator(
+    "#manager-opponent option:not([value=''])"
+  );
+  const opponentCount = await opponentOptions.count();
+
+  let opponentId = null;
+  for (let index = 0; index < opponentCount; index += 1) {
+    const value = await opponentOptions.nth(index).getAttribute("value");
+    if (value && value !== managedId) {
+      opponentId = value;
+      break;
+    }
+  }
+
+  expect(opponentId).toBeTruthy();
+
+  await page.locator("#manager-opponent").selectOption(opponentId);
+
+  await expect(page.locator("#manager-play-next")).toBeEnabled();
+  await expect(page.locator("#manager-next-action"))
+    .toHaveText("Gioca la prossima partita");
+
+  const prepared = await page.evaluate(key =>
+    JSON.parse(localStorage.getItem(key)),
+  MANAGER_KEY);
+
+  expect(prepared.nextMatch).toEqual({
+    opponentProviderTeamId: opponentId,
+  });
+  expect(prepared.club.providerTeamId).toBe(managedId);
+  expect(prepared.club.lineup).toHaveLength(11);
+
+  await page.locator("#hands").fill("1");
+  await page.locator("#manager-play-next").click();
+
+  await expect(page.locator("#team-0")).toHaveValue(managedId);
+  await expect(page.locator("#team-1")).toHaveValue(opponentId);
+  await expect(page.locator("#roll")).toBeEnabled();
+
+  const persistedAfterLaunch = await page.evaluate(key =>
+    JSON.parse(localStorage.getItem(key)),
+  MANAGER_KEY);
+
+  expect(persistedAfterLaunch.nextMatch).toEqual({
+    opponentProviderTeamId: opponentId,
+  });
+
+  await page.reload();
+
+  const restored = await page.evaluate(key =>
+    JSON.parse(localStorage.getItem(key)),
+  MANAGER_KEY);
+
+  expect(restored.nextMatch).toEqual({
+    opponentProviderTeamId: opponentId,
+  });
+
+  await page.locator("#manager-enabled").check();
+
+  await expect(page.locator("#manager-opponent")).toHaveValue(opponentId);
+  await expect(page.locator("#manager-play-next")).toBeEnabled();
+
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("Manager can start a new career with another club", async ({ page }) => {
+  await page.goto(GAME_URL);
+
+  const team0 = page.locator("#team-0");
+  const team1 = page.locator("#team-1");
+  const managerNew = page.locator("#manager-new-0");
+
+  await expect(managerNew).toBeDisabled();
+
+  const available = await team0.locator("option").evaluateAll(options =>
+    options.map(option => option.value).filter(Boolean)
+  );
+
+  expect(available.length).toBeGreaterThanOrEqual(2);
+
+  const firstClub = available[0];
+  const secondClub = available[1];
+
+  await team0.selectOption(firstClub);
+  await expect(managerNew).toBeEnabled();
+
+  const quickMatchTeam1Before = await team1.inputValue();
+  const competitionBefore = await page.locator("#competition").inputValue();
+
+  await managerNew.click();
+
+  await expect(page.locator("#manager-enabled")).toBeChecked();
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
+  await expect(team0).toHaveValue(firstClub);
+  await expect(team1).toHaveValue(quickMatchTeam1Before);
+  await expect(page.locator("#competition")).toHaveValue(competitionBefore);
+
+  const firstStoredClub = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("dado-goal.manager.v1"))
+      .club.providerTeamId
+  );
+  expect(String(firstStoredClub)).toBe(String(firstClub));
+
+  await expect(managerNew).toBeHidden();
+
+  await page.locator("#manager-enabled").uncheck();
+  await expect(managerNew).toBeVisible();
+
+  await team0.selectOption(secondClub);
+  await expect(managerNew).toBeEnabled();
+  await managerNew.click();
+
+  await expect(page.locator("#manager-enabled")).toBeChecked();
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
+
+  const secondStoredClub = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("dado-goal.manager.v1"))
+      .club.providerTeamId
+  );
+
+  expect(String(secondStoredClub)).toBe(String(secondClub));
+  expect(String(secondStoredClub)).not.toBe(String(firstStoredClub));
+  await expect(team1).toHaveValue(quickMatchTeam1Before);
+  await expect(page.locator("#competition")).toHaveValue(competitionBefore);
+});

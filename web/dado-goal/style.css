@@ -384,8 +384,17 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 }
 #commentary-text {
   margin: 12px 0 0;
-  font-weight: 600;
+  padding: 10px 12px;
+  border-left: 3px solid #c4e1a4;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, .16);
+  color: #ffe08a;
+  font-family: "Liberation Sans Narrow", "Arial Narrow", sans-serif;
+  font-size: 1.32rem;
+  font-weight: 700;
+  letter-spacing: .018em;
   line-height: 1.5;
+  white-space: pre-line;
 }
 
 
@@ -1349,4 +1358,497 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   .manager-editor-player {
     grid-template-columns: 1fr;
   }
+}
+
+.manager-next-match {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin: 1rem 0;
+}
+
+.manager-next-match > div {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.manager-next-match select,
+.manager-next-match button {
+  min-height: 2.5rem;
+}
+
+@media (max-width: 600px) {
+  .manager-next-match {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Manager dashboard visual polish. */
+#manager-dashboard {
+  display: grid;
+  gap: 18px;
+}
+
+#manager-dashboard[hidden] {
+  display: none;
+}
+
+.manager-summary > div,
+.manager-roster-grid > section,
+.manager-history {
+  box-shadow: 0 5px 14px rgb(0 0 0 / .16);
+}
+
+.manager-roster-grid > section,
+.manager-history {
+  padding: 16px;
+}
+
+.manager-roster-grid h3,
+.manager-history h3 {
+  color: #ffe08a;
+  font-size: 1.05rem;
+  letter-spacing: .015em;
+}
+
+.manager-player-list,
+.manager-history-list {
+  margin-top: 12px;
+}
+
+.manager-player-list li,
+.manager-history-list li {
+  padding: 4px 3px;
+  line-height: 1.35;
+  border-radius: 5px;
+}
+
+.manager-player-list li:nth-child(even) {
+  background: rgb(255 255 255 / .025);
+}
+
+.manager-history {
+  border-color: #557a5f;
+}
+
+.manager-actions {
+  gap: 12px;
+  padding-top: 2px;
+}
+
+.manager-actions button {
+  min-height: 44px;
+  padding: 9px 14px;
+  border-radius: 11px;
+  transition:
+    transform 120ms ease,
+    filter 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.manager-actions button:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgb(0 0 0 / .18);
+}
+
+.manager-actions button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+#manager-new {
+  border-color: #ffe08a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manager-actions button {
+    transition: none;
+  }
+}
+
+/* Manager roster: shirt identity left, translated tactical role right. */
+.manager-player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.manager-player-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.manager-shirt-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.15rem;
+  min-width: 2.15rem;
+  height: 1.75rem;
+  padding: 0 .25rem;
+  border: 1px solid rgb(255 224 138 / .55);
+  border-radius: 7px;
+  background: rgb(0 0 0 / .18);
+  color: #ffe08a;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.manager-player-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manager-player-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 8.5rem;
+  color: #cfe6c7;
+  font-size: .92rem;
+  text-align: right;
+}
+
+.manager-role-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  color: #ffe08a;
+  font-size: .8rem;
+}
+
+@media (max-width: 560px) {
+  .manager-player-row {
+    align-items: flex-start;
+  }
+
+  .manager-player-role {
+    min-width: auto;
+  }
+}
+\n
+
+/* Manager squad-sheet refinement. */
+.manager-player-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.manager-player-list .manager-player-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  min-height: 38px;
+  padding: 5px 7px;
+}
+
+.manager-player-list .manager-player-identity {
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.manager-player-list .manager-shirt-number {
+  width: 2.35rem;
+  min-width: 2.35rem;
+  height: 1.8rem;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.manager-player-list .manager-player-role {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: end;
+  gap: 5px;
+  min-width: 9rem;
+  text-align: right;
+}
+
+.manager-player-list .manager-role-icon {
+  width: 1.15rem;
+  justify-self: center;
+}
+
+.manager-roster-grid > section {
+  padding: 14px;
+  box-shadow: 0 3px 9px rgb(0 0 0 / .12);
+}
+
+@media (max-width: 700px) {
+  .manager-player-list .manager-player-row {
+    gap: 10px;
+  }
+
+  .manager-player-list .manager-player-role {
+    min-width: auto;
+    grid-template-columns: 1rem auto;
+  }
+}\n
+/* Manager roster is visually numbered by shirt badges, not list markers. */
+.manager-player-list {
+  display: block;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  list-style-position: outside;
+}
+
+.manager-player-list > li {
+  display: grid;
+  margin: 0;
+}
+
+.manager-player-list > li::marker {
+  content: "";
+}
+
+/* Align Manager player rows with their section heading. */
+.manager-player-list .manager-player-row {
+  padding-left: 0;
+}
+
+/* Manager roster has no ordered-list left gutter. */
+.manager-player-list {
+  padding-left: 0;
+}
+
+.manager-new-team {
+  width: 100%;
+  margin-top: 8px;
+  min-height: 38px;
+  border-color: #ffe08a;
+}
+
+.manager-new-team:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  filter: none;
+}\n
+/* Manager squad editor: identity, shirt number, football role, match assignment. */
+.manager-editor {
+  width: min(920px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+}
+
+.manager-editor-players {
+  display: grid;
+  gap: 7px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.manager-editor-player {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) 72px minmax(140px, 1fr) minmax(150px, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.manager-editor-player input,
+.manager-editor-player select {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .manager-editor-player {
+    grid-template-columns: 1fr 72px;
+  }
+
+  .manager-editor-player select {
+    grid-column: span 1;
+  }
+}
+
+/* Manager entry belongs to the team palette row when Manager mode is off. */
+.settings .team-colors {
+  grid-template-columns: 120px 1fr 120px auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings .team-colors .manager-new-team {
+  width: auto;
+  min-width: 92px;
+  min-height: 34px;
+  margin-top: 0;
+  padding: 6px 10px;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.settings .team-colors .manager-new-team[hidden] {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .settings .team-colors {
+    grid-template-columns: 120px 1fr 120px;
+  }
+
+  .settings .team-colors .manager-new-team {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}
+
+/* Compact Manager squad sheet: one player per row. */
+.manager-editor-players {
+  gap: 4px;
+}
+
+.manager-editor-player {
+  grid-template-columns:
+    minmax(190px, 2fr)
+    64px
+    minmax(130px, 1fr)
+    minmax(135px, 1fr);
+  gap: 6px;
+  min-height: 38px;
+}
+
+.manager-editor-player input,
+.manager-editor-player select {
+  height: 34px;
+  padding: 4px 8px;
+}
+
+.manager-editor-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 28px;
+  padding: 2px 8px;
+  background: #183d31;
+  border-bottom: 1px solid rgba(255, 224, 138, .45);
+}
+
+.manager-editor-header strong {
+  font-size: .78rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  opacity: .82;
+}
+
+.manager-editor-player:not(.manager-editor-header) {
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+
+@media (max-width: 720px) {
+  .manager-editor-player {
+    grid-template-columns:
+      minmax(150px, 1fr)
+      58px
+      minmax(120px, 1fr)
+      minmax(125px, 1fr);
+  }
+
+  .manager-editor-players {
+    overflow-x: auto;
+  }
+}
+
+/* Compact team palette so the Manager action fits naturally in-row. */
+.settings .team-colors {
+  grid-template-columns: 88px auto 88px auto;
+  gap: 7px;
+}
+
+.settings .team-colors input[type="color"] {
+  width: 88px;
+  min-width: 88px;
+}
+
+.settings .second-color-toggle {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  justify-self: center;
+}
+
+.settings .team-colors .manager-new-team {
+  min-width: 96px;
+  margin-left: 0;
+}
+
+@media (max-width: 720px) {
+  .settings .team-colors {
+    grid-template-columns: 88px auto 88px auto;
+  }
+
+  .settings .team-colors .manager-new-team {
+    grid-column: auto;
+    justify-self: end;
+  }
+}
+
+/* Compact team palette so the Manager action fits naturally in-row. */
+.settings .team-colors {
+  grid-template-columns: 88px auto 88px auto;
+  gap: 7px;
+}
+
+.settings .team-colors input[type="color"] {
+  width: 88px;
+  min-width: 88px;
+}
+
+.settings .second-color-toggle {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  justify-self: center;
+}
+
+.settings .team-colors .manager-new-team {
+  min-width: 96px;
+  margin-left: 0;
+}
+
+@media (max-width: 720px) {
+  .settings .team-colors {
+    grid-template-columns: 88px auto 88px auto;
+  }
+
+  .settings .team-colors .manager-new-team {
+    grid-column: auto;
+    justify-self: end;
+  }
+}
+
+/* Keep the secondary colour visually coupled to its enable checkbox. */
+.settings .team-colors {
+  grid-template-columns: 88px 18px 88px 1fr;
+  column-gap: 6px;
+}
+
+.settings .team-colors .manager-new-team {
+  justify-self: end;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }

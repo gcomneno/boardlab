@@ -52,19 +52,43 @@ test("single-player release-critical browser smoke", async ({ page }) => {
   await expect(page.locator("#pitch-logo-0")).toHaveAttribute("src", /.+/);
   await expect(page.locator("#pitch-logo-1")).toHaveAttribute("src", /.+/);
 
-  const initialTurn = await page.locator("#turn").textContent();
-  const initialPhase = await page.locator("#phase").textContent();
+  const initialDieLabel = await page.locator("#die").getAttribute(
+    "aria-label"
+  );
 
   await page.locator("#roll").click();
 
   await expect.poll(async () =>
-    (await page.locator("#match-events-list li").count()) +
-    Number((await page.locator("#turn").textContent()) !== initialTurn) +
-    Number((await page.locator("#phase").textContent()) !== initialPhase)
-  ).toBeGreaterThan(0);
+    page.locator("#die").getAttribute("aria-label")
+  ).not.toBe(initialDieLabel);
 
   await expect(page.locator("#stats-team-0")).not.toHaveText("");
   await expect(page.locator("#stats-team-1")).not.toHaveText("");
 
   expect(runtimeErrors).toEqual([]);
+});
+
+test("single-player rejects catalogue team versus local placeholder", async ({ page }) => {
+  await page.goto(GAME_URL);
+
+  await expect.poll(async () =>
+    page.locator("#team-0 option").count()
+  ).toBeGreaterThan(1);
+
+  const realTeam = await page.locator("#team-0 option")
+    .nth(1)
+    .getAttribute("value");
+
+  expect(realTeam).toBeTruthy();
+
+  await page.locator("#team-0").selectOption(realTeam);
+  await page.locator("#team-1").selectOption("");
+  await page.locator("#new").click();
+
+  await expect(page.locator("#roll")).toBeDisabled();
+
+  const message = await page.locator("#message").textContent();
+  expect(message).toContain(
+    "scegli due squadre del catalogo oppure due squadre locali"
+  );
 });

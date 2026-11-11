@@ -9,6 +9,10 @@ export const supportedLocales = Object.freeze(["en", "it"]);
 
 export const messages = Object.freeze({
   en: Object.freeze({
+    playerPositionGoalkeeper: "Goalkeeper",
+    playerPositionDefender: "Defender",
+    playerPositionMidfielder: "Midfielder",
+    playerPositionAttacker: "Attacker",
     eventBoardHeading: "📋 Match events",
     eventBoardEmpty: "No events recorded.",
     eventGoal: "⚽ GOAL! · #{number}",
@@ -152,6 +156,7 @@ export const messages = Object.freeze({
     penalties: "Penalties",
     invalidHands: "Choose 1 to 1000 hands per team.",
     sameTeamConflict: "The referee cannot start a match between the same team.",
+    mixedTeamConflict: "The referee cannot start the match: choose two catalogue teams or two local teams.",
     kitColorConflict: "The referee cannot start the match: the teams share a kit colour.",
     kickoff: "Kick-off!",
     kickoffTurn: "Kick-off! {name} starts.",
@@ -166,6 +171,10 @@ export const messages = Object.freeze({
     matchCancelled: "Match cancelled."
   }),
   it: Object.freeze({
+    playerPositionGoalkeeper: "Portiere",
+    playerPositionDefender: "Difensore",
+    playerPositionMidfielder: "Centrocampista",
+    playerPositionAttacker: "Attaccante",
     eventBoardHeading: "📋 Cronaca della partita",
     eventBoardEmpty: "Nessun evento registrato.",
     eventGoal: "⚽ GOAL! · n° {number}",
@@ -309,6 +318,7 @@ export const messages = Object.freeze({
     penalties: "Rigori",
     invalidHands: "Scegli da 1 a 1000 mani per squadra.",
     sameTeamConflict: "L'arbitro non può dare il calcio d'inizio: non è possibile giocare contro la stessa squadra.",
+    mixedTeamConflict: "L'arbitro non può dare il calcio d'inizio: scegli due squadre del catalogo oppure due squadre locali.",
     kitColorConflict: "L'arbitro non può dare il calcio d'inizio: le squadre condividono un colore della divisa.",
     kickoff: "Calcio d'inizio!",
     kickoffTurn: "Calcio d'inizio! Tocca a {name}.",

@@ -32,8 +32,8 @@
 
       <div id="manager-empty" class="manager-empty">
         <p>
-          Attiva Manager e scegli una squadra reale come Squadra 1
-          per iniziare una gestione persistente.
+          Attiva la modalità Manager e scegli una squadra reale
+          per iniziare una carriera d'allenatore.
         </p>
       </div>
 
@@ -51,6 +51,20 @@
             <span class="manager-label">Prossima azione</span>
             <strong id="manager-next-action">Configura la formazione</strong>
           </div>
+        </div>
+
+        <div class="manager-next-match">
+          <div>
+            <label class="manager-label" for="manager-opponent">
+              Prossimo avversario
+            </label>
+            <select id="manager-opponent">
+              <option value="">Scegli un avversario</option>
+            </select>
+          </div>
+          <button id="manager-play-next" type="button" disabled>
+            Gioca prossima partita
+          </button>
         </div>
 
         <div class="manager-roster-grid">
@@ -72,13 +86,13 @@
 
         <div class="manager-actions">
           <button id="manager-edit" type="button">
-            Modifica formazione
+            ✎ Modifica formazione
           </button>
           <button id="manager-export" type="button">
-            Esporta salvataggio
+            ↓ Esporta salvataggio
           </button>
           <button id="manager-import" type="button">
-            Importa salvataggio
+            ↑ Importa salvataggio
           </button>
           <input id="manager-import-file" type="file"
                  accept="application/json,.json" hidden>
@@ -111,7 +125,7 @@
         </label>
         <div class="team-colors">
           <label class="team-color-primary">
-            <span data-i18n="color">Colore</span>
+            <span class="visually-hidden" data-i18n="color">Colore</span>
             <input id="color-0" type="color" value="#e9bd48">
           </label>
           <label class="second-color-toggle"
@@ -121,6 +135,12 @@
           <input id="color-0-secondary" class="secondary-color"
                  type="color" value="#111111" disabled
                  aria-label="Secondo colore Squadra 1">
+          <button id="manager-new-0"
+                  class="manager-new-team"
+                  type="button" disabled
+                  aria-label="Nuovo manageriale Squadra 1">
+            ＋ Manager
+          </button>
         </div>
       </div>
 
@@ -136,7 +156,7 @@
         </label>
         <div class="team-colors">
           <label class="team-color-primary">
-            <span data-i18n="color">Colore</span>
+            <span class="visually-hidden" data-i18n="color">Colore</span>
             <input id="color-1" type="color" value="#66a5ef">
           </label>
           <label class="second-color-toggle"
@@ -146,6 +166,12 @@
           <input id="color-1-secondary" class="secondary-color"
                  type="color" value="#111111" disabled
                  aria-label="Secondo colore Squadra 2">
+          <button id="manager-new-1"
+                  class="manager-new-team"
+                  type="button" disabled
+                  aria-label="Nuovo manageriale Squadra 2">
+            ＋ Manager
+          </button>
         </div>
       </div>
 

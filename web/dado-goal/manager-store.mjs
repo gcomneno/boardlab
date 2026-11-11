@@ -4,6 +4,7 @@ import {
   importManagementJson,
 } from "./team-management-store.mjs";
 import { validateManagerClub } from "./manager-profile.mjs";
+import { validateNextMatch } from "./manager-next-match.mjs";
 
 export const MANAGER_SCHEMA_VERSION = 1;
 export const MANAGER_STORAGE_KEY = "dado-goal.manager.v1";
@@ -19,12 +20,18 @@ function validateDocument(data) {
     throw new TypeError("manager management state is required");
   }
 
+  validateNextMatch(
+    data.nextMatch ?? null,
+    data.club.providerTeamId,
+  );
+
   return data;
 }
 
 export function createManagerDocument({
   club,
   management = createManagementDocument(),
+  nextMatch = null,
 } = {}) {
   validateManagerClub(club);
 
@@ -32,10 +39,16 @@ export function createManagerDocument({
     exportManagementJson(management),
   );
 
+  const validatedNextMatch = validateNextMatch(
+    nextMatch,
+    club.providerTeamId,
+  );
+
   return {
     schemaVersion: MANAGER_SCHEMA_VERSION,
     club: structuredClone(club),
     management: structuredClone(validatedManagement),
+    nextMatch: structuredClone(validatedNextMatch),
   };
 }
 
@@ -45,6 +58,7 @@ export function exportManagerJson(document) {
   const canonical = createManagerDocument({
     club: document.club,
     management: document.management,
+    nextMatch: document.nextMatch ?? null,
   });
 
   return JSON.stringify(canonical, null, 2);
@@ -67,6 +81,7 @@ export function importManagerJson(source) {
   return createManagerDocument({
     club: data.club,
     management: data.management,
+    nextMatch: data.nextMatch ?? null,
   });
 }
 

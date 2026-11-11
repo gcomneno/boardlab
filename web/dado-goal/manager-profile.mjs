@@ -24,8 +24,32 @@ export function createManagerClub(team) {
     shirtNumber: player.shirtNumber ?? null,
   }));
 
-  const lineup = players.slice(0, 11).map(player => player.providerPlayerId);
-  const bench = players.slice(11, 20).map(player => player.providerPlayerId);
+  const formation = [
+    ["Goalkeeper", 1],
+    ["Defender", 4],
+    ["Midfielder", 4],
+    ["Attacker", 2],
+  ];
+
+  const lineupPlayers = formation.flatMap(([position, count]) =>
+    players.filter(player => player.position === position).slice(0, count)
+  );
+
+  if (lineupPlayers.length !== 11) {
+    throw new RangeError(
+      "catalogue team cannot provide the default 1-4-4-2 manager lineup"
+    );
+  }
+
+  const lineupIds = new Set(
+    lineupPlayers.map(player => player.providerPlayerId)
+  );
+  const benchPlayers = players
+    .filter(player => !lineupIds.has(player.providerPlayerId))
+    .slice(0, 9);
+
+  const lineup = lineupPlayers.map(player => player.providerPlayerId);
+  const bench = benchPlayers.map(player => player.providerPlayerId);
 
   return {
     provider: team.provider,
@@ -90,4 +114,69 @@ export function managerClubMatchTeam(club) {
     name: club.name,
     players,
   };
+}
+
+const MANAGER_PLAYER_POSITIONS = Object.freeze([
+  "Goalkeeper",
+  "Defender",
+  "Midfielder",
+  "Attacker",
+]);
+
+export function updateManagerPlayers(club, edits) {
+  validateManagerClub(club);
+
+  if (!Array.isArray(edits)) {
+    throw new TypeError("manager player edits must be an array");
+  }
+
+  const editsById = new Map();
+
+  for (const edit of edits) {
+    const playerId = String(edit?.providerPlayerId ?? "");
+    const name = String(edit?.name ?? "").trim();
+    const position = String(edit?.position ?? "");
+    const rawShirtNumber = edit?.shirtNumber;
+    const shirtNumber = rawShirtNumber === "" || rawShirtNumber == null
+      ? null
+      : Number(rawShirtNumber);
+
+    if (!playerId || editsById.has(playerId)) {
+      throw new TypeError("invalid or duplicate manager player edit");
+    }
+    if (!name) {
+      throw new TypeError("manager player name is required");
+    }
+    if (!MANAGER_PLAYER_POSITIONS.includes(position)) {
+      throw new TypeError("invalid manager player position");
+    }
+    if (shirtNumber !== null &&
+        (!Number.isSafeInteger(shirtNumber) ||
+         shirtNumber < 1 ||
+         shirtNumber > 99)) {
+      throw new RangeError(
+        "manager player shirt number must be between 1 and 99"
+      );
+    }
+
+    editsById.set(playerId, { name, position, shirtNumber });
+  }
+
+  const next = structuredClone(club);
+
+  next.players = next.players.map(player => {
+    const edit = editsById.get(String(player.providerPlayerId));
+    return edit ? { ...player, ...edit } : player;
+  });
+
+  if ([...editsById.keys()].some(
+    id => !next.players.some(
+      player => String(player.providerPlayerId) === id
+    )
+  )) {
+    throw new TypeError("manager player edit references unknown player");
+  }
+
+  validateManagerClub(next);
+  return next;
 }
