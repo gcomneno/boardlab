@@ -1852,3 +1852,51 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   white-space: nowrap !important;
   border: 0 !important;
 }
+
+/* Dado Goal Manager M3: compact career summary derived from match history. */
+.manager-career-summary {
+  padding: 12px;
+  border: 1px solid #426650;
+  border-radius: 12px;
+  background: #173328;
+}
+
+.manager-career-summary dl {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.manager-career-summary dl > div {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #426650;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.manager-career-summary dt {
+  color: #c4e1a4;
+  font-size: .72rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.manager-career-summary dd {
+  margin: 4px 0 0;
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+@media (max-width: 760px) {
+  .manager-career-summary dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .manager-career-summary dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

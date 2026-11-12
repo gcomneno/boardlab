@@ -27,7 +27,7 @@ import {
   saveManager,
   clearManager,
 } from "./manager-store.mjs";
-import { createMatchRecord } from "./team-history.mjs";
+import { createMatchRecord, teamStatistics } from "./team-history.mjs";
 import {
   createPlayerRatings,
   RATING_FIELDS,
@@ -707,14 +707,61 @@ function renderManagerDashboard() {
   renderPlayers("manager-lineup", club.lineup);
   renderPlayers("manager-bench", club.bench);
 
+  const career = teamStatistics(
+    matches,
+    club.providerTeamId,
+  );
+
+  const careerLabels = document.documentElement.lang === "en"
+    ? {
+        played: "Played",
+        won: "Wins",
+        drawn: "Draws",
+        lost: "Losses",
+        goalsFor: "Goals for",
+        goalsAgainst: "Goals against",
+      }
+    : {
+        played: "Giocate",
+        won: "Vinte",
+        drawn: "Pareggiate",
+        lost: "Perse",
+        goalsFor: "Gol fatti",
+        goalsAgainst: "Gol subiti",
+      };
+
+  for (const key of [
+    "played",
+    "won",
+    "drawn",
+    "lost",
+    "goalsFor",
+    "goalsAgainst",
+  ]) {
+    byId(`manager-career-${key}-label`).textContent =
+      careerLabels[key];
+    byId(`manager-career-${key}`).textContent =
+      String(career[key]);
+  }
+
   const history = byId("manager-history");
   history.replaceChildren();
 
   for (const match of matches.slice(-5).reverse()) {
     const item = document.createElement("li");
+    const managedHome =
+      String(match.home.providerTeamId) === String(club.providerTeamId);
+    const goalsFor = managedHome ? match.score.home : match.score.away;
+    const goalsAgainst = managedHome ? match.score.away : match.score.home;
+    const outcome = goalsFor > goalsAgainst
+      ? (document.documentElement.lang === "en" ? "W" : "V")
+      : goalsFor < goalsAgainst
+        ? (document.documentElement.lang === "en" ? "L" : "S")
+        : "P";
+
     item.textContent =
-      `${match.home.name} ${match.score.home}–${match.score.away} ` +
-      `${match.away.name}`;
+      `${outcome} · ${match.home.name} ` +
+      `${match.score.home}–${match.score.away} ${match.away.name}`;
     history.append(item);
   }
 
