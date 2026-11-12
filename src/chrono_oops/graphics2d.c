@@ -2,6 +2,7 @@
 
 #ifdef CHRONO_WITH_M002
 #include "graphics2d_m002.c"
+#include "graphics2d_m003.c"
 #endif
 
 #include <SDL2/SDL.h>
@@ -381,8 +382,15 @@ static void draw_mission_menu(SDL_Renderer *renderer, TTF_Font *font)
     label(renderer, font, 100, 457, white,
           "Riattiva il Cronofono e salda il debito causale.");
 
-    label(renderer, font, 70, 580, muted,
-          "Seleziona con mouse o tasti 1 / 2. ESC per uscire.");
+    rectangle(renderer, (SDL_Rect){70, 540, 1140, 135},
+              (SDL_Color){90, 66, 117, 255});
+    label(renderer, font, 100, 580, white,
+          "3  |  M003 - Il messaggio che non doveva arrivare");
+    label(renderer, font, 100, 622, white,
+          "Salva le persone senza cancellare la testimonianza.");
+
+    label(renderer, font, 70, 715, muted,
+          "Seleziona con mouse o tasti 1 / 2 / 3. ESC per uscire.");
     SDL_RenderPresent(renderer);
 }
 #endif
@@ -430,7 +438,9 @@ int main(void)
     bool running = true;
 #ifdef CHRONO_WITH_M002
     M002Gui m002;
+    M003Gui m003;
     m002_gui_init(&m002);
+    m003_gui_init(&m003);
     int selected_mission = 0;
 #endif
 
@@ -460,15 +470,20 @@ int main(void)
                         choice = 1;
                     else if (event.key.keysym.sym == SDLK_2)
                         choice = 2;
+                    else if (event.key.keysym.sym == SDLK_3)
+                        choice = 3;
                 } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                            event.button.button == SDL_BUTTON_LEFT) {
                     SDL_Rect first = {70, 210, 1140, 135};
                     SDL_Rect second = {70, 375, 1140, 135};
+                    SDL_Rect third = {70, 540, 1140, 135};
                     int x = event.button.x, y = event.button.y;
                     if (contains(first, x, y))
                         choice = 1;
                     else if (contains(second, x, y))
                         choice = 2;
+                    else if (contains(third, x, y))
+                        choice = 3;
                 }
                 if (choice == 1) {
                     chrono_init(&state);
@@ -480,11 +495,19 @@ int main(void)
                     m002_gui_init(&m002);
                     selected_mission = 2;
                     SDL_SetWindowTitle(window, "ChronoOops! 2D - Missione 002");
+                } else if (choice == 3) {
+                    m003_gui_init(&m003);
+                    selected_mission = 3;
+                    SDL_SetWindowTitle(window, "ChronoOops! 2D - Missione 003");
                 }
                 continue;
             }
             if (selected_mission == 2) {
                 m002_gui_event(&m002, &event);
+                continue;
+            }
+            if (selected_mission == 3) {
+                m003_gui_event(&m003, &event);
                 continue;
             }
 #endif
@@ -496,6 +519,9 @@ int main(void)
             draw_mission_menu(renderer, font);
         } else if (selected_mission == 2) {
             m002_gui_draw(renderer, font, &m002);
+            SDL_RenderPresent(renderer);
+        } else if (selected_mission == 3) {
+            m003_gui_draw(renderer, font, &m003);
             SDL_RenderPresent(renderer);
         } else {
             draw(renderer, font, &state, message);
