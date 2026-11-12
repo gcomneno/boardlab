@@ -45,6 +45,7 @@ test("incrementally enriches players without rebuilding canonical roster", () =>
     retrievedAt: "2026-11-12T18:00:00.000Z",
     snapshots: [{
       providerPlayerId: 18885,
+      providerTeamId: "33",
       firstname: "Karl",
       lastname: "Darlow",
       nationality: "England",
@@ -92,6 +93,7 @@ test("does not mutate the source catalogue", () => {
     retrievedAt: "2026-11-12T18:00:00.000Z",
     snapshots: [{
       providerPlayerId: "18885",
+      providerTeamId: "33",
       nationality: "England",
     }],
   });
@@ -106,6 +108,7 @@ test("reports provider snapshots absent from the catalogue", () => {
     retrievedAt: "2026-11-12T18:00:00.000Z",
     snapshots: [{
       providerPlayerId: "123456",
+      providerTeamId: "33",
       nationality: "Italy",
     }],
   });
@@ -124,12 +127,67 @@ test("rejects duplicate provider player snapshots", () => {
       provider: "api-football",
       retrievedAt: "2026-11-12T18:00:00.000Z",
       snapshots: [
-        { providerPlayerId: "18885" },
-        { providerPlayerId: 18885 },
+        { providerPlayerId: "18885", providerTeamId: "33" },
+        { providerPlayerId: 18885, providerTeamId: "33" },
       ],
     }),
-    /duplicate player snapshot: 18885/,
+    /duplicate player snapshot: 33:18885/,
   );
+});
+
+
+test("allows the same provider player in different teams", () => {
+  const source = {
+    schemaVersion: 4,
+    provider: "api-football",
+    competitionId: "135",
+    season: "2024",
+    teams: [
+      {
+        providerTeamId: "509",
+        players: [{
+          providerPlayerId: "341978",
+          name: "L. D&apos;Andrea",
+          position: "Attacker",
+          shirtNumber: 16,
+        }],
+      },
+      {
+        providerTeamId: "518",
+        players: [{
+          providerPlayerId: "341978",
+          name: "L. D&apos;Andrea",
+          position: "Attacker",
+          shirtNumber: 16,
+        }],
+      },
+    ],
+  };
+
+  const result = enrichCataloguePlayers({
+    catalogue: source,
+    snapshots: [
+      {
+        providerPlayerId: "341978",
+        providerTeamId: "509",
+        age: 21,
+        photo: "player.png",
+      },
+      {
+        providerPlayerId: "341978",
+        providerTeamId: "518",
+        age: 21,
+        photo: "player.png",
+      },
+    ],
+    provider: "api-football",
+    retrievedAt: "2026-11-12T00:00:00.000Z",
+  });
+
+  assert.equal(result.stats.matched, 2);
+  assert.equal(result.stats.unmatched, 0);
+  assert.equal(result.catalogue.teams[0].players[0].enrichment.age, 21);
+  assert.equal(result.catalogue.teams[1].players[0].enrichment.age, 21);
 });
 
 test("accepts normalized squad metadata as incremental enrichment", () => {
@@ -139,6 +197,7 @@ test("accepts normalized squad metadata as incremental enrichment", () => {
     retrievedAt: "2026-11-12T18:30:00.000Z",
     snapshots: [{
       providerPlayerId: "18885",
+      providerTeamId: "33",
       id: 18885,
       name: "K. Darlow",
       position: "Goalkeeper",

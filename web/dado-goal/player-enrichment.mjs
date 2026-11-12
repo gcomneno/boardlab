@@ -50,17 +50,19 @@ export function enrichCataloguePlayers({
     throw new TypeError("retrievedAt must be a non-empty string");
   }
 
-  const byPlayerId = new Map();
+  const byPlayerKey = new Map();
 
   for (const rawSnapshot of snapshots) {
     const snapshot = requireSnapshot(rawSnapshot);
     const id = String(snapshot.providerPlayerId);
+    const teamId = String(snapshot.providerTeamId);
+    const key = `${teamId}:${id}`;
 
-    if (byPlayerId.has(id)) {
-      throw new TypeError(`duplicate player snapshot: ${id}`);
+    if (byPlayerKey.has(key)) {
+      throw new TypeError(`duplicate player snapshot: ${key}`);
     }
 
-    byPlayerId.set(id, snapshot);
+    byPlayerKey.set(key, snapshot);
   }
 
   const matched = new Set();
@@ -69,13 +71,14 @@ export function enrichCataloguePlayers({
     ...team,
     players: team.players.map((player) => {
       const id = String(player.providerPlayerId);
-      const snapshot = byPlayerId.get(id);
+      const key = `${String(team.providerTeamId)}:${id}`;
+      const snapshot = byPlayerKey.get(key);
 
       if (!snapshot) {
         return player;
       }
 
-      matched.add(id);
+      matched.add(key);
 
       return {
         ...player,
