@@ -68,3 +68,41 @@ foreach(mission RANGE 2 5)
         COMMAND chrono-test-${mission_id}
     )
 endforeach()
+
+# Optional native 2D frontend. The deterministic C11 engine is shared with CLI.
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(CHRONO_SDL2 QUIET IMPORTED_TARGET sdl2)
+    pkg_check_modules(CHRONO_SDL2_TTF QUIET IMPORTED_TARGET SDL2_ttf)
+endif()
+
+if(TARGET PkgConfig::CHRONO_SDL2 AND TARGET PkgConfig::CHRONO_SDL2_TTF)
+    add_executable(chrono-oops-2d
+        graphics2d.c
+        chrono.c
+    )
+    target_link_libraries(chrono-oops-2d PRIVATE
+        PkgConfig::CHRONO_SDL2
+        PkgConfig::CHRONO_SDL2_TTF
+    )
+    chrono_warnings(chrono-oops-2d)
+endif()
+
+# Regression of the actual M001 GUI action table and hitboxes.
+# The included GUI main is renamed by the test translation unit.
+if(TARGET chrono-oops-2d)
+    add_executable(chrono-test-2d-001
+        test_graphics2d.c
+        chrono.c
+    )
+    target_link_libraries(chrono-test-2d-001 PRIVATE
+        PkgConfig::CHRONO_SDL2
+        PkgConfig::CHRONO_SDL2_TTF
+    )
+    chrono_warnings(chrono-test-2d-001)
+    chrono_test_assertions(chrono-test-2d-001)
+    add_test(
+        NAME chrono-2d-mission-001
+        COMMAND chrono-test-2d-001
+    )
+endif()
