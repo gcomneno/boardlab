@@ -37,7 +37,7 @@ if [ "$STATUS" -eq 0 ]; then
             --local \
             --config "$CF/wrangler.jsonc"
     else
-        npx wrangler \
+        npx --yes wrangler@4.160.1 \
             d1 migrations apply dado-goal-multiplayer \
             --local \
             --config "$CF/wrangler.jsonc"
@@ -47,6 +47,52 @@ if [ "$STATUS" -eq 0 ]; then
     if [ "$STEP_STATUS" -ne 0 ]; then
         STATUS=$STEP_STATUS
         FAILED_STEP="local_d1_migrations"
+    fi
+fi
+
+if [ "$STATUS" -eq 0 ]; then
+    CATALOGUE_SQL="${TMPDIR:-/tmp}/dado-goal-browser-smoke-catalogues.sql"
+    rm -f "$CATALOGUE_SQL"
+
+    for CATALOGUE in \
+        "$CF/public/catalogues/serie-a-2024.json" \
+        "$CF/public/catalogues/serie-b-2024.json" \
+        "$CF/public/catalogues/premier-league-2024.json" \
+        "$CF/public/catalogues/championship-2024.json"
+    do
+        "$NODE_RUNTIME" "$CF/persist-football-cli.mjs" "$CATALOGUE" \
+            >>"$CATALOGUE_SQL"
+        STEP_STATUS=$?
+
+        if [ "$STEP_STATUS" -ne 0 ]; then
+            STATUS=$STEP_STATUS
+            FAILED_STEP="prepare_local_football_catalogues"
+            break
+        fi
+    done
+fi
+
+if [ "$STATUS" -eq 0 ]; then
+    if [ -n "$WRANGLER_CLI" ]; then
+        "$NODE_RUNTIME" "$WRANGLER_CLI" \
+            d1 execute dado-goal-multiplayer \
+            --local \
+            --config "$CF/wrangler.jsonc" \
+            --file "$CATALOGUE_SQL"
+    else
+        npx --yes wrangler@4.160.1 \
+            d1 execute dado-goal-multiplayer \
+            --local \
+            --config "$CF/wrangler.jsonc" \
+            --file "$CATALOGUE_SQL"
+    fi
+
+    STEP_STATUS=$?
+    rm -f "$CATALOGUE_SQL"
+
+    if [ "$STEP_STATUS" -ne 0 ]; then
+        STATUS=$STEP_STATUS
+        FAILED_STEP="seed_local_football_catalogues"
     fi
 fi
 
@@ -61,7 +107,7 @@ if [ "$STATUS" -eq 0 ]; then
             --config "$CF/wrangler.jsonc" \
             >"$WORKER_LOG" 2>&1 &
     else
-        npx wrangler \
+        npx --yes wrangler@4.160.1 \
             dev \
             --local \
             --port 8787 \
@@ -100,8 +146,12 @@ if [ "$STATUS" -eq 0 ]; then
 fi
 
 if [ "$STATUS" -eq 0 ]; then
-    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-/snap/bin/chromium}" \
+    if [ -n "${CI:-}" ]; then
         npx playwright test
+    else
+        PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-/snap/bin/chromium}" \
+            npx playwright test
+    fi
     STEP_STATUS=$?
 
     if [ "$STEP_STATUS" -ne 0 ]; then
