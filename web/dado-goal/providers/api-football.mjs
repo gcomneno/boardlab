@@ -100,6 +100,8 @@ export function createApiFootballAdapter({
         name: player.name,
         position: player.position,
         shirtNumber: player.number ?? null,
+        age: player.age ?? null,
+        photo: player.photo ?? null,
       }));
     },
   });

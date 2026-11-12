@@ -85,7 +85,7 @@ test("maps API-Football squad players", async () => {
           age: 25,
           number: 7,
           position: "Attacker",
-          photo: "ignored",
+          photo: "https://media.api-sports.io/football/players/123.png",
         }],
       }],
     }),
@@ -98,6 +98,8 @@ test("maps API-Football squad players", async () => {
       name: "José Ángel",
       position: "Attacker",
       shirtNumber: 7,
+      age: 25,
+      photo: "https://media.api-sports.io/football/players/123.png",
     }],
   );
 });
