@@ -134,3 +134,60 @@ test("rejects provider errors", async () => {
     /API-Football error/,
   );
 });
+
+test("maps API-Football coaches without choosing response order", async () => {
+  const adapter = createApiFootballAdapter({
+    apiKey: "secret",
+    fetchImpl: async (url) => {
+      assert.equal(url.pathname, "/coachs");
+      assert.equal(url.searchParams.get("team"), "38");
+
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            errors: {},
+            response: [{
+              id: 1612,
+              name: "A. Dionisi",
+              firstname: "Alessio",
+              lastname: "Dionisi",
+              age: 45,
+              nationality: "Italy",
+              photo: "coach.png",
+              career: [{
+                team: {
+                  id: 38,
+                  name: "Watford",
+                  logo: "watford.png",
+                },
+                start: "2026-08-01",
+                end: null,
+              }],
+            }],
+          };
+        },
+      };
+    },
+  });
+
+  assert.deepEqual(await adapter.fetchCoaches({ teamId: 38 }), [{
+    id: 1612,
+    name: "A. Dionisi",
+    firstname: "Alessio",
+    lastname: "Dionisi",
+    age: 45,
+    nationality: "Italy",
+    photo: "coach.png",
+    career: [{
+      team: {
+        id: 38,
+        name: "Watford",
+        logo: "watford.png",
+      },
+      start: "2026-08-01",
+      end: null,
+    }],
+  }]);
+});

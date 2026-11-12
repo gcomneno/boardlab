@@ -104,5 +104,32 @@ export function createApiFootballAdapter({
         photo: player.photo ?? null,
       }));
     },
+
+    async fetchCoaches({ teamId }) {
+      const rows = await request("/coachs", { team: teamId });
+
+      return rows.map((coach) => ({
+        id: coach.id,
+        name: coach.name,
+        firstname: coach.firstname ?? null,
+        lastname: coach.lastname ?? null,
+        age: coach.age ?? null,
+        nationality: coach.nationality ?? null,
+        photo: coach.photo ?? null,
+        career: Array.isArray(coach.career)
+          ? coach.career.map((entry) => ({
+              team: entry.team
+                ? {
+                    id: entry.team.id,
+                    name: entry.team.name,
+                    logo: entry.team.logo,
+                  }
+                : null,
+              start: entry.start ?? null,
+              end: entry.end ?? null,
+            }))
+          : [],
+      }));
+    },
   });
 }
