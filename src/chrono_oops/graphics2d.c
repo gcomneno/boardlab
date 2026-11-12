@@ -1,5 +1,9 @@
 #include "chrono.h"
 
+#ifdef CHRONO_WITH_M002
+#include "graphics2d_m002.c"
+#endif
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdbool.h>
@@ -349,6 +353,40 @@ static void handle_event(const SDL_Event *event, ChronoState *state,
     }
 }
 
+#ifdef CHRONO_WITH_M002
+static void draw_mission_menu(SDL_Renderer *renderer, TTF_Font *font)
+{
+    SDL_Color white = {235, 241, 250, 255};
+    SDL_Color muted = {155, 179, 205, 255};
+
+    SDL_SetRenderDrawColor(renderer, 11, 23, 39, 255);
+    SDL_RenderClear(renderer);
+
+    label(renderer, font, 70, 85, white,
+          "CHRONOOOPS! 2D  |  SELEZIONE MISSIONE");
+    label(renderer, font, 70, 125, muted,
+          "Due epoche, una cronologia, conseguenze deterministiche.");
+
+    rectangle(renderer, (SDL_Rect){70, 210, 1140, 135},
+              (SDL_Color){35, 90, 135, 255});
+    label(renderer, font, 100, 248, white,
+          "1  |  M001 - Il ponte che non c'era... poi anatra");
+    label(renderer, font, 100, 290, white,
+          "Recupera la capsula temporale: Ponte oppure Papera.");
+
+    rectangle(renderer, (SDL_Rect){70, 375, 1140, 135},
+              (SDL_Color){31, 106, 96, 255});
+    label(renderer, font, 100, 415, white,
+          "2  |  M002 - Il prestito di domani");
+    label(renderer, font, 100, 457, white,
+          "Riattiva il Cronofono e salda il debito causale.");
+
+    label(renderer, font, 70, 580, muted,
+          "Seleziona con mouse o tasti 1 / 2. ESC per uscire.");
+    SDL_RenderPresent(renderer);
+}
+#endif
+
 int main(void)
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -390,13 +428,81 @@ int main(void)
     chrono_init(&state);
     char message[220] = "Missione 001 iniziata: recupera la capsula temporale.";
     bool running = true;
+#ifdef CHRONO_WITH_M002
+    M002Gui m002;
+    m002_gui_init(&m002);
+    int selected_mission = 0;
+#endif
+
 
     while (running) {
         SDL_Event event;
-        while (SDL_PollEvent(&event))
+        while (SDL_PollEvent(&event)) {
+#ifdef CHRONO_WITH_M002
+            if (event.type == SDL_QUIT) {
+                running = false;
+                continue;
+            }
+            if (event.type == SDL_KEYDOWN &&
+                event.key.keysym.sym == SDLK_ESCAPE) {
+                if (selected_mission == 0)
+                    running = false;
+                else {
+                    selected_mission = 0;
+                    SDL_SetWindowTitle(window, "ChronoOops! 2D - Selezione missione");
+                }
+                continue;
+            }
+            if (selected_mission == 0) {
+                int choice = 0;
+                if (event.type == SDL_KEYDOWN && event.key.repeat == 0) {
+                    if (event.key.keysym.sym == SDLK_1)
+                        choice = 1;
+                    else if (event.key.keysym.sym == SDLK_2)
+                        choice = 2;
+                } else if (event.type == SDL_MOUSEBUTTONDOWN &&
+                           event.button.button == SDL_BUTTON_LEFT) {
+                    SDL_Rect first = {70, 210, 1140, 135};
+                    SDL_Rect second = {70, 375, 1140, 135};
+                    int x = event.button.x, y = event.button.y;
+                    if (contains(first, x, y))
+                        choice = 1;
+                    else if (contains(second, x, y))
+                        choice = 2;
+                }
+                if (choice == 1) {
+                    chrono_init(&state);
+                    snprintf(message, sizeof(message),
+                             "Missione 001 iniziata: recupera la capsula.");
+                    selected_mission = 1;
+                    SDL_SetWindowTitle(window, "ChronoOops! 2D - Missione 001");
+                } else if (choice == 2) {
+                    m002_gui_init(&m002);
+                    selected_mission = 2;
+                    SDL_SetWindowTitle(window, "ChronoOops! 2D - Missione 002");
+                }
+                continue;
+            }
+            if (selected_mission == 2) {
+                m002_gui_event(&m002, &event);
+                continue;
+            }
+#endif
             handle_event(&event, &state, message, sizeof(message), &running);
+        }
 
+#ifdef CHRONO_WITH_M002
+        if (selected_mission == 0) {
+            draw_mission_menu(renderer, font);
+        } else if (selected_mission == 2) {
+            m002_gui_draw(renderer, font, &m002);
+            SDL_RenderPresent(renderer);
+        } else {
+            draw(renderer, font, &state, message);
+        }
+#else
         draw(renderer, font, &state, message);
+#endif
         SDL_Delay(30);
     }
 

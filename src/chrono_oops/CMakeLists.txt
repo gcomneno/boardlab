@@ -80,7 +80,9 @@ if(TARGET PkgConfig::CHRONO_SDL2 AND TARGET PkgConfig::CHRONO_SDL2_TTF)
     add_executable(chrono-oops-2d
         graphics2d.c
         chrono.c
+        mission002.c
     )
+    target_compile_definitions(chrono-oops-2d PRIVATE CHRONO_WITH_M002)
     target_link_libraries(chrono-oops-2d PRIVATE
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
@@ -104,5 +106,24 @@ if(TARGET chrono-oops-2d)
     add_test(
         NAME chrono-2d-mission-001
         COMMAND chrono-test-2d-001
+    )
+endif()
+
+# Mission 002 graphical adapter regression: actual SDL input,
+# causal debt propagation, paradox atomicity and both outcomes.
+if(TARGET chrono-oops-2d)
+    add_executable(chrono-test-2d-002
+        test_graphics2d_m002.c
+        mission002.c
+    )
+    target_link_libraries(chrono-test-2d-002 PRIVATE
+        PkgConfig::CHRONO_SDL2
+        PkgConfig::CHRONO_SDL2_TTF
+    )
+    chrono_warnings(chrono-test-2d-002)
+    chrono_test_assertions(chrono-test-2d-002)
+    add_test(
+        NAME chrono-2d-mission-002
+        COMMAND chrono-test-2d-002
     )
 endif()
