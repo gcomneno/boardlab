@@ -75,9 +75,13 @@ def current_repository_text():
 
 def validate_release(v, repository, tag, label):
     data = gh_json(
-        "release", "view", tag,
-        "--repo", repository,
-        "--json", "tagName,isDraft,isPrerelease,targetCommitish,url",
+        "release",
+        "view",
+        tag,
+        "--repo",
+        repository,
+        "--json",
+        "tagName,isDraft,isPrerelease,targetCommitish,url",
     )
 
     v.check(data.get("tagName") == tag, f"{label}_TAG")
@@ -127,25 +131,19 @@ def main():
     v.check(repository_url in local_text, "REPOSITORY_CANONICAL_URL")
     v.check(stable in local_text, "REPOSITORY_STABLE_MULTIPLAYER")
     v.check(
-        all(item not in local_text
-            for item in contract["obsolete_current_references"]),
+        all(item not in local_text for item in contract["obsolete_current_references"]),
         "REPOSITORY_OBSOLETE_REFERENCES",
     )
 
     if args.offline:
         print("NETWORK_CHECKS=SKIPPED")
         print(f"COMMAND_STATUS={1 if v.failed else 0}")
-        print(
-            "DADO_GOAL_DISTRIBUTION_GATE="
-            + ("FAIL" if v.failed else "PASS")
-        )
+        print("DADO_GOAL_DISTRIBUTION_GATE=" + ("FAIL" if v.failed else "PASS"))
         return 1 if v.failed else 0
 
     try:
         validate_release(v, repository_slug, single_tag, "SINGLE_RELEASE")
-        validate_release(
-            v, repository_slug, multiplayer_tag, "MULTIPLAYER_RELEASE"
-        )
+        validate_release(v, repository_slug, multiplayer_tag, "MULTIPLAYER_RELEASE")
     except (RuntimeError, json.JSONDecodeError) as error:
         v.check(False, "GITHUB_RELEASES", str(error))
 
@@ -158,8 +156,7 @@ def main():
         )
         v.check(stable in itch_html, "ITCH_STABLE_MULTIPLAYER")
         v.check(
-            all(item not in itch_html
-                for item in contract["obsolete_current_references"]),
+            all(item not in itch_html for item in contract["obsolete_current_references"]),
             "ITCH_OBSOLETE_REFERENCES",
         )
     except (urllib.error.URLError, TimeoutError) as error:
@@ -178,8 +175,7 @@ def main():
             )
             v.check(stable in text, f"SHOWCASE_{label}_STABLE_MULTIPLAYER")
             v.check(
-                all(item not in text
-                    for item in contract["obsolete_current_references"]),
+                all(item not in text for item in contract["obsolete_current_references"]),
                 f"SHOWCASE_{label}_OBSOLETE_REFERENCES",
             )
         except (urllib.error.URLError, TimeoutError) as error:
@@ -196,10 +192,7 @@ def main():
 
     print("VALIDATOR_MODE=READ_ONLY")
     print(f"COMMAND_STATUS={1 if v.failed else 0}")
-    print(
-        "DADO_GOAL_DISTRIBUTION_GATE="
-        + ("FAIL" if v.failed else "PASS")
-    )
+    print("DADO_GOAL_DISTRIBUTION_GATE=" + ("FAIL" if v.failed else "PASS"))
     return 1 if v.failed else 0
 
 
