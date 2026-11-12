@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "provider": "api-football",
   "competitionId": "40",
   "season": "2024",
@@ -16,6 +16,23 @@
         "#D71920"
       ],
       "logo": "https://media.api-sports.io/football/teams/38.png",
+      "enrichment": {
+        "code": "WAT",
+        "country": "England",
+        "founded": 1881,
+        "venue": {
+          "id": 596,
+          "name": "Vicarage Road",
+          "address": "Vicarage Road",
+          "city": "Watford",
+          "capacity": 22200,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -247,6 +264,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/43.png",
+      "enrichment": {
+        "code": "CAR",
+        "country": "Wales",
+        "founded": 1889,
+        "venue": {
+          "id": 516,
+          "name": "Cardiff City Stadium",
+          "address": "Leckwith Road",
+          "city": "Caerdydd",
+          "capacity": 33280,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -450,6 +484,23 @@
         "#99D6EA"
       ],
       "logo": "https://media.api-sports.io/football/teams/44.png",
+      "enrichment": {
+        "code": "BUR",
+        "country": "England",
+        "founded": 1882,
+        "venue": {
+          "id": 512,
+          "name": "Turf Moor",
+          "address": "Harry Potts Way",
+          "city": "Burnley",
+          "capacity": 22546,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -702,6 +753,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/56.png",
+      "enrichment": {
+        "code": "BRI",
+        "country": "England",
+        "founded": 1894,
+        "venue": {
+          "id": 20106,
+          "name": "Ashton Gate Stadium",
+          "address": "Ashton Road",
+          "city": "Bristol",
+          "capacity": 27000,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -905,6 +973,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/58.png",
+      "enrichment": {
+        "code": "MIL",
+        "country": "England",
+        "founded": 1885,
+        "venue": {
+          "id": 559,
+          "name": "The Den",
+          "address": "Zampa Road, Bermondsey",
+          "city": "London",
+          "capacity": 20146,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1171,6 +1256,23 @@
         "#173F7A"
       ],
       "logo": "https://media.api-sports.io/football/teams/59.png",
+      "enrichment": {
+        "code": "PRE",
+        "country": "England",
+        "founded": 1863,
+        "venue": {
+          "id": 574,
+          "name": "Deepdale",
+          "address": "Deepdale Road",
+          "city": "Preston",
+          "capacity": 23408,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1374,6 +1476,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/60.png",
+      "enrichment": {
+        "code": "WES",
+        "country": "England",
+        "founded": 1878,
+        "venue": {
+          "id": 597,
+          "name": "The Hawthorns",
+          "address": "Halfords Lane",
+          "city": "West Bromwich",
+          "capacity": 28003,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1591,6 +1710,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/62.png",
+      "enrichment": {
+        "code": "SHE",
+        "country": "England",
+        "founded": 1889,
+        "venue": {
+          "id": 581,
+          "name": "Bramall Lane",
+          "address": "Bramall Lane",
+          "city": "Sheffield",
+          "capacity": 32702,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1815,6 +1951,23 @@
         "#174A8B"
       ],
       "logo": "https://media.api-sports.io/football/teams/63.png",
+      "enrichment": {
+        "code": "LEE",
+        "country": "England",
+        "founded": 1919,
+        "venue": {
+          "id": 546,
+          "name": "Elland Road",
+          "address": "Elland Road",
+          "city": "Leeds, West Yorkshire",
+          "capacity": 40204,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2046,6 +2199,23 @@
         "#111111"
       ],
       "logo": "https://media.api-sports.io/football/teams/64.png",
+      "enrichment": {
+        "code": "HUL",
+        "country": "England",
+        "founded": 1904,
+        "venue": {
+          "id": 12051,
+          "name": "The MKM Stadium",
+          "address": "Walton Street / Anlaby Road",
+          "city": "Hull",
+          "capacity": 25504,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2291,6 +2461,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/67.png",
+      "enrichment": {
+        "code": "BLA",
+        "country": "England",
+        "founded": 1875,
+        "venue": {
+          "id": 500,
+          "name": "Ewood Park",
+          "address": "Nuttall Street",
+          "city": "Blackburn, Lancashire",
+          "capacity": 31367,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2550,6 +2737,23 @@
         "#111111"
       ],
       "logo": "https://media.api-sports.io/football/teams/69.png",
+      "enrichment": {
+        "code": "DER",
+        "country": "England",
+        "founded": 1884,
+        "venue": {
+          "id": 527,
+          "name": "Pride Park Stadium",
+          "address": "Pride Park, Royal Way",
+          "city": "Derby",
+          "capacity": 33597,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2795,6 +2999,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/70.png",
+      "enrichment": {
+        "code": "MID",
+        "country": "England",
+        "founded": 1876,
+        "venue": {
+          "id": 558,
+          "name": "Riverside Stadium",
+          "address": "Dockside Road",
+          "city": "Middlesbrough",
+          "capacity": 34988,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2991,6 +3212,23 @@
         "#177245"
       ],
       "logo": "https://media.api-sports.io/football/teams/71.png",
+      "enrichment": {
+        "code": "NOR",
+        "country": "England",
+        "founded": 1902,
+        "venue": {
+          "id": 565,
+          "name": "Carrow Road",
+          "address": "Carrow Road",
+          "city": "Norwich, Norfolk",
+          "capacity": 27606,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3215,6 +3453,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/72.png",
+      "enrichment": {
+        "code": "QPR",
+        "country": "England",
+        "founded": 1885,
+        "venue": {
+          "id": 20414,
+          "name": "MATRADE Loftus Road",
+          "address": "South Africa Road, Shepherd&apos;s Bush",
+          "city": "London",
+          "capacity": 18360,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3446,6 +3701,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/74.png",
+      "enrichment": {
+        "code": "SHE",
+        "country": "England",
+        "founded": 1867,
+        "venue": {
+          "id": 582,
+          "name": "Hillsborough",
+          "address": "Penistone Road North, Hillsborough",
+          "city": "Sheffield",
+          "capacity": 39814,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3705,6 +3977,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/75.png",
+      "enrichment": {
+        "code": "STO",
+        "country": "England",
+        "founded": 1868,
+        "venue": {
+          "id": 588,
+          "name": "bet365 Stadium",
+          "address": "Stanley Matthews Way",
+          "city": "Stoke-on-Trent, Staffordshire",
+          "capacity": 30089,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3936,6 +4225,23 @@
         "#111111"
       ],
       "logo": "https://media.api-sports.io/football/teams/76.png",
+      "enrichment": {
+        "code": "SWA",
+        "country": "Wales",
+        "founded": 1912,
+        "venue": {
+          "id": 12273,
+          "name": "Swansea.com Stadium",
+          "address": "Normandy Road",
+          "city": "Swansea",
+          "capacity": 21028,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -4146,6 +4452,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/746.png",
+      "enrichment": {
+        "code": "SUN",
+        "country": "England",
+        "founded": 1879,
+        "venue": {
+          "id": 589,
+          "name": "Stadium of Light",
+          "address": "Millenium Way",
+          "city": "Sunderland",
+          "capacity": 49000,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -4433,6 +4756,23 @@
         "#173F7A"
       ],
       "logo": "https://media.api-sports.io/football/teams/1338.png",
+      "enrichment": {
+        "code": "OXF",
+        "country": "England",
+        "founded": 1893,
+        "venue": {
+          "id": 569,
+          "name": "The Kassam Stadium",
+          "address": "Grenoble Road",
+          "city": "Oxford, Oxfordshire",
+          "capacity": 12500,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -4650,6 +4990,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/1346.png",
+      "enrichment": {
+        "code": "COV",
+        "country": "England",
+        "founded": 1883,
+        "venue": {
+          "id": 11896,
+          "name": "The Coventry Building Society Arena",
+          "address": "Phoenix Way, Rowleys Green",
+          "city": "Coventry, West Midlands",
+          "capacity": 32609,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -4867,6 +5224,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/1355.png",
+      "enrichment": {
+        "code": "POR",
+        "country": "England",
+        "founded": 1898,
+        "venue": {
+          "id": 573,
+          "name": "Fratton Park",
+          "address": "Frogmore Road",
+          "city": "Portsmouth",
+          "capacity": 20821,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -5098,6 +5472,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/1357.png",
+      "enrichment": {
+        "code": "PLY",
+        "country": "England",
+        "founded": 1886,
+        "venue": {
+          "id": 571,
+          "name": "Home Park",
+          "address": "Gilbert Lane",
+          "city": "Plymouth",
+          "capacity": 19500,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -5308,6 +5699,23 @@
         "#173F7A"
       ],
       "logo": "https://media.api-sports.io/football/teams/1359.png",
+      "enrichment": {
+        "code": "LUT",
+        "country": "England",
+        "founded": 1885,
+        "venue": {
+          "id": 551,
+          "name": "Kenilworth Road",
+          "address": "1 Maple Road",
+          "city": "Luton, Bedfordshire",
+          "capacity": 11500,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.045Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",

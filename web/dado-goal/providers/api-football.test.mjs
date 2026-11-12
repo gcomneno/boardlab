@@ -28,6 +28,17 @@ test("maps API-Football teams without altering official names", async () => {
               id: 492,
               name: "SSC Napoli",
               logo: "https://media.api-sports.io/football/teams/492.png",
+              code: "NAP",
+              country: "Italy",
+              founded: 1926,
+            },
+            venue: {
+              id: 119,
+              name: "Stadio Diego Armando Maradona",
+              address: "Piazzale Vincenzo Tecchio",
+              city: "Napoli",
+              capacity: 54726,
+              surface: "grass",
             },
           },
         ],
@@ -44,6 +55,17 @@ test("maps API-Football teams without altering official names", async () => {
     id: 492,
     name: "SSC Napoli",
     logo: "https://media.api-sports.io/football/teams/492.png",
+    code: "NAP",
+    country: "Italy",
+    founded: 1926,
+    venue: {
+      id: 119,
+      name: "Stadio Diego Armando Maradona",
+      address: "Piazzale Vincenzo Tecchio",
+      city: "Napoli",
+      capacity: 54726,
+      surface: "grass",
+    },
   }]);
   assert.equal(request.url.searchParams.get("league"), "135");
   assert.equal(request.url.searchParams.get("season"), "2026");

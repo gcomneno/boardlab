@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "provider": "api-football",
   "competitionId": "136",
   "season": "2024",
@@ -16,6 +16,23 @@
         "#111111"
       ],
       "logo": "https://media.api-sports.io/football/teams/488.png",
+      "enrichment": {
+        "code": "SAS",
+        "country": "Italy",
+        "founded": 1922,
+        "venue": {
+          "id": 935,
+          "name": "MAPEI Stadium - Città del Tricolore",
+          "address": "Piazza Azzuri d&apos;Italia, 1",
+          "city": "Reggio Emilia",
+          "capacity": 23717,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -282,6 +299,23 @@
         "#D71920"
       ],
       "logo": "https://media.api-sports.io/football/teams/498.png",
+      "enrichment": {
+        "code": "SAM",
+        "country": "Italy",
+        "founded": 1946,
+        "venue": {
+          "id": 905,
+          "name": "Stadio Comunale Luigi Ferraris",
+          "address": "Via Giovanni De Prà, 1",
+          "city": "Genova",
+          "capacity": 36703,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -485,6 +519,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/508.png",
+      "enrichment": {
+        "code": "BAR",
+        "country": "Italy",
+        "founded": 1908,
+        "venue": {
+          "id": 2763,
+          "name": "Stadio Comunale San Nicola",
+          "address": "Strada Provinciale Modugno-Carbonara",
+          "city": "Bari",
+          "capacity": 58270,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -702,6 +753,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/509.png",
+      "enrichment": {
+        "code": "CES",
+        "country": "Italy",
+        "founded": 1940,
+        "venue": {
+          "id": 2758,
+          "name": "Orogel Stadium-Dino Manuzzi",
+          "address": "Via dello Stadio, 124",
+          "city": "Cesena",
+          "capacity": 23860,
+          "surface": "artificial turf"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -926,6 +994,23 @@
         "#F4D000"
       ],
       "logo": "https://media.api-sports.io/football/teams/510.png",
+      "enrichment": {
+        "code": "CIT",
+        "country": "Italy",
+        "founded": 1973,
+        "venue": {
+          "id": 891,
+          "name": "Stadio Pier Cesare Tombolato",
+          "address": "Viale dello Sport, 7",
+          "city": "Cittadella",
+          "capacity": 7623,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1136,6 +1221,23 @@
         "#F4D000"
       ],
       "logo": "https://media.api-sports.io/football/teams/512.png",
+      "enrichment": {
+        "code": "FRO",
+        "country": "Italy",
+        "founded": 1928,
+        "venue": {
+          "id": 904,
+          "name": "Stadio Benito Stirpe",
+          "address": "Viale Olimpia",
+          "city": "Frosinone",
+          "capacity": 16310,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1367,6 +1469,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/514.png",
+      "enrichment": {
+        "code": "SAL",
+        "country": "Italy",
+        "founded": 2011,
+        "venue": {
+          "id": 933,
+          "name": "Stadio Arechi",
+          "address": "Via Salvador Allende",
+          "city": "Salerno",
+          "capacity": 37245,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1577,6 +1696,23 @@
         "#111111"
       ],
       "logo": "https://media.api-sports.io/football/teams/515.png",
+      "enrichment": {
+        "code": "SPE",
+        "country": "Italy",
+        "founded": 1906,
+        "venue": {
+          "id": 939,
+          "name": "Stadio Alberto Picco",
+          "address": "Via Nicolò Fieschi, 18",
+          "city": "La Spezia",
+          "capacity": 11767,
+          "surface": "artificial turf"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1808,6 +1944,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/518.png",
+      "enrichment": {
+        "code": "BRE",
+        "country": "Italy",
+        "founded": 1911,
+        "venue": {
+          "id": 882,
+          "name": "Stadio Mario Rigamonti",
+          "address": "Via Giovanni Novagani, 8",
+          "city": "Brescia",
+          "capacity": 27547,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -1906,6 +2059,23 @@
         "#B8B8B8"
       ],
       "logo": "https://media.api-sports.io/football/teams/520.png",
+      "enrichment": {
+        "code": "CRE",
+        "country": "Italy",
+        "founded": 1903,
+        "venue": {
+          "id": 894,
+          "name": "Stadio Giovanni Zini",
+          "address": "Via Persico, 19",
+          "city": "Cremona",
+          "capacity": 20034,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2137,6 +2307,23 @@
         "#111111"
       ],
       "logo": "https://media.api-sports.io/football/teams/522.png",
+      "enrichment": {
+        "code": "PAL",
+        "country": "Italy",
+        "founded": 1900,
+        "venue": {
+          "id": 920,
+          "name": "Stadio Renzo Barbera",
+          "address": "Viale del Fante, 11",
+          "city": "Palermo",
+          "capacity": 36349,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2354,6 +2541,23 @@
         "#111111"
       ],
       "logo": "https://media.api-sports.io/football/teams/801.png",
+      "enrichment": {
+        "code": "PIS",
+        "country": "Italy",
+        "founded": 1909,
+        "venue": {
+          "id": 925,
+          "name": "Arena Garibaldi - Stadio Romeo Anconetani",
+          "address": "Via di Gello, 25",
+          "city": "Pisa",
+          "capacity": 17500,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2578,6 +2782,23 @@
         "#174A8B"
       ],
       "logo": "https://media.api-sports.io/football/teams/863.png",
+      "enrichment": {
+        "code": "JUV",
+        "country": "Italy",
+        "founded": 1907,
+        "venue": {
+          "id": 908,
+          "name": "Stadio Comunale Romeo Menti",
+          "address": "Via G. Cosenza, 283",
+          "city": "Castellammare di Stabia",
+          "capacity": 7642,
+          "surface": "artificial turf"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -2809,6 +3030,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/880.png",
+      "enrichment": {
+        "code": "REG",
+        "country": "Italy",
+        "founded": 1919,
+        "venue": {
+          "id": 935,
+          "name": "MAPEI Stadium - Città del Tricolore",
+          "address": "Piazza Azzuri d&apos;Italia, 1",
+          "city": "Reggio Emilia",
+          "capacity": 23717,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3019,6 +3257,23 @@
         "#F4D000"
       ],
       "logo": "https://media.api-sports.io/football/teams/899.png",
+      "enrichment": {
+        "code": "MOD",
+        "country": "Italy",
+        "founded": 1912,
+        "venue": {
+          "id": 2771,
+          "name": "Stadio Alberto Braglia",
+          "address": "Viale Monte Kosica, 128/134",
+          "city": "Modena",
+          "capacity": 21151,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3243,6 +3498,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/1578.png",
+      "enrichment": {
+        "code": "SUD",
+        "country": "Italy",
+        "founded": 1974,
+        "venue": {
+          "id": 940,
+          "name": "Stadio Marco Druso",
+          "address": "Viale Trieste / Trieststraße 29",
+          "city": "Bozen",
+          "capacity": 5600,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3467,6 +3739,23 @@
         "#F4D000"
       ],
       "logo": "https://media.api-sports.io/football/teams/1581.png",
+      "enrichment": {
+        "code": "CAR",
+        "country": "Italy",
+        "founded": null,
+        "venue": {
+          "id": 885,
+          "name": "Stadio dei Marmi",
+          "address": "Piazza Vittorio Veneto, 8",
+          "city": "Carrara",
+          "capacity": 4975,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3691,6 +3980,23 @@
         "#F4D000"
       ],
       "logo": "https://media.api-sports.io/football/teams/1687.png",
+      "enrichment": {
+        "code": "CAT",
+        "country": "Italy",
+        "founded": 1929,
+        "venue": {
+          "id": 888,
+          "name": "Stadio Nicola Ceravolo",
+          "address": "Via Francesco Paglia",
+          "city": "Catanzaro",
+          "capacity": 14650,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -3908,6 +4214,23 @@
         "#F4F4F4"
       ],
       "logo": "https://media.api-sports.io/football/teams/1693.png",
+      "enrichment": {
+        "code": "MAN",
+        "country": "Italy",
+        "founded": 1906,
+        "venue": {
+          "id": 4185,
+          "name": "Stadio Danilo Martelli",
+          "address": "Viale Te, 7-9",
+          "city": "Mantova",
+          "capacity": 14854,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",
@@ -4132,6 +4455,23 @@
         "#D71920"
       ],
       "logo": "https://media.api-sports.io/football/teams/10137.png",
+      "enrichment": {
+        "code": "NUO",
+        "country": "Italy",
+        "founded": 1914,
+        "venue": {
+          "id": 893,
+          "name": "Stadio San Vito-Luigi Marulla",
+          "address": "Via degli Stadio",
+          "city": "Cosenza",
+          "capacity": 24209,
+          "surface": "grass"
+        },
+        "provenance": {
+          "provider": "api-football",
+          "retrievedAt": "2026-11-12T11:55:54.603Z"
+        }
+      },
       "players": [
         {
           "provider": "api-football",

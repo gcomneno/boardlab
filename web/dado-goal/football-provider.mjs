@@ -28,6 +28,16 @@ export async function importFootballCatalogue({
       season,
       colors: socialColors(rawTeam.id),
       logo: rawTeam.logo,
+      enrichment: {
+        code: rawTeam.code ?? null,
+        country: rawTeam.country ?? null,
+        founded: rawTeam.founded ?? null,
+        venue: rawTeam.venue ?? null,
+        provenance: {
+          provider: adapter.name,
+          retrievedAt: importedAt,
+        },
+      },
     });
 
     const rawPlayers = await adapter.fetchPlayers({

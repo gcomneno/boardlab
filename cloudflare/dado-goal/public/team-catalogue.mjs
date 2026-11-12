@@ -1,4 +1,4 @@
-export const CATALOGUE_SCHEMA_VERSION = 3;
+export const CATALOGUE_SCHEMA_VERSION = 4;
 
 function requireText(value, field) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -38,6 +38,7 @@ export function createTeam({
   season,
   colors,
   logo,
+  enrichment = null,
 }) {
   return Object.freeze({
     provider: requireText(provider, "provider"),
@@ -47,6 +48,9 @@ export function createTeam({
     season: requireProviderId(season, "season"),
     colors: requireColors(colors),
     logo: requireText(logo, "logo"),
+    ...(enrichment === null
+      ? {}
+      : { enrichment: structuredClone(enrichment) }),
   });
 }
 
@@ -56,6 +60,7 @@ export function createPlayer({
   name,
   position,
   shirtNumber = null,
+  enrichment = null,
 }) {
   if (shirtNumber !== null &&
       (!Number.isInteger(shirtNumber) || shirtNumber <= 0)) {
@@ -71,6 +76,9 @@ export function createPlayer({
     name: requireText(name, "name"),
     position: requireText(position, "position"),
     shirtNumber,
+    ...(enrichment === null
+      ? {}
+      : { enrichment: structuredClone(enrichment) }),
   });
 }
 

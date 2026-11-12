@@ -67,10 +67,23 @@ export function createApiFootballAdapter({
         season,
       });
 
-      return rows.map(({ team }) => ({
+      return rows.map(({ team, venue }) => ({
         id: team.id,
         name: team.name,
         logo: team.logo,
+        code: team.code ?? null,
+        country: team.country ?? null,
+        founded: team.founded ?? null,
+        venue: venue
+          ? {
+              id: venue.id ?? null,
+              name: venue.name ?? null,
+              address: venue.address ?? null,
+              city: venue.city ?? null,
+              capacity: venue.capacity ?? null,
+              surface: venue.surface ?? null,
+            }
+          : null,
       }));
     },
 

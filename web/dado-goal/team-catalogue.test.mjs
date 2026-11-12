@@ -83,3 +83,67 @@ test("rejects invalid shirt numbers", () => {
     /shirtNumber/,
   );
 });
+
+test("team and player enrichment remain optional provider snapshots", () => {
+  const team = createTeam({
+    provider: "api-football",
+    providerTeamId: 33,
+    name: "Manchester United",
+    competitionId: 39,
+    season: 2024,
+    colors: ["#DA291C"],
+    logo: "https://example.invalid/team.png",
+    enrichment: {
+      code: "MUN",
+      country: "England",
+      founded: 1878,
+      venue: {
+        id: 556,
+        name: "Old Trafford",
+        city: "Manchester",
+        capacity: 76212,
+      },
+      provenance: {
+        provider: "api-football",
+        retrievedAt: "2026-11-12T00:00:00.000Z",
+      },
+    },
+  });
+
+  const player = createPlayer({
+    provider: "api-football",
+    providerPlayerId: 18885,
+    name: "K. Darlow",
+    position: "Goalkeeper",
+    shirtNumber: 1,
+    enrichment: {
+      firstname: "Karl",
+      lastname: "Darlow",
+      nationality: "England",
+      height: "190",
+      weight: "88",
+      birth: {
+        date: "1990-10-08",
+        place: "Northampton",
+        country: "England",
+      },
+    },
+  });
+
+  assert.equal(team.enrichment.venue.name, "Old Trafford");
+  assert.equal(team.enrichment.founded, 1878);
+  assert.equal(player.enrichment.firstname, "Karl");
+  assert.equal(player.enrichment.birth.place, "Northampton");
+
+  const legacyTeam = createTeam({
+    provider: "api-football",
+    providerTeamId: 1,
+    name: "Legacy",
+    competitionId: 39,
+    season: 2024,
+    colors: ["#000000"],
+    logo: "https://example.invalid/legacy.png",
+  });
+
+  assert.equal("enrichment" in legacyTeam, false);
+});

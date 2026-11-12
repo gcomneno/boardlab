@@ -25,7 +25,8 @@ export function importCatalogueJson(source) {
     throw new TypeError("invalid catalogue JSON");
   }
 
-  if (raw?.schemaVersion !== CATALOGUE_SCHEMA_VERSION) {
+  if (raw?.schemaVersion !== CATALOGUE_SCHEMA_VERSION &&
+      raw?.schemaVersion !== 3) {
     throw new TypeError("unsupported catalogue schema");
   }
 
@@ -42,6 +43,7 @@ export function importCatalogueJson(source) {
       season: rawTeam.season,
       colors: rawTeam.colors,
       logo: rawTeam.logo,
+      enrichment: rawTeam.enrichment ?? null,
     });
 
     if (!Array.isArray(rawTeam.players)) {
@@ -56,6 +58,7 @@ export function importCatalogueJson(source) {
         name: player.name,
         position: player.position,
         shirtNumber: player.shirtNumber ?? null,
+        enrichment: player.enrichment ?? null,
       })),
     };
   });
