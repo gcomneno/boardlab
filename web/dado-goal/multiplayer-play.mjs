@@ -292,6 +292,7 @@ function render() {
 
   const eventKeys = {
     goal: "eventGoal",
+    penalty: "eventPenalty",
     yellow: "eventYellow",
     red: "eventRed",
     substitution: "eventSubstitution"
@@ -310,14 +311,19 @@ function render() {
 
       const description = document.createElement("span");
       const reason = describeEventReason(event.reason, getLocale());
-      const eventDescription = event.classification === "narrative"
-        ? describeExtraordinaryEvent(event, getLocale())
-            .replace(/^\d+′\s*/, "")
-        : formatMessage(eventKeys[event.type], {
+      const eventDescription = event.type === "penalty"
+        ? formatMessage("eventPenalty", {
             ...eventDisplayValues(event),
-            team: names[event.team],
-            reason: ""
-          });
+            outcome: displayDieFace(event.outcome)
+          })
+        : event.classification === "narrative"
+          ? describeExtraordinaryEvent(event, getLocale())
+              .replace(/^\d+′\s*/, "")
+          : formatMessage(eventKeys[event.type], {
+              ...eventDisplayValues(event),
+              team: names[event.team],
+              reason: ""
+            });
       description.textContent = eventDescription;
       descriptionStack.append(description);
 
