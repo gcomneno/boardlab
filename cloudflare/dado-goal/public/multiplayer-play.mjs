@@ -1273,6 +1273,7 @@ async function multiplayerLogin() {
     render();
   } finally {
     multiplayerBusy = false;
+    syncMultiplayerControls();
   }
 }
 

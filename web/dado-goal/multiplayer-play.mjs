@@ -1099,6 +1099,7 @@ async function multiplayerLogin() {
     render();
   } finally {
     multiplayerBusy = false;
+    syncMultiplayerControls();
   }
 }
 
@@ -1135,6 +1136,10 @@ function showMultiplayerError(error) {
 byId("create").addEventListener("click", () => {
   void multiplayerCreate().catch(showMultiplayerError);
 });
+
+byId("invite-code").addEventListener(
+  "input", syncMultiplayerControls
+);
 
 byId("join").addEventListener("click", () => {
   void multiplayerJoin().catch(showMultiplayerError);

@@ -23,8 +23,13 @@ const sqlString = (value) =>
 
 const now = Date.now();
 const catalogueJson = JSON.stringify(catalogue);
+const SQL_CHUNK_SIZE = 16 * 1024;
 
-const sql = `
+const provider = sqlString(catalogue.provider);
+const competitionId = sqlString(catalogue.competitionId);
+const season = sqlString(catalogue.season);
+
+const statements = [`
 INSERT INTO football_catalogues (
   provider,
   competition_id,
@@ -34,18 +39,30 @@ INSERT INTO football_catalogues (
   updated_at
 )
 VALUES (
-  ${sqlString(catalogue.provider)},
-  ${sqlString(catalogue.competitionId)},
-  ${sqlString(catalogue.season)},
-  ${sqlString(catalogueJson)},
+  ${provider},
+  ${competitionId},
+  ${season},
+  '',
   ${sqlString(catalogue.importedAt)},
   ${now}
 )
 ON CONFLICT(provider, competition_id, season)
 DO UPDATE SET
-  catalogue_json = excluded.catalogue_json,
+  catalogue_json = '',
   imported_at = excluded.imported_at,
   updated_at = excluded.updated_at;
-`.trim();
+`.trim()];
 
+for (let offset = 0; offset < catalogueJson.length; offset += SQL_CHUNK_SIZE) {
+  const chunk = catalogueJson.slice(offset, offset + SQL_CHUNK_SIZE);
+  statements.push(`
+UPDATE football_catalogues
+SET catalogue_json = catalogue_json || ${sqlString(chunk)}
+WHERE provider = ${provider}
+  AND competition_id = ${competitionId}
+  AND season = ${season};
+`.trim());
+}
+
+const sql = statements.join("\n");
 process.stdout.write(`${sql}\n`);
