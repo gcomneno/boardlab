@@ -31,6 +31,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 25762,
+          "name": "Michael Carrick",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/25762.png",
+          "career": [
+            {
+              "team": {
+                "id": 33,
+                "name": "Manchester United",
+                "logo": "https://media.api-sports.io/football/teams/33.png"
+              },
+              "start": "2025-08-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -606,6 +631,76 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 13959,
+          "name": "M. Jaissle",
+          "firstname": "Matthias",
+          "lastname": "Jaissle",
+          "age": 37,
+          "nationality": "Germany",
+          "photo": "https://media.api-sports.io/football/coachs/13959.png",
+          "career": [
+            {
+              "team": {
+                "id": 34,
+                "name": "Newcastle",
+                "logo": "https://media.api-sports.io/football/teams/34.png"
+              },
+              "start": "2026-08-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 2929,
+                "name": "Al Ahli",
+                "logo": "https://media.api-sports.io/football/teams/2929.png"
+              },
+              "start": "2023-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 571,
+                "name": "Salzburg",
+                "logo": "https://media.api-sports.io/football/teams/571.png"
+              },
+              "start": "2021-07-01",
+              "end": "2023-07-01"
+            },
+            {
+              "team": {
+                "id": 1400,
+                "name": "Liefering",
+                "logo": "https://media.api-sports.io/football/teams/1400.png"
+              },
+              "start": "2021-01-01",
+              "end": "2021-07-01"
+            },
+            {
+              "team": {
+                "id": 7928,
+                "name": "Salzburg U19",
+                "logo": "https://media.api-sports.io/football/teams/7928.png"
+              },
+              "start": "2020-08-01",
+              "end": "2021-01-01"
+            },
+            {
+              "team": {
+                "id": null,
+                "name": "Red Bull Akademie U18",
+                "logo": null
+              },
+              "start": "2019-07-01",
+              "end": "2021-01-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -1165,6 +1260,94 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 1540,
+          "name": "M. Rose",
+          "firstname": "Marco",
+          "lastname": "Rose",
+          "age": 49,
+          "nationality": "Germany",
+          "photo": "https://media.api-sports.io/football/coachs/1540.png",
+          "career": [
+            {
+              "team": {
+                "id": 35,
+                "name": "Bournemouth",
+                "logo": "https://media.api-sports.io/football/teams/35.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 24751,
+                "name": "RB Leipzig U21",
+                "logo": "https://media.api-sports.io/football/teams/24751.png"
+              },
+              "start": "2024-08-01",
+              "end": "2024-10-01"
+            },
+            {
+              "team": {
+                "id": 173,
+                "name": "RB Leipzig",
+                "logo": "https://media.api-sports.io/football/teams/173.png"
+              },
+              "start": "2022-09-01",
+              "end": "2025-03-01"
+            },
+            {
+              "team": {
+                "id": 165,
+                "name": "Borussia Dortmund",
+                "logo": "https://media.api-sports.io/football/teams/165.png"
+              },
+              "start": "2021-07-01",
+              "end": "2022-06-01"
+            },
+            {
+              "team": {
+                "id": 163,
+                "name": "Borussia M'gladbach",
+                "logo": "https://media.api-sports.io/football/teams/163.png"
+              },
+              "start": "2019-07-01",
+              "end": "2021-06-01"
+            },
+            {
+              "team": {
+                "id": 571,
+                "name": "Salzburg",
+                "logo": "https://media.api-sports.io/football/teams/571.png"
+              },
+              "start": "2017-06-01",
+              "end": "2019-06-01"
+            },
+            {
+              "team": {
+                "id": 7928,
+                "name": "Salzburg U19",
+                "logo": "https://media.api-sports.io/football/teams/7928.png"
+              },
+              "start": "2016-07-01",
+              "end": "2017-06-01"
+            },
+            {
+              "team": {
+                "id": 9355,
+                "name": "Lokomotive Leipzig",
+                "logo": "https://media.api-sports.io/football/teams/9355.png"
+              },
+              "start": "2012-07-01",
+              "end": "2013-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -1724,6 +1907,40 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 25679,
+          "name": "Alvaro Arbeloa",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/25679.png",
+          "career": [
+            {
+              "team": {
+                "id": 36,
+                "name": "Fulham",
+                "logo": "https://media.api-sports.io/football/teams/36.png"
+              },
+              "start": "2026-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 541,
+                "name": "Real Madrid",
+                "logo": "https://media.api-sports.io/football/teams/541.png"
+              },
+              "start": "2025-09-01",
+              "end": "2026-05-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -2203,6 +2420,103 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 2798,
+          "name": "César Peixoto",
+          "firstname": "Paulo César",
+          "lastname": "da Silva Peixoto",
+          "age": 45,
+          "nationality": "Portugal",
+          "photo": "https://media.api-sports.io/football/coachs/2798.png",
+          "career": [
+            {
+              "team": {
+                "id": 39,
+                "name": "Wolves",
+                "logo": "https://media.api-sports.io/football/teams/39.png"
+              },
+              "start": "2026-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 762,
+                "name": "Gil Vicente",
+                "logo": "https://media.api-sports.io/football/teams/762.png"
+              },
+              "start": "2025-03-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 215,
+                "name": "Moreirense",
+                "logo": "https://media.api-sports.io/football/teams/215.png"
+              },
+              "start": "2024-07-01",
+              "end": "2025-02-01"
+            },
+            {
+              "team": {
+                "id": 234,
+                "name": "Paços Ferreira",
+                "logo": "https://media.api-sports.io/football/teams/234.png"
+              },
+              "start": "2023-01-01",
+              "end": "2023-05-01"
+            },
+            {
+              "team": {
+                "id": 234,
+                "name": "Paços Ferreira",
+                "logo": "https://media.api-sports.io/football/teams/234.png"
+              },
+              "start": "2021-12-01",
+              "end": "2022-10-01"
+            },
+            {
+              "team": {
+                "id": 215,
+                "name": "Moreirense",
+                "logo": "https://media.api-sports.io/football/teams/215.png"
+              },
+              "start": "2020-11-01",
+              "end": "2021-01-01"
+            },
+            {
+              "team": {
+                "id": 223,
+                "name": "Chaves",
+                "logo": "https://media.api-sports.io/football/teams/223.png"
+              },
+              "start": "2019-12-01",
+              "end": "2020-06-01"
+            },
+            {
+              "team": {
+                "id": 239,
+                "name": "Académica",
+                "logo": "https://media.api-sports.io/football/teams/239.png"
+              },
+              "start": "2019-07-01",
+              "end": "2019-11-01"
+            },
+            {
+              "team": {
+                "id": 237,
+                "name": "Varzim",
+                "logo": "https://media.api-sports.io/football/teams/237.png"
+              },
+              "start": "2019-03-01",
+              "end": "2019-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -2729,6 +3043,67 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 2108,
+          "name": "Andoni Iraola",
+          "firstname": "Andoni",
+          "lastname": "Iraola Sagarna",
+          "age": 43,
+          "nationality": "Spain",
+          "photo": "https://media.api-sports.io/football/coachs/2108.png",
+          "career": [
+            {
+              "team": {
+                "id": 40,
+                "name": "Liverpool",
+                "logo": "https://media.api-sports.io/football/teams/40.png"
+              },
+              "start": "2026-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 35,
+                "name": "AFC Bournemouth",
+                "logo": "https://media.api-sports.io/football/teams/35.png"
+              },
+              "start": "2023-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 728,
+                "name": "Rayo Vallecano",
+                "logo": "https://media.api-sports.io/football/teams/728.png"
+              },
+              "start": "2020-08-01",
+              "end": "2023-06-01"
+            },
+            {
+              "team": {
+                "id": 799,
+                "name": "Mirandes",
+                "logo": "https://media.api-sports.io/football/teams/799.png"
+              },
+              "start": "2019-07-01",
+              "end": "2020-07-01"
+            },
+            {
+              "team": {
+                "id": 614,
+                "name": "AEK Larnaca",
+                "logo": "https://media.api-sports.io/football/teams/614.png"
+              },
+              "start": "2018-07-01",
+              "end": "2019-01-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -3272,6 +3647,85 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 600,
+          "name": "S. Rusk",
+          "firstname": "Simon Edward",
+          "lastname": "Rusk",
+          "age": 44,
+          "nationality": "England",
+          "photo": "https://media.api-sports.io/football/coachs/600.png",
+          "career": [
+            {
+              "team": {
+                "id": 41,
+                "name": "Southampton",
+                "logo": "https://media.api-sports.io/football/teams/41.png"
+              },
+              "start": "2025-04-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 41,
+                "name": "Southampton",
+                "logo": "https://media.api-sports.io/football/teams/41.png"
+              },
+              "start": "2024-12-01",
+              "end": "2024-12-01"
+            },
+            {
+              "team": {
+                "id": 7201,
+                "name": "Southampton U21",
+                "logo": "https://media.api-sports.io/football/teams/7201.png"
+              },
+              "start": "2024-08-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 10332,
+                "name": "England U19",
+                "logo": "https://media.api-sports.io/football/teams/10332.png"
+              },
+              "start": "2022-09-01",
+              "end": "2023-12-01"
+            },
+            {
+              "team": {
+                "id": 4686,
+                "name": "Stockport County",
+                "logo": "https://media.api-sports.io/football/teams/4686.png"
+              },
+              "start": "2021-01-01",
+              "end": "2021-10-01"
+            },
+            {
+              "team": {
+                "id": 7191,
+                "name": "Brighton & Hove U21",
+                "logo": "https://media.api-sports.io/football/teams/7191.png"
+              },
+              "start": "2017-07-01",
+              "end": "2021-01-01"
+            },
+            {
+              "team": {
+                "id": 11917,
+                "name": "Brighton U23",
+                "logo": "https://media.api-sports.io/football/teams/11917.png"
+              },
+              "start": "2016-07-01",
+              "end": "2021-01-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -3719,6 +4173,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 7248,
+          "name": "Mikel Arteta",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/7248.png",
+          "career": [
+            {
+              "team": {
+                "id": 42,
+                "name": "Arsenal",
+                "logo": "https://media.api-sports.io/football/teams/42.png"
+              },
+              "start": "2019-12-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -4294,6 +4773,40 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 17953,
+          "name": "L. Baines",
+          "firstname": "Leighton",
+          "lastname": "Baines",
+          "age": 41,
+          "nationality": "England",
+          "photo": "https://media.api-sports.io/football/coachs/17953.png",
+          "career": [
+            {
+              "team": {
+                "id": 45,
+                "name": "Everton",
+                "logo": "https://media.api-sports.io/football/teams/45.png"
+              },
+              "start": "2025-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 15378,
+                "name": "Everton U18",
+                "logo": "https://media.api-sports.io/football/teams/15378.png"
+              },
+              "start": "2022-08-01",
+              "end": "2024-12-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -4741,6 +5254,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29001,
+          "name": "Russell Martin",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29001.png",
+          "career": [
+            {
+              "team": {
+                "id": 46,
+                "name": "Leicester",
+                "logo": "https://media.api-sports.io/football/teams/46.png"
+              },
+              "start": "2026-07-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -5380,6 +5918,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 28389,
+          "name": "Bruno Saltor",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/28389.png",
+          "career": [
+            {
+              "team": {
+                "id": 47,
+                "name": "Tottenham",
+                "logo": "https://media.api-sports.io/football/teams/47.png"
+              },
+              "start": "2025-11-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -5923,6 +6486,94 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 16,
+          "name": "Nuno Espírito Santo",
+          "firstname": "Nuno Herlander",
+          "lastname": "Simões Espírito Santo",
+          "age": 51,
+          "nationality": "Portugal",
+          "photo": "https://media.api-sports.io/football/coachs/16.png",
+          "career": [
+            {
+              "team": {
+                "id": 48,
+                "name": "West Ham",
+                "logo": "https://media.api-sports.io/football/teams/48.png"
+              },
+              "start": "2025-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 65,
+                "name": "Nottingham Forest",
+                "logo": "https://media.api-sports.io/football/teams/65.png"
+              },
+              "start": "2023-12-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 2938,
+                "name": "Al Ittihad",
+                "logo": "https://media.api-sports.io/football/teams/2938.png"
+              },
+              "start": "2022-07-01",
+              "end": "2023-11-01"
+            },
+            {
+              "team": {
+                "id": 47,
+                "name": "Tottenham Hotspur",
+                "logo": "https://media.api-sports.io/football/teams/47.png"
+              },
+              "start": "2021-06-01",
+              "end": "2021-11-01"
+            },
+            {
+              "team": {
+                "id": 39,
+                "name": "Wolverhampton Wanderers",
+                "logo": "https://media.api-sports.io/football/teams/39.png"
+              },
+              "start": "2017-05-01",
+              "end": "2021-05-01"
+            },
+            {
+              "team": {
+                "id": 212,
+                "name": "Porto",
+                "logo": "https://media.api-sports.io/football/teams/212.png"
+              },
+              "start": "2016-06-01",
+              "end": "2017-05-01"
+            },
+            {
+              "team": {
+                "id": 532,
+                "name": "Valencia",
+                "logo": "https://media.api-sports.io/football/teams/532.png"
+              },
+              "start": "2014-07-01",
+              "end": "2015-11-01"
+            },
+            {
+              "team": {
+                "id": 226,
+                "name": "Rio Ave",
+                "logo": "https://media.api-sports.io/football/teams/226.png"
+              },
+              "start": "2012-07-01",
+              "end": "2014-05-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -6402,6 +7053,58 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 6801,
+          "name": "Xabi Alonso",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/6801.png",
+          "career": [
+            {
+              "team": {
+                "id": 49,
+                "name": "Chelsea",
+                "logo": "https://media.api-sports.io/football/teams/49.png"
+              },
+              "start": "2026-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 541,
+                "name": "Real Madrid",
+                "logo": "https://media.api-sports.io/football/teams/541.png"
+              },
+              "start": "2025-06-01",
+              "end": "2026-01-01"
+            },
+            {
+              "team": {
+                "id": 168,
+                "name": "Bayer Leverkusen",
+                "logo": "https://media.api-sports.io/football/teams/168.png"
+              },
+              "start": "2022-10-01",
+              "end": "2025-05-01"
+            },
+            {
+              "team": {
+                "id": 9585,
+                "name": "Real Sociedad II",
+                "logo": "https://media.api-sports.io/football/teams/9585.png"
+              },
+              "start": "2019-08-01",
+              "end": "2022-05-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -6913,6 +7616,76 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 12629,
+          "name": "E. Maresca",
+          "firstname": "Vincenzo",
+          "lastname": "Maresca",
+          "age": 45,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/12629.png",
+          "career": [
+            {
+              "team": {
+                "id": 50,
+                "name": "Manchester City",
+                "logo": "https://media.api-sports.io/football/teams/50.png"
+              },
+              "start": "2026-08-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 49,
+                "name": "Chelsea",
+                "logo": "https://media.api-sports.io/football/teams/49.png"
+              },
+              "start": "2024-06-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 46,
+                "name": "Leicester City",
+                "logo": "https://media.api-sports.io/football/teams/46.png"
+              },
+              "start": "2023-07-01",
+              "end": "2024-06-01"
+            },
+            {
+              "team": {
+                "id": 523,
+                "name": "Parma",
+                "logo": "https://media.api-sports.io/football/teams/523.png"
+              },
+              "start": "2021-05-01",
+              "end": "2021-11-01"
+            },
+            {
+              "team": {
+                "id": 7197,
+                "name": "Manchester City U21",
+                "logo": "https://media.api-sports.io/football/teams/7197.png"
+              },
+              "start": "2020-09-01",
+              "end": "2021-05-01"
+            },
+            {
+              "team": {
+                "id": 15637,
+                "name": "Manchester City U23",
+                "logo": "https://media.api-sports.io/football/teams/15637.png"
+              },
+              "start": "2020-08-01",
+              "end": "2021-05-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -7376,6 +8149,49 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 19253,
+          "name": "F. Hürzeler",
+          "firstname": "Fabian Marc",
+          "lastname": "Hürzeler",
+          "age": 32,
+          "nationality": "Germany",
+          "photo": "https://media.api-sports.io/football/coachs/19253.png",
+          "career": [
+            {
+              "team": {
+                "id": 51,
+                "name": "Brighton & Hove Albion",
+                "logo": "https://media.api-sports.io/football/teams/51.png"
+              },
+              "start": "2024-06-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 186,
+                "name": "St. Pauli",
+                "logo": "https://media.api-sports.io/football/teams/186.png"
+              },
+              "start": "2022-12-01",
+              "end": "2024-06-01"
+            },
+            {
+              "team": {
+                "id": 12832,
+                "name": "Pipinsried",
+                "logo": "https://media.api-sports.io/football/teams/12832.png"
+              },
+              "start": "2016-07-01",
+              "end": "2020-07-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -7935,6 +8751,58 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 21562,
+          "name": "P. Sage",
+          "firstname": "Pierre",
+          "lastname": "Sage",
+          "age": 46,
+          "nationality": "France",
+          "photo": "https://media.api-sports.io/football/coachs/21562.png",
+          "career": [
+            {
+              "team": {
+                "id": 52,
+                "name": "Crystal Palace",
+                "logo": "https://media.api-sports.io/football/teams/52.png"
+              },
+              "start": "2026-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 116,
+                "name": "Lens",
+                "logo": "https://media.api-sports.io/football/teams/116.png"
+              },
+              "start": "2025-07-01",
+              "end": "2026-05-01"
+            },
+            {
+              "team": {
+                "id": 80,
+                "name": "Lyon",
+                "logo": "https://media.api-sports.io/football/teams/80.png"
+              },
+              "start": "2023-11-01",
+              "end": "2025-01-01"
+            },
+            {
+              "team": {
+                "id": 9969,
+                "name": "Chambéry",
+                "logo": "https://media.api-sports.io/football/teams/9969.png"
+              },
+              "start": "2012-07-01",
+              "end": "2013-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -8542,6 +9410,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 25364,
+          "name": "Keith Andrews",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/25364.png",
+          "career": [
+            {
+              "team": {
+                "id": 55,
+                "name": "Brentford",
+                "logo": "https://media.api-sports.io/football/teams/55.png"
+              },
+              "start": "2025-07-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -9005,6 +9898,49 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 18151,
+          "name": "G. O'Neil",
+          "firstname": "Gary Paul",
+          "lastname": "O'Neil",
+          "age": 42,
+          "nationality": "England",
+          "photo": "https://media.api-sports.io/football/coachs/18151.png",
+          "career": [
+            {
+              "team": {
+                "id": 57,
+                "name": "Ipswich",
+                "logo": "https://media.api-sports.io/football/teams/57.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 39,
+                "name": "Wolverhampton Wanderers",
+                "logo": "https://media.api-sports.io/football/teams/39.png"
+              },
+              "start": "2023-08-01",
+              "end": "2024-12-01"
+            },
+            {
+              "team": {
+                "id": 35,
+                "name": "AFC Bournemouth",
+                "logo": "https://media.api-sports.io/football/teams/35.png"
+              },
+              "start": "2022-08-01",
+              "end": "2023-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -9507,6 +10443,76 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 1534,
+          "name": "O. Glasner",
+          "firstname": "Oliver",
+          "lastname": "Glasner",
+          "age": 51,
+          "nationality": "Austria",
+          "photo": "https://media.api-sports.io/football/coachs/1534.png",
+          "career": [
+            {
+              "team": {
+                "id": 65,
+                "name": "Nottingham Forest",
+                "logo": "https://media.api-sports.io/football/teams/65.png"
+              },
+              "start": "2026-08-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 52,
+                "name": "Crystal Palace",
+                "logo": "https://media.api-sports.io/football/teams/52.png"
+              },
+              "start": "2024-02-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 169,
+                "name": "Eintracht Frankfurt",
+                "logo": "https://media.api-sports.io/football/teams/169.png"
+              },
+              "start": "2021-07-01",
+              "end": "2023-06-01"
+            },
+            {
+              "team": {
+                "id": 161,
+                "name": "Wolfsburg",
+                "logo": "https://media.api-sports.io/football/teams/161.png"
+              },
+              "start": "2019-07-01",
+              "end": "2021-06-01"
+            },
+            {
+              "team": {
+                "id": 1026,
+                "name": "LASK",
+                "logo": "https://media.api-sports.io/football/teams/1026.png"
+              },
+              "start": "2015-07-01",
+              "end": "2019-06-01"
+            },
+            {
+              "team": {
+                "id": 1028,
+                "name": "Ried",
+                "logo": "https://media.api-sports.io/football/teams/1028.png"
+              },
+              "start": "2014-06-01",
+              "end": "2015-05-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -9986,6 +10992,103 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.400Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 18,
+          "name": "Unai Emery",
+          "firstname": "Unai",
+          "lastname": "Emery Etxegoien",
+          "age": 54,
+          "nationality": "Spain",
+          "photo": "https://media.api-sports.io/football/coachs/18.png",
+          "career": [
+            {
+              "team": {
+                "id": 66,
+                "name": "Aston Villa",
+                "logo": "https://media.api-sports.io/football/teams/66.png"
+              },
+              "start": "2022-11-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 533,
+                "name": "Villarreal",
+                "logo": "https://media.api-sports.io/football/teams/533.png"
+              },
+              "start": "2020-07-01",
+              "end": "2022-10-01"
+            },
+            {
+              "team": {
+                "id": 42,
+                "name": "Arsenal",
+                "logo": "https://media.api-sports.io/football/teams/42.png"
+              },
+              "start": "2018-05-01",
+              "end": "2019-11-01"
+            },
+            {
+              "team": {
+                "id": 85,
+                "name": "PSG",
+                "logo": "https://media.api-sports.io/football/teams/85.png"
+              },
+              "start": "2016-06-01",
+              "end": "2018-05-01"
+            },
+            {
+              "team": {
+                "id": 536,
+                "name": "Sevilla",
+                "logo": "https://media.api-sports.io/football/teams/536.png"
+              },
+              "start": "2013-01-01",
+              "end": "2016-06-01"
+            },
+            {
+              "team": {
+                "id": 558,
+                "name": "Spartak Moscow",
+                "logo": "https://media.api-sports.io/football/teams/558.png"
+              },
+              "start": "2012-06-01",
+              "end": "2012-11-01"
+            },
+            {
+              "team": {
+                "id": 532,
+                "name": "Valencia",
+                "logo": "https://media.api-sports.io/football/teams/532.png"
+              },
+              "start": "2008-07-01",
+              "end": "2012-06-01"
+            },
+            {
+              "team": {
+                "id": 723,
+                "name": "Almeria",
+                "logo": "https://media.api-sports.io/football/teams/723.png"
+              },
+              "start": "2006-07-01",
+              "end": "2008-06-01"
+            },
+            {
+              "team": {
+                "id": 9400,
+                "name": "Lorca Deportiva CF",
+                "logo": "https://media.api-sports.io/football/teams/9400.png"
+              },
+              "start": "2004-11-01",
+              "end": "2006-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [

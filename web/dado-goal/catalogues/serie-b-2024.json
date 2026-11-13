@@ -31,6 +31,58 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 15941,
+          "name": "A. Aquilani",
+          "firstname": "Alberto",
+          "lastname": "Aquilani",
+          "age": 41,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/15941.png",
+          "career": [
+            {
+              "team": {
+                "id": 488,
+                "name": "Sassuolo",
+                "logo": "https://media.api-sports.io/football/teams/488.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 1687,
+                "name": "Catanzaro",
+                "logo": "https://media.api-sports.io/football/teams/1687.png"
+              },
+              "start": "2025-07-01",
+              "end": "2026-08-01"
+            },
+            {
+              "team": {
+                "id": 801,
+                "name": "Pisa",
+                "logo": "https://media.api-sports.io/football/teams/801.png"
+              },
+              "start": "2023-07-01",
+              "end": "2024-06-01"
+            },
+            {
+              "team": {
+                "id": 15665,
+                "name": "Fiorentina U19",
+                "logo": "https://media.api-sports.io/football/teams/15665.png"
+              },
+              "start": "2021-07-01",
+              "end": "2023-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -611,6 +663,103 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 1602,
+          "name": "L. D'Angelo",
+          "firstname": "Luca",
+          "lastname": "D'Angelo",
+          "age": 54,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/1602.png",
+          "career": [
+            {
+              "team": {
+                "id": 498,
+                "name": "Sampdoria",
+                "logo": "https://media.api-sports.io/football/teams/498.png"
+              },
+              "start": "2026-10-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 515,
+                "name": "Spezia",
+                "logo": "https://media.api-sports.io/football/teams/515.png"
+              },
+              "start": "2023-11-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 801,
+                "name": "Pisa",
+                "logo": "https://media.api-sports.io/football/teams/801.png"
+              },
+              "start": "2022-09-01",
+              "end": "2023-06-01"
+            },
+            {
+              "team": {
+                "id": 801,
+                "name": "Pisa",
+                "logo": "https://media.api-sports.io/football/teams/801.png"
+              },
+              "start": "2018-06-01",
+              "end": "2022-06-01"
+            },
+            {
+              "team": {
+                "id": 885,
+                "name": "Casertana",
+                "logo": "https://media.api-sports.io/football/teams/885.png"
+              },
+              "start": "2017-10-01",
+              "end": "2018-05-01"
+            },
+            {
+              "team": {
+                "id": 881,
+                "name": "Bassano",
+                "logo": "https://media.api-sports.io/football/teams/881.png"
+              },
+              "start": "2016-07-01",
+              "end": "2017-02-01"
+            },
+            {
+              "team": {
+                "id": 1695,
+                "name": "Fidelis Andria",
+                "logo": "https://media.api-sports.io/football/teams/1695.png"
+              },
+              "start": "2015-07-01",
+              "end": "2016-06-01"
+            },
+            {
+              "team": {
+                "id": 878,
+                "name": "Alessandria",
+                "logo": "https://media.api-sports.io/football/teams/878.png"
+              },
+              "start": "2013-11-01",
+              "end": "2015-06-01"
+            },
+            {
+              "team": {
+                "id": 1709,
+                "name": "Rimini",
+                "logo": "https://media.api-sports.io/football/teams/1709.png"
+              },
+              "start": "2011-07-01",
+              "end": "2013-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -1074,6 +1223,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29582,
+          "name": "Massimo Rastelli",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29582.png",
+          "career": [
+            {
+              "team": {
+                "id": 508,
+                "name": "Bari",
+                "logo": "https://media.api-sports.io/football/teams/508.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -1569,6 +1743,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29170,
+          "name": "Alessandro Diamanti",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29170.png",
+          "career": [
+            {
+              "team": {
+                "id": 509,
+                "name": "Cesena",
+                "logo": "https://media.api-sports.io/football/teams/509.png"
+              },
+              "start": "2026-08-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -2080,6 +2279,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29442,
+          "name": "Roberto Musso",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29442.png",
+          "career": [
+            {
+              "team": {
+                "id": 510,
+                "name": "Cittadella",
+                "logo": "https://media.api-sports.io/football/teams/510.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -2559,6 +2783,112 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 413,
+          "name": "M. Alvini",
+          "firstname": "Massimiliano",
+          "lastname": "Alvini",
+          "age": 55,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/413.png",
+          "career": [
+            {
+              "team": {
+                "id": 512,
+                "name": "Frosinone",
+                "logo": "https://media.api-sports.io/football/teams/512.png"
+              },
+              "start": "2025-08-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 10137,
+                "name": "Cosenza",
+                "logo": "https://media.api-sports.io/football/teams/10137.png"
+              },
+              "start": "2025-03-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 10137,
+                "name": "Cosenza",
+                "logo": "https://media.api-sports.io/football/teams/10137.png"
+              },
+              "start": "2024-06-01",
+              "end": "2025-02-01"
+            },
+            {
+              "team": {
+                "id": 515,
+                "name": "Spezia",
+                "logo": "https://media.api-sports.io/football/teams/515.png"
+              },
+              "start": "2023-07-01",
+              "end": "2023-11-01"
+            },
+            {
+              "team": {
+                "id": 520,
+                "name": "Cremonese",
+                "logo": "https://media.api-sports.io/football/teams/520.png"
+              },
+              "start": "2022-06-01",
+              "end": "2023-01-01"
+            },
+            {
+              "team": {
+                "id": 524,
+                "name": "Perugia",
+                "logo": "https://media.api-sports.io/football/teams/524.png"
+              },
+              "start": "2021-06-01",
+              "end": "2022-06-01"
+            },
+            {
+              "team": {
+                "id": 880,
+                "name": "Reggiana",
+                "logo": "https://media.api-sports.io/football/teams/880.png"
+              },
+              "start": "2019-07-01",
+              "end": "2021-06-01"
+            },
+            {
+              "team": {
+                "id": 879,
+                "name": "AlbinoLeffe",
+                "logo": "https://media.api-sports.io/football/teams/879.png"
+              },
+              "start": "2016-08-01",
+              "end": "2018-11-01"
+            },
+            {
+              "team": {
+                "id": 1589,
+                "name": "Pistoiese",
+                "logo": "https://media.api-sports.io/football/teams/1589.png"
+              },
+              "start": "2015-06-01",
+              "end": "2016-04-01"
+            },
+            {
+              "team": {
+                "id": 1686,
+                "name": "Tuttocuoio",
+                "logo": "https://media.api-sports.io/football/teams/1686.png"
+              },
+              "start": "2013-07-01",
+              "end": "2015-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -3068,6 +3398,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29584,
+          "name": "Serse Cosmi",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29584.png",
+          "career": [
+            {
+              "team": {
+                "id": 514,
+                "name": "Salernitana",
+                "logo": "https://media.api-sports.io/football/teams/514.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -3547,6 +3902,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29551,
+          "name": "Marco Turati",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29551.png",
+          "career": [
+            {
+              "team": {
+                "id": 515,
+                "name": "Spezia",
+                "logo": "https://media.api-sports.io/football/teams/515.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -4074,6 +4454,157 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 2908,
+          "name": "P. Bisoli",
+          "firstname": "Pierpaolo",
+          "lastname": "Bisoli",
+          "age": 59,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/2908.png",
+          "career": [
+            {
+              "team": {
+                "id": 518,
+                "name": "Brescia",
+                "logo": "https://media.api-sports.io/football/teams/518.png"
+              },
+              "start": "2024-12-01",
+              "end": "2025-01-01"
+            },
+            {
+              "team": {
+                "id": 899,
+                "name": "Modena",
+                "logo": "https://media.api-sports.io/football/teams/899.png"
+              },
+              "start": "2024-04-01",
+              "end": "2024-11-01"
+            },
+            {
+              "team": {
+                "id": 1578,
+                "name": "Südtirol",
+                "logo": "https://media.api-sports.io/football/teams/1578.png"
+              },
+              "start": "2022-08-01",
+              "end": "2023-12-01"
+            },
+            {
+              "team": {
+                "id": 10137,
+                "name": "Cosenza",
+                "logo": "https://media.api-sports.io/football/teams/10137.png"
+              },
+              "start": "2022-02-01",
+              "end": "2022-06-01"
+            },
+            {
+              "team": {
+                "id": 520,
+                "name": "Cremonese",
+                "logo": "https://media.api-sports.io/football/teams/520.png"
+              },
+              "start": "2020-03-01",
+              "end": "2021-01-01"
+            },
+            {
+              "team": {
+                "id": 870,
+                "name": "Padova",
+                "logo": "https://media.api-sports.io/football/teams/870.png"
+              },
+              "start": "2018-12-01",
+              "end": "2019-03-01"
+            },
+            {
+              "team": {
+                "id": 870,
+                "name": "Padova",
+                "logo": "https://media.api-sports.io/football/teams/870.png"
+              },
+              "start": "2017-06-01",
+              "end": "2018-11-01"
+            },
+            {
+              "team": {
+                "id": 1584,
+                "name": "Vicenza",
+                "logo": "https://media.api-sports.io/football/teams/1584.png"
+              },
+              "start": "2016-10-01",
+              "end": "2017-04-01"
+            },
+            {
+              "team": {
+                "id": 524,
+                "name": "Perugia",
+                "logo": "https://media.api-sports.io/football/teams/524.png"
+              },
+              "start": "2015-06-01",
+              "end": "2016-06-01"
+            },
+            {
+              "team": {
+                "id": 509,
+                "name": "Cesena",
+                "logo": "https://media.api-sports.io/football/teams/509.png"
+              },
+              "start": "2012-09-01",
+              "end": "2014-12-01"
+            },
+            {
+              "team": {
+                "id": 500,
+                "name": "Bologna",
+                "logo": "https://media.api-sports.io/football/teams/500.png"
+              },
+              "start": "2011-05-01",
+              "end": "2011-10-01"
+            },
+            {
+              "team": {
+                "id": 490,
+                "name": "Cagliari",
+                "logo": "https://media.api-sports.io/football/teams/490.png"
+              },
+              "start": "2010-06-01",
+              "end": "2010-11-01"
+            },
+            {
+              "team": {
+                "id": 509,
+                "name": "Cesena",
+                "logo": "https://media.api-sports.io/football/teams/509.png"
+              },
+              "start": "2008-07-01",
+              "end": "2010-06-01"
+            },
+            {
+              "team": {
+                "id": 9496,
+                "name": "Città di Foligno",
+                "logo": "https://media.api-sports.io/football/teams/9496.png"
+              },
+              "start": "2007-07-01",
+              "end": "2008-06-01"
+            },
+            {
+              "team": {
+                "id": 1680,
+                "name": "Prato",
+                "logo": "https://media.api-sports.io/football/teams/1680.png"
+              },
+              "start": "2006-07-01",
+              "end": "2007-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -4297,6 +4828,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29427,
+          "name": "Fabio Pecchia",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29427.png",
+          "career": [
+            {
+              "team": {
+                "id": 520,
+                "name": "Cremonese",
+                "logo": "https://media.api-sports.io/football/teams/520.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -4824,6 +5380,112 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 1603,
+          "name": "F. Inzaghi",
+          "firstname": "Filippo",
+          "lastname": "Inzaghi",
+          "age": 52,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/1603.png",
+          "career": [
+            {
+              "team": {
+                "id": 522,
+                "name": "Palermo",
+                "logo": "https://media.api-sports.io/football/teams/522.png"
+              },
+              "start": "2025-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 801,
+                "name": "Pisa",
+                "logo": "https://media.api-sports.io/football/teams/801.png"
+              },
+              "start": "2024-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 514,
+                "name": "Salernitana",
+                "logo": "https://media.api-sports.io/football/teams/514.png"
+              },
+              "start": "2023-10-01",
+              "end": "2024-02-01"
+            },
+            {
+              "team": {
+                "id": 1692,
+                "name": "Reggina",
+                "logo": "https://media.api-sports.io/football/teams/1692.png"
+              },
+              "start": "2022-07-01",
+              "end": "2023-10-01"
+            },
+            {
+              "team": {
+                "id": 518,
+                "name": "Brescia",
+                "logo": "https://media.api-sports.io/football/teams/518.png"
+              },
+              "start": "2021-06-01",
+              "end": "2022-03-01"
+            },
+            {
+              "team": {
+                "id": 506,
+                "name": "Benevento",
+                "logo": "https://media.api-sports.io/football/teams/506.png"
+              },
+              "start": "2019-06-01",
+              "end": "2021-06-01"
+            },
+            {
+              "team": {
+                "id": 500,
+                "name": "Bologna",
+                "logo": "https://media.api-sports.io/football/teams/500.png"
+              },
+              "start": "2018-07-01",
+              "end": "2019-01-01"
+            },
+            {
+              "team": {
+                "id": 517,
+                "name": "Venezia",
+                "logo": "https://media.api-sports.io/football/teams/517.png"
+              },
+              "start": "2016-07-01",
+              "end": "2018-06-01"
+            },
+            {
+              "team": {
+                "id": 489,
+                "name": "AC Milan",
+                "logo": "https://media.api-sports.io/football/teams/489.png"
+              },
+              "start": "2014-07-01",
+              "end": "2015-06-01"
+            },
+            {
+              "team": {
+                "id": 15670,
+                "name": "Milan U19",
+                "logo": "https://media.api-sports.io/football/teams/15670.png"
+              },
+              "start": "2013-09-01",
+              "end": "2014-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -5319,6 +5981,76 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 3728,
+          "name": "P. Bianco",
+          "firstname": "Paolo",
+          "lastname": "Bianco",
+          "age": 48,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/3728.png",
+          "career": [
+            {
+              "team": {
+                "id": 801,
+                "name": "Pisa",
+                "logo": "https://media.api-sports.io/football/teams/801.png"
+              },
+              "start": "2026-08-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 1579,
+                "name": "Monza",
+                "logo": "https://media.api-sports.io/football/teams/1579.png"
+              },
+              "start": "2025-07-01",
+              "end": "2026-07-01"
+            },
+            {
+              "team": {
+                "id": 512,
+                "name": "Frosinone",
+                "logo": "https://media.api-sports.io/football/teams/512.png"
+              },
+              "start": "2025-02-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 899,
+                "name": "Modena",
+                "logo": "https://media.api-sports.io/football/teams/899.png"
+              },
+              "start": "2023-06-01",
+              "end": "2024-04-01"
+            },
+            {
+              "team": {
+                "id": 1590,
+                "name": "Sicula Leonzio",
+                "logo": "https://media.api-sports.io/football/teams/1590.png"
+              },
+              "start": "2018-06-01",
+              "end": "2018-12-01"
+            },
+            {
+              "team": {
+                "id": 894,
+                "name": "Siracusa",
+                "logo": "https://media.api-sports.io/football/teams/894.png"
+              },
+              "start": "2017-06-01",
+              "end": "2018-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -5830,6 +6562,58 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 21214,
+          "name": "P. De Giorgio",
+          "firstname": "Pietro",
+          "lastname": "De Giorgio",
+          "age": 42,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/21214.png",
+          "career": [
+            {
+              "team": {
+                "id": 863,
+                "name": "Juve Stabia",
+                "logo": "https://media.api-sports.io/football/teams/863.png"
+              },
+              "start": "2026-10-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 1710,
+                "name": "Potenza",
+                "logo": "https://media.api-sports.io/football/teams/1710.png"
+              },
+              "start": "2024-04-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 1710,
+                "name": "Potenza",
+                "logo": "https://media.api-sports.io/football/teams/1710.png"
+              },
+              "start": "2023-12-01",
+              "end": "2023-12-01"
+            },
+            {
+              "team": {
+                "id": 1710,
+                "name": "Potenza",
+                "logo": "https://media.api-sports.io/football/teams/1710.png"
+              },
+              "start": "2023-10-01",
+              "end": "2023-10-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -6357,6 +7141,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29545,
+          "name": "Attilio Tesser",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29545.png",
+          "career": [
+            {
+              "team": {
+                "id": 880,
+                "name": "Reggiana",
+                "logo": "https://media.api-sports.io/football/teams/880.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -6836,6 +7645,49 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 20679,
+          "name": "D. Galloppa",
+          "firstname": "Daniele",
+          "lastname": "Galloppa",
+          "age": 40,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/20679.png",
+          "career": [
+            {
+              "team": {
+                "id": 899,
+                "name": "Modena",
+                "logo": "https://media.api-sports.io/football/teams/899.png"
+              },
+              "start": "2026-10-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 24731,
+                "name": "Fiorentina U20",
+                "logo": "https://media.api-sports.io/football/teams/24731.png"
+              },
+              "start": "2024-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 15665,
+                "name": "Fiorentina U19",
+                "logo": "https://media.api-sports.io/football/teams/15665.png"
+              },
+              "start": "2023-07-01",
+              "end": "2024-06-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -7347,6 +8199,49 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 19426,
+          "name": "D. Possanzini",
+          "firstname": "Davide",
+          "lastname": "Possanzini",
+          "age": 49,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/19426.png",
+          "career": [
+            {
+              "team": {
+                "id": 1578,
+                "name": "Sudtirol",
+                "logo": "https://media.api-sports.io/football/teams/1578.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 1693,
+                "name": "Mantova",
+                "logo": "https://media.api-sports.io/football/teams/1693.png"
+              },
+              "start": "2023-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 518,
+                "name": "Brescia",
+                "logo": "https://media.api-sports.io/football/teams/518.png"
+              },
+              "start": "2023-02-01",
+              "end": "2023-02-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -7858,6 +8753,94 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 15285,
+          "name": "G. Pagliuca",
+          "firstname": "Guido",
+          "lastname": "Pagliuca",
+          "age": 49,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/15285.png",
+          "career": [
+            {
+              "team": {
+                "id": 1581,
+                "name": "Carrarese",
+                "logo": "https://media.api-sports.io/football/teams/1581.png"
+              },
+              "start": "2026-10-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 511,
+                "name": "Empoli",
+                "logo": "https://media.api-sports.io/football/teams/511.png"
+              },
+              "start": "2025-07-01",
+              "end": "2025-12-01"
+            },
+            {
+              "team": {
+                "id": 863,
+                "name": "Juve Stabia",
+                "logo": "https://media.api-sports.io/football/teams/863.png"
+              },
+              "start": "2023-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 1583,
+                "name": "Siena",
+                "logo": "https://media.api-sports.io/football/teams/1583.png"
+              },
+              "start": "2022-07-01",
+              "end": "2023-06-01"
+            },
+            {
+              "team": {
+                "id": 889,
+                "name": "Lucchese",
+                "logo": "https://media.api-sports.io/football/teams/889.png"
+              },
+              "start": "2021-08-01",
+              "end": "2022-06-01"
+            },
+            {
+              "team": {
+                "id": 6381,
+                "name": "Pianese",
+                "logo": "https://media.api-sports.io/football/teams/6381.png"
+              },
+              "start": "2020-07-01",
+              "end": "2021-06-01"
+            },
+            {
+              "team": {
+                "id": 889,
+                "name": "Lucchese",
+                "logo": "https://media.api-sports.io/football/teams/889.png"
+              },
+              "start": "2013-07-01",
+              "end": "2014-11-01"
+            },
+            {
+              "team": {
+                "id": 1699,
+                "name": "Follonica Gavorrano",
+                "logo": "https://media.api-sports.io/football/teams/1699.png"
+              },
+              "start": "2011-07-01",
+              "end": "2011-11-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -8369,6 +9352,85 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 3725,
+          "name": "M. Mignani",
+          "firstname": "Michele",
+          "lastname": "Mignani",
+          "age": 53,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/3725.png",
+          "career": [
+            {
+              "team": {
+                "id": 1687,
+                "name": "Catanzaro",
+                "logo": "https://media.api-sports.io/football/teams/1687.png"
+              },
+              "start": "2026-10-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 509,
+                "name": "Cesena",
+                "logo": "https://media.api-sports.io/football/teams/509.png"
+              },
+              "start": "2024-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 522,
+                "name": "Palermo",
+                "logo": "https://media.api-sports.io/football/teams/522.png"
+              },
+              "start": "2024-04-01",
+              "end": "2024-06-01"
+            },
+            {
+              "team": {
+                "id": 508,
+                "name": "Bari",
+                "logo": "https://media.api-sports.io/football/teams/508.png"
+              },
+              "start": "2021-07-01",
+              "end": "2023-10-01"
+            },
+            {
+              "team": {
+                "id": 899,
+                "name": "Modena",
+                "logo": "https://media.api-sports.io/football/teams/899.png"
+              },
+              "start": "2019-11-01",
+              "end": "2021-06-01"
+            },
+            {
+              "team": {
+                "id": 1583,
+                "name": "Siena",
+                "logo": "https://media.api-sports.io/football/teams/1583.png"
+              },
+              "start": "2017-06-01",
+              "end": "2019-05-01"
+            },
+            {
+              "team": {
+                "id": 1697,
+                "name": "Olbia",
+                "logo": "https://media.api-sports.io/football/teams/1697.png"
+              },
+              "start": "2016-01-01",
+              "end": "2017-03-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -8855,6 +9917,94 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 416,
+          "name": "F. Modesto",
+          "firstname": "Francesco",
+          "lastname": "Modesto",
+          "age": 43,
+          "nationality": "Italy",
+          "photo": "https://media.api-sports.io/football/coachs/416.png",
+          "career": [
+            {
+              "team": {
+                "id": 1693,
+                "name": "Mantova",
+                "logo": "https://media.api-sports.io/football/teams/1693.png"
+              },
+              "start": "2026-10-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 22104,
+                "name": "Atalanta II",
+                "logo": "https://media.api-sports.io/football/teams/22104.png"
+              },
+              "start": "2023-07-01",
+              "end": null
+            },
+            {
+              "team": {
+                "id": 1584,
+                "name": "Vicenza",
+                "logo": "https://media.api-sports.io/football/teams/1584.png"
+              },
+              "start": "2022-11-01",
+              "end": "2023-03-01"
+            },
+            {
+              "team": {
+                "id": 501,
+                "name": "Crotone",
+                "logo": "https://media.api-sports.io/football/teams/501.png"
+              },
+              "start": "2021-12-01",
+              "end": "2022-05-01"
+            },
+            {
+              "team": {
+                "id": 501,
+                "name": "Crotone",
+                "logo": "https://media.api-sports.io/football/teams/501.png"
+              },
+              "start": "2021-06-01",
+              "end": "2021-10-01"
+            },
+            {
+              "team": {
+                "id": 526,
+                "name": "Pro Vercelli",
+                "logo": "https://media.api-sports.io/football/teams/526.png"
+              },
+              "start": "2020-08-01",
+              "end": "2021-06-01"
+            },
+            {
+              "team": {
+                "id": 509,
+                "name": "Cesena",
+                "logo": "https://media.api-sports.io/football/teams/509.png"
+              },
+              "start": "2019-06-01",
+              "end": "2020-01-01"
+            },
+            {
+              "team": {
+                "id": 886,
+                "name": "Rende",
+                "logo": "https://media.api-sports.io/football/teams/886.png"
+              },
+              "start": "2018-07-01",
+              "end": "2019-05-01"
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
@@ -9366,6 +10516,31 @@
         "provenance": {
           "provider": "api-football",
           "retrievedAt": "2026-11-12T11:55:54.603Z"
+        },
+        "coach": {
+          "provider": "api-football",
+          "providerCoachId": 29581,
+          "name": "Federico Coppitelli",
+          "firstname": null,
+          "lastname": null,
+          "age": null,
+          "nationality": null,
+          "photo": "https://media.api-sports.io/football/coachs/29581.png",
+          "career": [
+            {
+              "team": {
+                "id": 10137,
+                "name": "Cosenza",
+                "logo": "https://media.api-sports.io/football/teams/10137.png"
+              },
+              "start": "2026-09-01",
+              "end": null
+            }
+          ],
+          "provenance": {
+            "provider": "api-football",
+            "retrievedAt": "2026-11-13T00:00:00.000Z"
+          }
         }
       },
       "players": [
