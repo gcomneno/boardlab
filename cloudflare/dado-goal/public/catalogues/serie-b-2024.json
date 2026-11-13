@@ -7299,22 +7299,6 @@
         },
         {
           "provider": "api-football",
-          "providerPlayerId": "0",
-          "name": "Lucas Pasquoto",
-          "position": "Defender",
-          "shirtNumber": 55,
-          "enrichment": {
-            "age": 21,
-            "photo": null,
-            "providerTeamId": "880",
-            "provenance": {
-              "provider": "api-football",
-              "retrievedAt": "2026-11-12T00:00:00.000Z"
-            }
-          }
-        },
-        {
-          "provider": "api-football",
           "providerPlayerId": "215866",
           "name": "F. Ponsi",
           "position": "Defender",
