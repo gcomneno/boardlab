@@ -82,15 +82,18 @@ Format: https://keepachangelog.com/en/1.1.0/
   a match with synchronized authoritative state.
 - Python/JavaScript parity verified across 800 transitions.
 
-### Multiplayer limitations
+### Historical multiplayer limitations
 
-- Currently verified only on localhost.
-- Matches are stored in process memory and do not survive restart.
-- Browser refresh loses the current seat credential.
-- Session expiry, rate limiting and durable recovery are pending.
-- Multiplayer is not publicly deployed.
-- GitHub issue #27 remains open until remote-player acceptance
-  and operational requirements are satisfied.
+The following limitations applied to the initial multiplayer laboratory
+described above and were subsequently resolved before Multiplayer 1.0.0:
+
+- Multiplayer was verified only on localhost.
+- Matches were stored in process memory and did not survive restart.
+- Browser refresh lost the current seat credential.
+- Session expiry, rate limiting and durable recovery were pending.
+- Multiplayer was not publicly deployed.
+- GitHub issue #27 remained open pending remote-player acceptance
+  and operational requirements; it was subsequently completed and closed.
 
 
 ### Added — Historical reconstruction
