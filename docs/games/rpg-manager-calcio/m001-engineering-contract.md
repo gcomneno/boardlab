@@ -1,11 +1,11 @@
 # RPG Manager Calcio — M001 Engineering Contract v1.0
 
-**Progetto:** GiadaWare BoardLab / RPG Manager Calcio  
-**Milestone:** M001 — First Playable Season  
-**Data:** 13 novembre 2026  
-**Baseline funzionale:** Design Freeze 1.0, CONCEPT 001–010  
-**Stato:** Specificazione completa candidata all'approvazione  
-**Implementazione:** ISO C11, CLI testuale, target iniziale Linux  
+**Progetto:** GiadaWare BoardLab / RPG Manager Calcio
+**Milestone:** M001 — First Playable Season
+**Data:** 13 novembre 2026
+**Baseline funzionale:** Design Freeze 1.0, CONCEPT 001–010
+**Stato:** Specificazione completa candidata all'approvazione
+**Implementazione:** ISO C11, CLI testuale, target iniziale Linux
 **Regola di modifica:** ogni cambiamento normativo richiede una revisione esplicita del contratto.
 
 ---
