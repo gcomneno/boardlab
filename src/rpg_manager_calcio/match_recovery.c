@@ -1,6 +1,7 @@
 #include "match_recovery.h"
 #include "match_clock.h"
 #include "match_tackle_action.h"
+#include "match_cross_action.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -89,7 +90,8 @@ bool rmc_match_recovery_apply(
         cause->match_id.value != state->fixture.id.value ||
         cause->type != RMC_EVENT_ACTION ||
         (cause->outcome_code != RMC_PASS_OUTCOME_LOOSE_BALL &&
-         cause->outcome_code != RMC_TACKLE_OUTCOME_LOOSE_BALL) ||
+         cause->outcome_code != RMC_TACKLE_OUTCOME_LOOSE_BALL &&
+         cause->outcome_code != RMC_CROSS_OUTCOME_LOOSE_BALL) ||
         cause->team_id.value != state->possession.team_id.value ||
         cause->at_second > state->elapsed_seconds ||
         cause->cause_event_id >= cause->id ||

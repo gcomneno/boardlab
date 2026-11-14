@@ -32,11 +32,12 @@ typedef struct {
 } RmcRecoveryResult;
 
 /*
- * Resolve a loose ball originating from a failed pass or tackle.
+ * Resolve a loose ball originating from a pass, tackle or cross.
  *
  * Requires a live possession with no controller and
  * the immediately preceding event to be ACTION with
- * PASS_OUTCOME_LOOSE_BALL or TACKLE_OUTCOME_LOOSE_BALL for the
+ * PASS_OUTCOME_LOOSE_BALL, TACKLE_OUTCOME_LOOSE_BALL or
+ * CROSS_OUTCOME_LOOSE_BALL for the
  * suspended possession team and current match, with a coherent
  * consecutive ID and nondecreasing timestamp. Other ACTION outcomes
  * are ineligible. Each cause can be resolved only once.

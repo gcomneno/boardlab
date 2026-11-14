@@ -736,6 +736,7 @@ target_include_directories(rmc-match-recovery PUBLIC
 target_link_libraries(rmc-match-recovery PUBLIC
     rmc-match-pass-action
     rmc-match-tackle-action
+    rmc-match-cross-action
     rmc-match-sequence
     rmc-match-clock
     rmc-match-event-log
@@ -905,3 +906,37 @@ add_test(
     NAME rmc-match-tackle-action
     COMMAND rmc-test-match-tackle-action
 )
+
+# M001-B1.25 — Cross action and causal loose-ball recovery.
+add_library(rmc-match-cross-action STATIC match_cross_action.c)
+
+target_include_directories(rmc-match-cross-action PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(rmc-match-cross-action PUBLIC
+    rmc-match-clock
+    rmc-match-sequence
+    rmc-match-event-log
+    rmc-match-probability
+    rmc-streams
+)
+
+rmc_warnings(rmc-match-cross-action)
+
+add_executable(rmc-test-match-cross-action test_match_cross_action.c)
+
+target_link_libraries(rmc-test-match-cross-action PRIVATE
+    rmc-match-cross-action
+    rmc-match-transitions
+)
+
+if(MSVC)
+    target_compile_options(rmc-test-match-cross-action PRIVATE /UNDEBUG)
+else()
+    target_compile_options(rmc-test-match-cross-action PRIVATE -UNDEBUG)
+endif()
+
+rmc_warnings(rmc-test-match-cross-action)
+
+add_test(NAME rmc-match-cross-action COMMAND rmc-test-match-cross-action)

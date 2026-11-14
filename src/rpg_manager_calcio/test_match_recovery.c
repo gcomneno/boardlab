@@ -1,6 +1,7 @@
 #include "match_recovery.h"
 #include "match_transitions.h"
 #include "match_tackle_action.h"
+#include "match_cross_action.h"
 #include "match_sequence_apply.h"
 
 #include <assert.h>
@@ -192,6 +193,81 @@ static void prepare_tackle_loose(
     assert(!"No tackle loose ball found in deterministic search");
 }
 
+/* Search actual production crosses; never alter the resolved outcome. */
+static void prepare_cross_loose(
+    RmcMatchState *state,
+    RmcPcg32 *rng,
+    RmcMatchEvent storage[3],
+    RmcMatchEventLog *log,
+    uint32_t action_count,
+    uint32_t at_second,
+    bool second_half,
+    uint8_t source_sector)
+{
+    RmcPcg32 candidate = match_rng();
+    for (unsigned attempt = 0; attempt < 1024; ++attempt) {
+        *state = active_state();
+        state->possession.zone.sector = source_sector;
+        state->possession.zone.lane = second_half ? RMC_LANE_RIGHT : RMC_LANE_LEFT;
+        state->possession.action_count = action_count;
+        state->elapsed_seconds = at_second;
+        if (second_half) {
+            state->period = RMC_MATCH_SECOND_HALF;
+            state->second_half_start_second = 2700;
+        }
+        *rng = candidate;
+        memset(storage, 0, 3 * sizeof(storage[0]));
+        assert(rmc_match_event_log_init(state, storage, 3, log));
+        const RmcCrossAction action = {
+            .team_id = state->possession.team_id,
+            .crosser = state->possession.controller,
+            .recipient = state->home_lineup.players[2],
+            .defender = state->away_lineup.players[1],
+            .duration_seconds = 5
+        };
+        RmcCrossResult result = {0};
+        assert(rmc_match_cross_apply(
+            &world, state, rng, log, &action, &result
+        ));
+        if (result.outcome == RMC_CROSS_OUTCOME_LOOSE_BALL) {
+            assert(state->possession.controller.value == 0);
+            assert(state->possession.team_id.value == action.team_id.value);
+            assert(state->possession.zone.sector == source_sector + 1);
+            assert(state->possession.zone.lane == RMC_LANE_CENTRE);
+            assert(state->possession.action_count == action_count + 1);
+            assert(state->possession.phase == (source_sector == 3
+                ? RMC_PHASE_CHANCE : RMC_PHASE_ATTACKING_DEVELOPMENT));
+            assert(log->count == 1);
+            assert(storage[0].type == RMC_EVENT_ACTION);
+            assert(storage[0].outcome_code == RMC_CROSS_OUTCOME_LOOSE_BALL);
+            assert(storage[0].team_id.value == action.team_id.value);
+            assert(storage[0].primary_actor.value == action.crosser.value);
+            assert(storage[0].secondary_actor.value == action.recipient.value);
+            return;
+        }
+        (void)rmc_pcg32_next(&candidate);
+    }
+    assert(!"No cross loose ball found in deterministic search");
+}
+
+/* 0: pass, 1: tackle, 2/3: cross from the corresponding sector. */
+static void prepare_cause(
+    unsigned source,
+    RmcMatchState *state,
+    RmcPcg32 *rng,
+    RmcMatchEvent storage[3],
+    RmcMatchEventLog *log)
+{
+    if (source >= 2) {
+        prepare_cross_loose(state, rng, storage, log, 0, 0, false,
+                            (uint8_t)source);
+    } else if (source == 1) {
+        prepare_tackle_loose(state, rng, storage, log, 0, 0, false);
+    } else {
+        prepare_loose(state, rng, storage, log);
+    }
+}
+
 static void reject_unchanged(
     RmcMatchState *state,
     RmcPcg32 *rng,
@@ -234,20 +310,14 @@ static void reject_unchanged(
     ) == 0);
 }
 
-static void test_both_outcomes_and_causality(bool from_tackle)
+static void test_both_outcomes_and_causality(unsigned source)
 {
     RmcMatchState loose;
     RmcPcg32 loose_rng;
     RmcMatchEvent cause_storage[3] = {{0}};
     RmcMatchEventLog cause_log = {0};
 
-    if (from_tackle) {
-        prepare_tackle_loose(
-            &loose, &loose_rng, cause_storage, &cause_log, 0, 0, false
-        );
-    } else {
-        prepare_loose(&loose, &loose_rng, cause_storage, &cause_log);
-    }
+    prepare_cause(source, &loose, &loose_rng, cause_storage, &cause_log);
 
     const RmcRecoveryAction action = recovery_action(&loose);
     const RmcMatchEvent cause = cause_storage[0];
@@ -314,7 +384,10 @@ static void test_both_outcomes_and_causality(bool from_tackle)
                    action.incumbent.value);
             assert(state.possession.action_count ==
                    loose.possession.action_count + 1);
-            assert(state.possession.zone.sector == 1);
+            assert(state.possession.phase == loose.possession.phase);
+            assert(state.possession.elapsed_seconds ==
+                   loose.possession.elapsed_seconds + action.duration_seconds);
+            assert(state.possession.zone.sector == loose.possession.zone.sector);
             assert(result.winner.value ==
                    action.incumbent.value);
         } else {
@@ -327,7 +400,7 @@ static void test_both_outcomes_and_causality(bool from_tackle)
                    action.challenger.value);
             assert(state.possession.action_count == 0);
             assert(state.possession.elapsed_seconds == 0);
-            assert(state.possession.zone.sector == 3);
+            assert(state.possession.zone.sector == 4 - loose.possession.zone.sector);
             assert(state.possession.phase ==
                    RMC_PHASE_TRANSITION);
             assert(result.winner.value ==
@@ -420,30 +493,22 @@ static void test_invalid_actions_and_atomicity(void)
     reject_unchanged(&state, &rng, &log, &valid);
 }
 
-static void test_deterministic_replay(bool from_tackle)
+static void test_deterministic_replay(unsigned source)
 {
     RmcMatchState first;
     RmcPcg32 first_rng;
     RmcMatchEvent first_storage[3] = {{0}};
     RmcMatchEventLog first_log = {0};
 
-    if (from_tackle) {
-        prepare_tackle_loose(
-            &first, &first_rng, first_storage, &first_log, 0, 0, false
-        );
-    } else {
-        prepare_loose(&first, &first_rng, first_storage, &first_log);
-    }
+    prepare_cause(source, &first, &first_rng, first_storage, &first_log);
 
     RmcMatchState second = first;
     RmcPcg32 second_rng = first_rng;
     RmcMatchEvent second_storage[3] = {{0}};
     RmcMatchEventLog second_log = {0};
 
-    if (from_tackle) {
-        prepare_tackle_loose(
-            &second, &second_rng, second_storage, &second_log, 0, 0, false
-        );
+    if (source != 0) {
+        prepare_cause(source, &second, &second_rng, second_storage, &second_log);
         assert(memcmp(&first, &second, sizeof(first)) == 0);
         assert(memcmp(&first_rng, &second_rng, sizeof(first_rng)) == 0);
         assert(memcmp(first_storage, second_storage, sizeof(first_storage)) == 0);
@@ -485,19 +550,20 @@ static void test_deterministic_replay(bool from_tackle)
            second_result.winner.value);
 }
 
-static void test_tackle_cause_rejections(void)
+static void test_cause_rejections(unsigned source)
 {
     RmcMatchState state;
     RmcPcg32 rng;
     RmcMatchEvent storage[3] = {{0}};
     RmcMatchEventLog log = {0};
-    prepare_tackle_loose(&state, &rng, storage, &log, 0, 0, false);
+    prepare_cause(source, &state, &rng, storage, &log);
     const RmcRecoveryAction action = recovery_action(&state);
     const RmcMatchEvent cause = storage[0];
 
     const uint32_t invalid_outcomes[] = {
         RMC_PASS_OUTCOME_COMPLETED, RMC_TACKLE_OUTCOME_RETAINED,
-        RMC_TACKLE_OUTCOME_WON, 0, 101, 201, UINT32_MAX
+        RMC_TACKLE_OUTCOME_WON, RMC_CROSS_OUTCOME_COMPLETED,
+        RMC_CROSS_OUTCOME_INTERCEPTED, 0, 101, 201, 404, UINT32_MAX
     };
     for (size_t i = 0;
          i < sizeof(invalid_outcomes) / sizeof(invalid_outcomes[0]); ++i) {
@@ -554,7 +620,7 @@ static void test_tackle_cause_rejections(void)
     reject_unchanged(&state, &rng, &log, &action);
 }
 
-static void test_action_window_and_period_precedence(void)
+static void test_action_window_and_period_precedence(bool from_cross)
 {
     /* Repeat in each half, before and exactly at its period deadline. */
     for (unsigned second_half = 0; second_half < 2; ++second_half) {
@@ -564,11 +630,20 @@ static void test_action_window_and_period_precedence(void)
             RmcMatchEvent storage[3] = {{0}};
             RmcMatchEventLog log = {0};
             const uint32_t start = second_half ? 2700 : 0;
-            prepare_tackle_loose(
-                &state, &rng, storage, &log,
-                RMC_POSSESSION_MAX_ACTIONS - 1,
-                start + (at_end ? 2695 : 0), second_half != 0
-            );
+            if (from_cross) {
+                prepare_cross_loose(
+                    &state, &rng, storage, &log,
+                    RMC_POSSESSION_MAX_ACTIONS - 1,
+                    start + (at_end ? 2695 : 0), second_half != 0,
+                    second_half ? 3 : 2
+                );
+            } else {
+                prepare_tackle_loose(
+                    &state, &rng, storage, &log,
+                    RMC_POSSESSION_MAX_ACTIONS - 1,
+                    start + (at_end ? 2695 : 0), second_half != 0
+                );
+            }
             assert(state.possession.action_count == RMC_POSSESSION_MAX_ACTIONS);
             const RmcRecoveryAction action = recovery_action(&state);
             reject_unchanged(&state, &rng, &log, &action);
@@ -636,8 +711,15 @@ int main(void)
     test_invalid_actions_and_atomicity();
     test_deterministic_replay(false);
     test_deterministic_replay(true);
-    test_tackle_cause_rejections();
-    test_action_window_and_period_precedence();
+    test_both_outcomes_and_causality(2);
+    test_both_outcomes_and_causality(3);
+    test_deterministic_replay(2);
+    test_deterministic_replay(3);
+    test_cause_rejections(1);
+    test_cause_rejections(2);
+    test_cause_rejections(3);
+    test_action_window_and_period_precedence(false);
+    test_action_window_and_period_precedence(true);
 
     puts("RECOVERY_BOTH_OUTCOMES=PASS");
     puts("RECOVERY_TURNOVER_COORDINATES=PASS");
@@ -649,6 +731,9 @@ int main(void)
     puts("RECOVERY_TACKLE_CAUSE_REJECTION=PASS");
     puts("RECOVERY_ACTION_32_RESET_PRESERVES_LOOSE_BALL=PASS");
     puts("RECOVERY_PERIOD_END_PRECEDENCE=PASS");
+    puts("RECOVERY_CROSS_BOTH_OUTCOMES_GEOMETRY_AND_CAUSALITY=PASS");
+    puts("RECOVERY_CROSS_CAUSE_REJECTION_AND_REPLAY=PASS");
+    puts("RECOVERY_CROSS_ACTION_32_RESET_AND_PERIOD_END=PASS");
 
     return 0;
 }
