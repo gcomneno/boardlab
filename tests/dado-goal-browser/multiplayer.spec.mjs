@@ -52,6 +52,7 @@ test("multiplayer authoritative host/join browser smoke", async ({ browser }) =>
     await host.locator("#team-1").selectOption(team1);
     await host.locator("#hands").fill("1");
 
+    await expect(host.locator("#create")).toBeEnabled();
     await host.locator("#create").click();
 
     await expect(host.locator("#invite-code")).not.toHaveValue("");

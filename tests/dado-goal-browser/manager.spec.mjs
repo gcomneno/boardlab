@@ -4,6 +4,38 @@ const GAME_URL = "http://127.0.0.1:4173/web/dado-goal/";
 const MANAGER_KEY = "dado-goal.manager.v1";
 const SHARED_KEY = "dado-goal.team-management.v1";
 
+test("Manager cannot be enabled before Squadra 1 is selected", async ({ page }) => {
+  await page.goto(GAME_URL);
+
+  await expect.poll(async () =>
+    page.locator("#team-0 option").count()
+  ).toBeGreaterThan(1);
+
+  const toggle = page.locator("#manager-enabled");
+  const team0 = page.locator("#team-0");
+
+  await expect(team0).toHaveValue("");
+  await expect(toggle).toBeDisabled();
+  await expect(toggle).not.toBeChecked();
+
+  const firstClub = await team0.locator("option").nth(1).getAttribute("value");
+  expect(firstClub).toBeTruthy();
+
+  await team0.selectOption(firstClub);
+
+  await expect(toggle).toBeEnabled();
+  await toggle.check();
+
+  await expect(toggle).toBeChecked();
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
+
+  const storedManager = await page.evaluate(() =>
+    localStorage.getItem("dado-goal.manager.v1")
+  );
+
+  expect(storedManager).toBeTruthy();
+});
+
 test("Manager persists an isolated catalogue-backed squad and launches normal play", async ({ page }) => {
   const runtimeErrors = [];
   page.on("pageerror", error => runtimeErrors.push(error.message));

@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 test("Championship creates, plays, records and reloads its next fixture", async ({ page }) => {
   await page.goto("http://127.0.0.1:4173/web/dado-goal/");
 
+  await page.locator("#competition").selectOption("40:2024");
+  await expect(page.locator("#tournament-participants")).toBeEnabled();
+
   const participants = page.locator("#tournament-participants");
 
   await expect(participants).toBeVisible();

@@ -78,6 +78,31 @@ import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mj
 import { socialColors } from "./team-colors.mjs";
 
 const byId = (id) => document.getElementById(id);
+
+
+const DADO_GOAL_LOCAL_STORAGE_KEYS = Object.freeze([
+  "dado-goal.tournament.v1",
+  "dado-goal.tournament-recovery.v1",
+  "dado-goal.manager.v1",
+  "dado-goal.team-management.v1",
+  "dado-goal.multiplayer-seat.v1",
+]);
+
+function resetLocalData() {
+  const confirmed = window.confirm(
+    "Azzera tutti i dati locali di Dado Goal? " +
+    "Campionato, manager, gestione squadra e recovery saranno eliminati."
+  );
+
+  if (!confirmed) return;
+
+  for (const key of DADO_GOAL_LOCAL_STORAGE_KEYS) {
+    window.localStorage.removeItem(key);
+  }
+
+  window.location.reload();
+}
+
 const phaseNames = {
   team: "teamDie",
   pink: "pinkDie",
@@ -1114,6 +1139,11 @@ function editManagerSelection() {
 
 function syncNewManagerControls() {
   const managerEnabled = byId("manager-enabled").checked;
+  const managerTeamAvailable = catalogueTeam("team-0") !== null;
+
+  byId("manager-enabled").disabled =
+    (matchStarted && state.phase !== "finished") ||
+    (!managerEnabled && !managerState && !managerTeamAvailable);
 
   for (const seat of [0, 1]) {
     const button = byId(`manager-new-${seat}`);
@@ -1376,7 +1406,12 @@ function syncCompetitionSelector() {
   const selector = byId("competition");
   const previous = selector.value;
 
+  const friendly = document.createElement("option");
+  friendly.value = "";
+  friendly.textContent = "Amichevole";
+
   selector.replaceChildren(
+    friendly,
     ...competitions.map(({ value, label }) => {
       const option = document.createElement("option");
       option.value = value;
@@ -1387,9 +1422,11 @@ function syncCompetitionSelector() {
 
   if (competitions.some(({ value }) => value === previous)) {
     selector.value = previous;
+  } else {
+    selector.value = "";
   }
 
-  if (selector.options.length !== competitions.length) {
+  if (selector.options.length !== competitions.length + 1) {
     throw new Error("Competition selector synchronization failed");
   }
 }
@@ -1400,6 +1437,11 @@ function allCatalogueTeams() {
 
 function selectedCompetitionTeams() {
   const selected = byId("competition").value;
+
+  if (selected === "") {
+    return allCatalogueTeams();
+  }
+
   const [competitionId, season] = selected.split(":");
 
   return allCatalogueTeams().filter(team =>
@@ -1414,31 +1456,11 @@ function renderCatalogueTeams() {
       right.name, undefined, { sensitivity: "base" }
     )
   );
-  const allTeams = allCatalogueTeams();
-
   for (let seat = 0; seat < 2; seat += 1) {
     const select = byId(`team-${seat}`);
     const current = select.value;
-    const currentTeam = allTeams.find(team =>
-      String(team.providerTeamId) === current
-    );
 
     const visibleTeams = [...filteredTeams];
-
-    // Preserve an already-selected team from another competition so the
-    // two seats may intentionally represent different championships.
-    if (currentTeam &&
-        !visibleTeams.some(team =>
-          String(team.providerTeamId) === String(currentTeam.providerTeamId)
-        )) {
-      visibleTeams.push(currentTeam);
-    }
-
-    visibleTeams.sort(
-      (left, right) => left.name.localeCompare(
-        right.name, undefined, { sensitivity: "base" }
-      )
-    );
 
     select.replaceChildren(new Option(`Squadra ${seat + 1}`, ""));
 
@@ -1448,6 +1470,8 @@ function renderCatalogueTeams() {
 
     if ([...select.options].some(option => option.value === current)) {
       select.value = current;
+    } else {
+      select.value = "";
     }
 
     renderSelectedTeamLogo(seat);
@@ -1523,6 +1547,36 @@ function nextTournamentFixture() {
   return tournamentState?.fixtures.find(fixture => fixture.matchId === null) ?? null;
 }
 
+function selectTournamentCompetitionParticipants() {
+  if (tournamentState) return;
+
+  const list = byId("tournament-participants");
+  const createButton = byId("tournament-create");
+  const competition = byId("competition").value;
+
+  if (competition === "") {
+    for (const option of list.options) {
+      option.selected = false;
+    }
+    list.disabled = true;
+    createButton.disabled = true;
+    return;
+  }
+
+  list.disabled = false;
+  createButton.disabled = false;
+
+  const selectedIds = new Set(
+    selectedCompetitionTeams().map(
+      team => String(team.providerTeamId)
+    )
+  );
+
+  for (const option of list.options) {
+    option.selected = selectedIds.has(option.value);
+  }
+}
+
 function renderTournament() {
   const setup = byId("tournament-setup");
   const dashboard = byId("tournament-dashboard");
@@ -1546,6 +1600,8 @@ function renderTournament() {
       option.selected = selected.has(option.value);
       return option;
     }));
+
+    selectTournamentCompetitionParticipants();
     return;
   }
 
@@ -1669,11 +1725,20 @@ function playNextTournamentFixture() {
   );
   if (!home || !away) return;
 
+  const competitionValue =
+    `${home.competitionId}:${home.season}`;
+  byId("competition").value = competitionValue;
+  renderCatalogueTeams();
+
   for (const [seat, team] of [[0, home], [1, away]]) {
-    const competitionValue = `${team.competitionId}:${team.season}`;
-    byId("competition").value = competitionValue;
-    renderCatalogueTeams();
-    byId(`team-${seat}`).value = String(team.providerTeamId);
+    const select = byId(`team-${seat}`);
+    const teamId = String(team.providerTeamId);
+
+    if (![...select.options].some(option => option.value === teamId)) {
+      select.append(new Option(team.name, teamId));
+    }
+
+    select.value = teamId;
     applySelectedTeamColor(seat);
   }
 
@@ -1768,8 +1833,16 @@ function applySelectedTeamColor(seat) {
 
 byId("competition").addEventListener("change", () => {
   renderCatalogueTeams();
+
+  for (const seat of [0, 1]) {
+    applySelectedTeamColor(seat);
+  }
+
   syncNewManagerControls();
   renderManagerDashboard();
+  renderTournament();
+  selectTournamentCompetitionParticipants();
+  render();
 });
 
 for (const seat of [0, 1]) {
@@ -2214,6 +2287,8 @@ byId("auto").addEventListener("click", () => {
   updateAutoConfigForm();
   autoDialog.showModal();
 });
+
+byId("reset-local-data").addEventListener("click", resetLocalData);
 
 byId("new").addEventListener("click", () => {
   if (isRolling) {

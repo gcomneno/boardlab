@@ -135,18 +135,23 @@
       <div class="tournament-heading">
         <div>
           <p class="manager-kicker">Dado Goal!</p>
-          <h2 id="tournament-title">Campionato</h2>
+          <h2 id="tournament-title">Torneo</h2>
         </div>
       </div>
 
+      <div class="locale-setting">
+        <select id="competition"
+                name="competition"
+                aria-label="Campionato"></select>
+      </div>
+
       <div id="tournament-setup">
-        <p>Seleziona almeno 4 squadre, in numero pari.</p>
         <label for="tournament-participants">Partecipanti</label>
         <select id="tournament-participants" multiple size="8"></select>
         <p id="tournament-error" class="tournament-error"
            role="status"></p>
         <button id="tournament-create" type="button">
-          Crea campionato
+          Crea torneo
         </button>
       </div>
 
@@ -198,9 +203,10 @@
           <option value="en">English</option>
         </select>
       </label>
-      <label for="competition" class="locale-setting">
-        <span data-i18n="competition">Campionato</span>
-        <select id="competition" name="competition"></select>
+      <label for="hands" class="locale-setting">
+        <span data-i18n="handsPerTeam">Num. di lanci</span>
+        <input id="hands" type="number" min="1" max="1000"
+               step="1" value="6">
       </label>
 
       <div class="team-config">
@@ -269,11 +275,9 @@
 
       <div class="match-actions">
         <button id="new" type="button">Nuova partita</button>
-        <label class="roll-count">
-          <span data-i18n="handsPerTeam">Num. di lanci</span>
-          <input id="hands" type="number" min="1" max="1000"
-                 step="1" value="20">
-        </label>
+        <button id="reset-local-data" type="button">
+          Azzera dati
+        </button>
         <a class="multiplayer-button"
            href="https://dado-goal-multiplayer.giancarlo-cicellyn.workers.dev/multiplayer.html"
            target="_blank" rel="noopener noreferrer"

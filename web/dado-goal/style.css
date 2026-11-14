@@ -874,7 +874,8 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   max-width: none;
 }
 
-.settings > .locale-setting select {
+.settings > .locale-setting select,
+.settings > .locale-setting input {
   box-sizing: border-box;
   width: 100%;
   max-width: none;
@@ -1903,6 +1904,11 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 
 
 /* Dado Goal #116 championship tournament. */
+.tournament-panel {
+  display: grid;
+  gap: 14px;
+}
+
 .tournament-heading,
 .tournament-summary {
   display: flex;
@@ -1912,14 +1918,74 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   flex-wrap: wrap;
 }
 
+#tournament-title {
+  margin: 0;
+}
+
+.tournament-panel > .locale-setting {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+}
+
+.tournament-panel > .locale-setting select {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+}
+
+#tournament-setup {
+  display: grid;
+  gap: 8px;
+}
+
+#tournament-setup[hidden] {
+  display: none;
+}
+
+#tournament-setup > label[for="tournament-participants"] {
+  display: block;
+  margin-top: 10px;
+}
+
 #tournament-participants {
+  box-sizing: border-box;
   width: 100%;
   min-height: 12rem;
-  margin: 8px 0;
+  margin: 0;
+  border-radius: 11px;
+}
+
+#tournament-participants:disabled {
+  opacity: .58;
+  cursor: not-allowed;
+}
+
+#tournament-create {
+  min-height: 44px;
+  padding: 9px 14px;
+  border-radius: 11px;
+  transition:
+    transform 120ms ease,
+    filter 120ms ease,
+    box-shadow 120ms ease;
+}
+
+#tournament-create:not(:disabled):hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgb(0 0 0 / .18);
+}
+
+#tournament-create:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow: none;
 }
 
 .tournament-error {
   min-height: 1.4em;
+  margin: 0;
 }
 
 .tournament-table-wrap {

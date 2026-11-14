@@ -501,7 +501,8 @@ function render() {
     byId(`color-${seat}-secondary`).disabled =
       playing || !byId(`color-${seat}-enabled`).checked;
   }
-  byId("roll").disabled = !playing || isRolling;
+  byId("roll").disabled =
+    !playing || isRolling || state.player !== multiplayerClient.seat;
   byId("auto").disabled = !playing;
   const selectedTeamIds = [0, 1].map(
     seat => byId(`team-${seat}`).value
@@ -615,6 +616,8 @@ function renderCatalogueTeams() {
 
     renderSelectedTeamLogo(seat);
   }
+
+  syncMultiplayerControls();
 }
 
 
@@ -1002,6 +1005,36 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
   matchStarted = snapshot.status === "active" ||
     snapshot.status === "finished";
 
+  if (Array.isArray(snapshot.teams) && snapshot.teams.length === 2) {
+    for (const seat of [0, 1]) {
+      const team = snapshot.teams[seat];
+      if (!team) continue;
+
+      if (typeof team.name === "string" && team.name.length > 0) {
+        names[seat] = team.name;
+      }
+
+      if (Array.isArray(team.colors) && team.colors.length > 0) {
+        teamPalettes[seat] = [...team.colors];
+        colors[seat] = team.colors[0];
+      }
+
+      const logo = byId(`pitch-logo-${seat}`);
+      if (typeof team.logo === "string" && team.logo.length > 0) {
+        logo.src = team.logo;
+        logo.alt = team.name || names[seat];
+        logo.hidden = false;
+      } else {
+        logo.hidden = true;
+        logo.removeAttribute("src");
+        logo.alt = "";
+      }
+    }
+  } else if (Array.isArray(snapshot.teamNames) &&
+             snapshot.teamNames.length === 2) {
+    names = [...snapshot.teamNames];
+  }
+
   rollEvents = Array.isArray(snapshot.rollEvents)
     ? snapshot.rollEvents
     : [];
@@ -1093,7 +1126,7 @@ async function multiplayerJoin() {
       multiplayerClient.remember();
     }
 
-    adoptAuthoritativeSnapshot(joined.snapshot);
+    adoptAuthoritativeSnapshot(joined);
     startMultiplayerSync();
   } finally {
     multiplayerBusy = false;
@@ -1155,6 +1188,12 @@ function showMultiplayerError(error) {
 byId("create").addEventListener("click", () => {
   void multiplayerCreate().catch(showMultiplayerError);
 });
+
+for (let seat = 0; seat < 2; seat += 1) {
+  byId(`team-${seat}`).addEventListener(
+    "change", syncMultiplayerControls
+  );
+}
 
 byId("invite-code").addEventListener(
   "input", syncMultiplayerControls
