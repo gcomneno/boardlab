@@ -751,6 +751,7 @@ add_executable(rmc-test-match-recovery
 
 target_link_libraries(rmc-test-match-recovery PRIVATE
     rmc-match-recovery
+    rmc-match-shot-action
     rmc-match-transitions
     rmc-match-sequence-apply
 )

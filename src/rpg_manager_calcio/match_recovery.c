@@ -5,6 +5,81 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+
+/* Reuse the schema validator without writing caller storage. As in the shot
+ * action, validate first-half records against their own period when a log
+ * continues into the second half. Current-lineup requirements still apply.
+ */
+static bool prefix_valid(
+    const RmcWorldCore *world, const RmcMatchState *state,
+    const RmcMatchEventLog *log)
+{
+    RmcMatchEvent *storage = malloc(log->count * sizeof(*storage));
+    if (storage == NULL) {
+        return false;
+    }
+    RmcMatchEventLog check = {
+        .events = storage, .capacity = log->count, .match_id = log->match_id
+    };
+    bool valid = true;
+    if (state->period == RMC_MATCH_SECOND_HALF) {
+        const uint32_t first_deadline =
+            UINT32_C(2700) + state->first_half_stoppage_seconds;
+        size_t first_count = 0;
+        while (first_count < log->count &&
+               log->events[first_count].at_second <= first_deadline) {
+            ++first_count;
+        }
+        if (first_count != 0) {
+            RmcMatchState first = *state;
+            first.period = RMC_MATCH_FIRST_HALF;
+            first.elapsed_seconds = first_deadline;
+            first.second_half_start_second = 0;
+            first.second_half_stoppage_seconds = 0;
+            first.possession = (RmcMatchPossession){0};
+            valid = rmc_match_event_log_append_batch(
+                world, &first, &check, log->events, first_count);
+        }
+    }
+    if (valid && check.count < log->count) {
+        valid = rmc_match_event_log_append_batch(
+            world, state, &check, &log->events[check.count],
+            log->count - check.count);
+    }
+    free(storage);
+    return valid;
+}
+
+static bool recoverable_cause(
+    const RmcMatchState *state, const RmcMatchEvent *cause)
+{
+    if (cause->type == RMC_EVENT_ACTION) {
+        return cause->outcome_code == RMC_PASS_OUTCOME_LOOSE_BALL ||
+               cause->outcome_code == RMC_TACKLE_OUTCOME_LOOSE_BALL ||
+               cause->outcome_code == RMC_CROSS_OUTCOME_LOOSE_BALL;
+    }
+    if (cause->type != RMC_EVENT_SHOT ||
+        cause->shot.model_version != RMC_SHOT_MODEL_VERSION ||
+        cause->shot.duration_seconds > state->possession.elapsed_seconds ||
+        (state->period == RMC_MATCH_SECOND_HALF &&
+         cause->at_second <= state->second_half_start_second)) {
+        return false;
+    }
+    switch (cause->outcome_code) {
+    case RMC_SHOT_BLOCKED:
+        /* The payload records source zone, but not source phase. */
+        return state->possession.zone.sector == cause->shot.source_zone.sector &&
+               state->possession.zone.lane == cause->shot.source_zone.lane;
+    case RMC_SHOT_SAVED_REBOUND:
+    case RMC_SHOT_WOODWORK:
+        return state->possession.zone.sector == 4 &&
+               state->possession.zone.lane == RMC_LANE_CENTRE &&
+               state->possession.phase == RMC_PHASE_CHANCE;
+    default:
+        return false;
+    }
+}
 
 static bool lineup_contains(
     const RmcLineup *lineup,
@@ -75,7 +150,9 @@ bool rmc_match_recovery_apply(
         action->incumbent.value == action->challenger.value ||
         action->context < -20 || action->context > 20 ||
         action->duration_seconds == 0 ||
+        (match_rng->increment & UINT64_C(1)) == 0 ||
         log->events == NULL ||
+        log->capacity > SIZE_MAX / sizeof(log->events[0]) ||
         log->count == 0 ||
         log->count >= log->capacity ||
         log->count >= UINT64_MAX ||
@@ -88,10 +165,7 @@ bool rmc_match_recovery_apply(
 
     if (cause->id != (uint64_t)log->count ||
         cause->match_id.value != state->fixture.id.value ||
-        cause->type != RMC_EVENT_ACTION ||
-        (cause->outcome_code != RMC_PASS_OUTCOME_LOOSE_BALL &&
-         cause->outcome_code != RMC_TACKLE_OUTCOME_LOOSE_BALL &&
-         cause->outcome_code != RMC_CROSS_OUTCOME_LOOSE_BALL) ||
+        !recoverable_cause(state, cause) ||
         cause->team_id.value != state->possession.team_id.value ||
         cause->at_second > state->elapsed_seconds ||
         cause->cause_event_id >= cause->id ||
@@ -152,6 +226,14 @@ bool rmc_match_recovery_apply(
 
     if (!rmc_match_clock_advance(
             world, &next, action->duration_seconds)) {
+        return false;
+    }
+
+    /* Includes chance payload, adjacent SHOT reference, match/team/shooter
+     * identity, roles, timestamps and every preceding envelope. Complete this
+     * before requesting the single bounded recovery draw.
+     */
+    if (!prefix_valid(world, state, log)) {
         return false;
     }
 

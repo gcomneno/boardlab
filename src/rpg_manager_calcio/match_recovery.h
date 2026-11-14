@@ -32,7 +32,7 @@ typedef struct {
 } RmcRecoveryResult;
 
 /*
- * Resolve a loose ball originating from a pass, tackle or cross.
+ * Resolve a loose ball originating from a pass, tackle, cross or Shot v1.
  *
  * Requires a live possession with no controller and
  * the immediately preceding event to be ACTION with
@@ -40,11 +40,21 @@ typedef struct {
  * CROSS_OUTCOME_LOOSE_BALL for the
  * suspended possession team and current match, with a coherent
  * consecutive ID and nondecreasing timestamp. Other ACTION outcomes
- * are ineligible. Each cause can be resolved only once.
+ * are ineligible. Also accepts a final SHOT with RMC_SHOT_SAVED_REBOUND,
+ * RMC_SHOT_BLOCKED or RMC_SHOT_WOODWORK, referencing the adjacent validated
+ * ACTION / RMC_SHOT_CHANCE with matching shooting team, shooter and payload.
+ * Its timestamp must belong to the current period and its duration must fit
+ * the suspended possession clock.
+ * The loose-ball zone must match the Shot v1 destination (source zone for a
+ * block; sector 4, CENTRE and CHANCE phase for rebound/woodwork). Source phase
+ * on a block is not recorded in the payload and cannot be checked.
+ * Each cause can be resolved only once; RECOVERY references the final SHOT,
+ * never its chance event. The complete prefix is revalidated before sampling.
  * The sequence action window must allow another action; resetting
  * that window preserves the loose ball and its latest event cause.
  *
- * Both contenders must be on field for opposite teams.
+ * Both contenders must be on field for opposite teams. Uses exactly one
+ * bounded draw from the existing match PCG32 stream.
  *
  * v1 effectiveness:
  * A = floor((incumbent.CONTRASTO +
@@ -65,7 +75,9 @@ typedef struct {
  *
  * On failure state, RNG, log, storage and result are
  * unchanged. Writable arguments must not overlap.
- * Caller provides exclusive access.
+ * Caller provides exclusive access. Prefix validation uses temporary heap
+ * storage; allocation failure rejects atomically. Historical events must
+ * satisfy the logger's current-lineup requirements.
  */
 bool rmc_match_recovery_apply(
     const RmcWorldCore *world,
