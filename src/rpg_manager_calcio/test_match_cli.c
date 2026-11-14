@@ -151,9 +151,23 @@ static void check_reference(const Capture *c, const RmcCareerSetup *career,
         if (e->type == RMC_EVENT_SHOT) {
             assert(e->outcome_code >= RMC_SHOT_GOAL && e->outcome_code <= RMC_SHOT_WOODWORK);
             ++shots[side][e->outcome_code - RMC_SHOT_GOAL];
+            if (e->outcome_code != RMC_SHOT_GOAL) {
+                static const char *const outcomes[] = {"GOL", "parato e trattenuto",
+                    "parato con respinta", "bloccato", "WIDE (fuori)", "legno"};
+                (void)snprintf(expected, sizeof(expected), "LIVE %02" PRIu32 ":%02" PRIu32
+                    " %s (#%" PRIu64 ") Player #%" PRIu64 " tiro: %s\n",
+                    e->at_second / 60, e->at_second % 60, owned_team(w, e->team_id)->name,
+                    e->team_id.value, e->primary_actor.value, outcomes[e->outcome_code - RMC_SHOT_GOAL]);
+                assert(strstr(c->out, expected) != NULL);
+            }
         }
         if (e->type == RMC_EVENT_GOAL) {
             ++goals[side];
+            (void)snprintf(expected, sizeof(expected), "LIVE %02" PRIu32 ":%02" PRIu32
+                " GOL %s (#%" PRIu64 ") Player #%" PRIu64 "; score=%zu - %zu\n",
+                e->at_second / 60, e->at_second % 60, owned_team(w, e->team_id)->name,
+                e->team_id.value, e->primary_actor.value, goals[0], goals[1]);
+            assert(strstr(c->out, expected) != NULL);
             const RmcLineup *l = side == 0 ? &home : &away;
             bool found = false;
             for (size_t j = 0; j < RMC_LINEUP_PLAYERS; ++j) {
@@ -194,8 +208,21 @@ static void check_reference(const Capture *c, const RmcCareerSetup *career,
         }
     }
     assert(strstr(c->out, "Controllo gol eventi/score: PASS") != NULL);
-    assert(occurrences(c->out, "LIVE ") <= 80);
-    assert(occurrences(c->out, "Cronaca: limite di 80") == 1);
+    assert(occurrences(c->out, "Inizio tempo: apre") == 2);
+    assert(strstr(c->out, "LIVE 45:00 Inizio tempo: apre") != NULL);
+    assert(occurrences(c->out, "Fine tempo") == 2);
+    assert(occurrences(c->out, "Fischio finale") == 1);
+    size_t shot_total = 0, routine_total = 0;
+    for (size_t side = 0; side < 2; ++side) {
+        for (size_t j = 0; j < 6; ++j) { shot_total += shots[side][j]; }
+        routine_total += recoveries[side][0] + recoveries[side][1] + tackles[side];
+    }
+    assert(routine_total > 80); /* Real production volume exceeds the old cap. */
+    assert(occurrences(c->out, "Cronaca: limite di 40 routine") == 2);
+    assert(occurrences(c->out, " GOL ") == goals[0] + goals[1]);
+    assert(occurrences(c->out, " tiro: ") == shot_total - goals[0] - goals[1]);
+    assert(occurrences(c->out, "recupera la palla contesa") +
+        occurrences(c->out, "vince il contrasto") == 80);
     assert(occurrences(c->out, "Player #") >= 22);
     free(events); free(commands);
 }
@@ -309,15 +336,15 @@ int main(void)
     assert(strcmp(strstr(automatic.out, "Finale:"), strstr(replay.out, "Finale:")) == 0);
     release(&replay);
     const char *interactive[] = {"rmc-match"};
-    Capture blanks = INVOKE(interactive, "\n\n\n\n\n\n\n");
-    assert(blanks.code == 0 && strstr(blanks.out, "[KEEP]") != NULL);
+    Capture blanks = INVOKE(interactive, "\n\n\n\n\n\n\n\n\n");
+    assert(blanks.code == 0 && strstr(blanks.out, "[1 = KEEP]") != NULL);
     assert(strcmp(strstr(automatic.out, "Finale:"), strstr(blanks.out, "Finale:")) == 0);
     release(&blanks);
     Capture eof = INVOKE(interactive, "");
     assert(eof.code == 3 && strstr(eof.out, "Incontro generato") == NULL);
     assert(strstr(eof.out, "Partita completata") == NULL && strstr(eof.err, "EOF") != NULL);
     release(&eof);
-    Capture half_eof = INVOKE(interactive, "\n\n\n\n\n\n");
+    Capture half_eof = INVOKE(interactive, "\n\n\n\n\n\n\n\n");
     assert(half_eof.code == 3 && strstr(half_eof.out, "Intervallo:") != NULL);
     assert(strstr(half_eof.out, "Finale:") == NULL && strstr(half_eof.out, "Partita completata") == NULL);
     release(&half_eof);
@@ -325,11 +352,12 @@ int main(void)
     memset(long_input, 'x', 300);
     (void)snprintf(long_input + 300, sizeof(long_input) - 300,
         "\n0\n9999\n\n9999\n\n451\n\nno\n\nHOME\n\n"
-        "DIRECT CARRY_FIRST INVALID\n\nBAD\n\n");
+        "DIRECT CARRY_FIRST INVALID\n?\n--help\n1\nBAD\n1\n0\n1\nBAD\n1\n");
     Capture corrected = INVOKE(interactive, long_input);
     assert(corrected.code == 0 && strstr(corrected.err, "Input troppo lungo") != NULL);
     assert(occurrences(corrected.err, "Scelta non valida") >= 7);
     assert(strcmp(strstr(automatic.out, "Finale:"), strstr(corrected.out, "Finale:")) == 0);
+    assert(occurrences(corrected.out, "Aiuto: Approach") == 2);
     release(&corrected);
     release(&automatic);
     const RmcFixture *f = &career->foundation.calendar.fixtures[0];
@@ -338,15 +366,19 @@ int main(void)
     (void)snprintf(away_id, sizeof(away_id), "%" PRIu64, f->away_team.value);
     (void)snprintf(match_id, sizeof(match_id), "%" PRIu64, f->id.value);
     const char *home_args[] = {"rmc-match", "--team", home_id, "--fixture", match_id, "--verify-replay"};
-    Capture home_play = INVOKE(home_args, "\n\n\nDIRECT DRIBBLE_FIRST PRESS_HIGH\nKEEP\n");
+    Capture home_play = INVOKE(home_args, "\n\n\n2\n2\n2\n1\n");
     assert(strstr(home_play.out, "Replay semantico: PASS") != NULL);
     check_reference(&home_play, career, f, f->home_team, true, false, RMC_FORMATION_442, RMC_FORMATION_433, false);
     release(&home_play);
     const char *away_args[] = {"rmc-match", "--seed", "20261114", "--team", away_id,
         "--fixture", match_id, "--verify-replay"};
-    Capture away_play = INVOKE(away_args, "352\n442\naway\nDIRECT DRIBBLE_FIRST PRESS_HIGH\nDIRECT DRIBBLE_FIRST PRESS_HIGH\n");
+    Capture away_play = INVOKE(away_args, "352\n442\naway\n2\n2\n2\n2\n\n\n\n");
     assert(strstr(away_play.out, "Replay semantico: PASS") != NULL);
     check_reference(&away_play, career, f, f->away_team, true, true, RMC_FORMATION_352, RMC_FORMATION_442, true);
+    assert(strstr(away_play.out, "Istruzioni attuali: DIRECT DRIBBLE_FIRST PRESS_HIGH") != NULL);
+    assert(strstr(away_play.out, "Approach [2 = DIRECT]") != NULL);
+    assert(strstr(away_play.out, "Progression [2 = DRIBBLE_FIRST]") != NULL);
+    assert(strstr(away_play.out, "Pressure [2 = PRESS_HIGH]") != NULL);
     release(&away_play);
     const char *explicit_args[] = {"rmc-match", "--half", "DIRECT", "DRIBBLE_FIRST", "PRESS_HIGH",
         "--auto", "--team", home_id, "--fixture", match_id, "--seed", "20261114",
@@ -368,6 +400,54 @@ int main(void)
     Capture stopped = INVOKE(half_only, "");
     assert(stopped.code == 3 && strstr(stopped.out, "Finale:") == NULL);
     release(&stopped);
+    /* Every partial menu/CHANGE boundary must cancel, including unterminated input. */
+    const char *tactical[] = {"rmc-match", "--team", home_id, "--fixture", match_id,
+        "--home-formation", "442", "--away-formation", "433", "--opener", "home"};
+    const char *cancel[] = {"", "2\n", "2\n2\n", "2\n2\n2\n",
+        "2\n2\n2\n2\n", "2\n2\n2\n2\n1\n", "2\n2\n2\n2\n1\n1\n", "1"};
+    for (size_t i = 0; i < sizeof(cancel) / sizeof(cancel[0]); ++i) {
+        Capture cancelled = INVOKE(tactical, cancel[i]);
+        assert(cancelled.code == 3 && strstr(cancelled.out, "Finale:") == NULL);
+        release(&cancelled);
+    }
+    /* Mixed triples, both managed sides, both instruction windows, help and long
+     * lines: accepted sporting summaries equal the unchanged flag workflow.
+     * Replay additionally compares every active command/event field, causal ID,
+     * participant assignment, clock and exact RNG pair at half-time and final. */
+    for (unsigned bits = 0; bits < 8; ++bits) {
+        const char *a = bits & 1 ? "DIRECT" : "PATIENT";
+        const char *p = bits & 2 ? "DRIBBLE_FIRST" : "CARRY_FIRST";
+        const char *r = bits & 4 ? "PRESS_HIGH" : "PRESS_NORMAL";
+        const char *manager = bits & 1 ? away_id : home_id;
+        const char *flags[] = {"rmc-match", "--auto", "--team", manager, "--fixture", match_id,
+            "--pre", a, p, r, "--half", a, p, r, "--verify-replay"};
+        const char *menus[] = {"rmc-match", "--team", manager, "--fixture", match_id,
+            "--home-formation", "442", "--away-formation", "433", "--opener", "home", "--verify-replay"};
+        char input[1024];
+        memset(input, 'x', 300);
+        (void)snprintf(input + 300, sizeof(input) - 300,
+            "\n?\n9\n%u\n--help\n0\n%u\n?\n3\n%u\n--help\n9\n2\n?\n%u\n--help\n%u\n?\n%u\n",
+            1 + (bits & 1), 1 + ((bits >> 1) & 1), 1 + ((bits >> 2) & 1),
+            1 + (bits & 1), 1 + ((bits >> 1) & 1), 1 + ((bits >> 2) & 1));
+        Capture flagged = INVOKE(flags, "unread\n");
+        Capture numbered = INVOKE(menus, input);
+        assert(flagged.code == 0 && numbered.code == 0);
+        assert(strstr(numbered.err, "Input troppo lungo") != NULL);
+        assert(occurrences(numbered.out, "Aiuto:") == 7);
+        assert(strstr(numbered.out, "Replay semantico: PASS") != NULL);
+        assert(strcmp(strstr(flagged.out, "Finale:"), strstr(numbered.out, "Finale:")) == 0);
+        /* Compare all event commentary, independent of setup/half-time prompts. */
+        const char *x = flagged.out, *y = numbered.out;
+        while ((x = strstr(x, "LIVE ")) != NULL) {
+            y = strstr(y, "LIVE ");
+            assert(y != NULL);
+            size_t length = (size_t)(strchr(x, '\n') - x);
+            assert(strncmp(x, y, length) == 0 && y[length] == '\n');
+            x += length; y += length;
+        }
+        assert(strstr(y, "LIVE ") == NULL);
+        release(&flagged); release(&numbered);
+    }
     const RmcFixture *unrelated = NULL;
     for (size_t i = 0; i < RMC_CALENDAR_FIXTURES; ++i) {
         const RmcFixture *candidate = &career->foundation.calendar.fixtures[i];

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum { LIVE_LIMIT = 80 };
+enum { ROUTINE_LIMIT = 40 };
 enum { OPT_HELP, OPT_AUTO, OPT_VERIFY, OPT_SEED, OPT_TEAM, OPT_FIXTURE,
     OPT_HOME, OPT_AWAY, OPT_OPENER, OPT_PRE, OPT_HALF, OPT_COUNT };
 
@@ -35,7 +35,7 @@ typedef struct {
     size_t goals[2], shots[2], outcomes[2][6];
     size_t recoveries[2][2], tackles[2];
     size_t scorers[2][RMC_LINEUP_PLAYERS];
-    unsigned live_lines;
+    unsigned routine_lines;
     bool suppressed;
 } Statistics;
 
@@ -182,7 +182,7 @@ static void help(Console *c)
         "  Default pre e avversario: PATIENT CARRY_FIRST PRESS_NORMAL; intervallo: KEEP.\n"
         "  Token esatti, sensibili alle maiuscole; opzioni in qualsiasi ordine, senza duplicati.\n"
         "  Senza --auto: richieste solo le scelte omesse. Invio accetta il default;\n"
-        "  all'intervallo Invio significa KEEP. EOF annulla (codice 3).\n"
+        "  tattiche: menu 1/2, ? o --help per aiuto; all'intervallo Invio significa KEEP. EOF annulla (codice 3).\n"
         "  --auto non legge stdin. Nessuna scelta di azioni individuali.\n"
         "  --verify-replay verifica il journal in memoria; nessun formato portabile/hash.\n"
         "  Codici: 0 completata/help, 1 errore runtime/risorse/I/O, 2 opzioni/scelta, 3 EOF.\n");
@@ -260,9 +260,78 @@ static size_t words(char *text, char *tokens[], size_t capacity)
     return n;
 }
 
+/* Only local choices are staged here; no flow operation occurs while reading. */
+static int menu(Console *c, const char *label, const char *choices,
+    unsigned def, const char *default_text, unsigned *selected)
+{
+    char displayed[96];
+    (void)snprintf(displayed, sizeof(displayed), "%u = %s", def, default_text);
+    for (;;) {
+        write_to(c, c->out, "%s\n", choices);
+        char buffer[256], *tokens[1];
+        int rc = line(c, label, displayed, buffer);
+        if (rc != 0 && rc != 2) { return rc; }
+        if (rc == 0) {
+            size_t n = words(buffer, tokens, 1);
+            if (n == 0) { *selected = def; return 0; }
+            if (n == 1) {
+                if (strcmp(tokens[0], "?") == 0 || strcmp(tokens[0], "--help") == 0) {
+                    write_to(c, c->out, "Aiuto: %s. Invio accetta [%s]; EOF annulla.\n", label, displayed);
+                    continue;
+                }
+                if (strcmp(tokens[0], "1") == 0 || strcmp(tokens[0], "2") == 0) {
+                    *selected = (unsigned)(tokens[0][0] - '0'); return 0;
+                }
+            }
+        }
+        write_to(c, c->err, "Scelta non valida: accettati 1, 2, Invio (default), ? o --help.\n");
+        if (c->io_failed) { return 1; }
+    }
+}
+
+static int tactics_prompt(Console *c, Options *o, bool half)
+{
+    RmcFlowInstructions t = o->pre;
+    write_to(c, c->out, "Selector v1: q = numero operazioni sportive modulo 5; "
+        "portiere distribuisce prima, poi contrasti, tiri, passaggi q=0 e progressione.\n");
+    unsigned choice;
+    int rc;
+    if (half) {
+        char current[64];
+        instructions_text(current, sizeof(current), t);
+        write_to(c, c->out, "Istruzioni attuali: %s\n", current);
+        rc = menu(c, "Intervallo", "1 = KEEP (mantieni le istruzioni correnti)\n2 = CHANGE (scegli i tre assi)",
+            1, "KEEP", &choice);
+        if (rc != 0) { return rc; }
+        if (choice == 1) { o->half_keep = true; return 0; }
+    }
+    rc = menu(c, "Approach",
+        "1 = PATIENT (tiro dal settore 4)\n2 = DIRECT (anche tiro dal settore 3 nel ciclo q=4)",
+        t.approach == RMC_FLOW_PATIENT ? 1 : 2,
+        t.approach == RMC_FLOW_PATIENT ? "PATIENT" : "DIRECT", &choice);
+    if (rc != 0) { return rc; }
+    t.approach = choice == 1 ? RMC_FLOW_PATIENT : RMC_FLOW_DIRECT;
+    rc = menu(c, "Progression",
+        "1 = CARRY_FIRST (conduzione quando prevista la progressione)\n2 = DRIBBLE_FIRST (dribbling quando prevista la progressione)",
+        t.progression == RMC_FLOW_CARRY_FIRST ? 1 : 2,
+        t.progression == RMC_FLOW_CARRY_FIRST ? "CARRY_FIRST" : "DRIBBLE_FIRST", &choice);
+    if (rc != 0) { return rc; }
+    t.progression = choice == 1 ? RMC_FLOW_CARRY_FIRST : RMC_FLOW_DRIBBLE_FIRST;
+    rc = menu(c, "Pressure",
+        "1 = PRESS_NORMAL (in difesa contrasto nel ciclo q=2)\n2 = PRESS_HIGH (in difesa contrasto nei cicli q=1 e q=2)",
+        t.pressure == RMC_FLOW_PRESS_NORMAL ? 1 : 2,
+        t.pressure == RMC_FLOW_PRESS_NORMAL ? "PRESS_NORMAL" : "PRESS_HIGH", &choice);
+    if (rc != 0) { return rc; }
+    t.pressure = choice == 1 ? RMC_FLOW_PRESS_NORMAL : RMC_FLOW_PRESS_HIGH;
+    if (half) { o->half = t; o->half_keep = false; }
+    else { o->pre = t; }
+    return 0;
+}
+
 static int prompt(Console *c, Options *o, unsigned choice,
     const RmcCareerSetup *career)
 {
+    if (choice == OPT_PRE || choice == OPT_HALF) { return tactics_prompt(c, o, choice == OPT_HALF); }
     const char *label = "";
     char def[64];
     switch (choice) {
@@ -271,19 +340,20 @@ static int prompt(Console *c, Options *o, unsigned choice,
     case OPT_HOME: label = "Modulo casa (442/433/352)"; (void)snprintf(def, sizeof(def), "%s", formation_text(o->home)); break;
     case OPT_AWAY: label = "Modulo trasferta (442/433/352)"; (void)snprintf(def, sizeof(def), "%s", formation_text(o->away)); break;
     case OPT_OPENER: label = "Primo calcio d'inizio (home/away)"; (void)snprintf(def, sizeof(def), "%s", o->away_opens ? "away" : "home"); break;
-    case OPT_PRE: label = "Tattica pre-partita (APPROACH PROGRESSION PRESSURE)"; instructions_text(def, sizeof(def), o->pre); break;
-    case OPT_HALF: label = "Tattica intervallo (KEEP oppure APPROACH PROGRESSION PRESSURE)"; (void)snprintf(def, sizeof(def), "KEEP"); break;
     default: return 1;
     }
     for (;;) {
         char buffer[256], *tokens[3];
         int rc = line(c, label, def, buffer);
-        if (rc == 2) { continue; }
+        if (rc == 2) { write_to(c, c->err, "Scelte accettate: %s; Invio per [%s].\n", label, def); continue; }
         if (rc != 0) { return rc; }
         const size_t n = words(buffer, tokens, 3);
         if (n == 0) {
-            if (choice == OPT_HALF) { o->half_keep = true; }
             return 0;
+        }
+        if (n == 1 && (strcmp(tokens[0], "?") == 0 || strcmp(tokens[0], "--help") == 0)) {
+            write_to(c, c->out, "Aiuto: %s; default [%s]. Invio accetta, EOF annulla.\n", label, def);
+            continue;
         }
         uint64_t id;
         bool valid = false;
@@ -294,15 +364,8 @@ static int prompt(Console *c, Options *o, unsigned choice,
         else if (choice == OPT_HOME && n == 1) { valid = formation(tokens[0], &o->home); }
         else if (choice == OPT_AWAY && n == 1) { valid = formation(tokens[0], &o->away); }
         else if (choice == OPT_OPENER && n == 1) { valid = opener(tokens[0], &o->away_opens); }
-        else if (choice == OPT_PRE && n == 3) { valid = triple(tokens[0], tokens[1], tokens[2], &o->pre); }
-        else if (choice == OPT_HALF && n == 1 && strcmp(tokens[0], "KEEP") == 0) {
-            o->half_keep = true; valid = true;
-        } else if (choice == OPT_HALF && n == 3) {
-            valid = triple(tokens[0], tokens[1], tokens[2], &o->half);
-            if (valid) { o->half_keep = false; }
-        }
         if (valid) { return 0; }
-        write_to(c, c->err, "Scelta non valida: usare gli ID mostrati o i token di --help.\n");
+        write_to(c, c->err, "Scelta non valida: %s; Invio per [%s], ? o --help.\n", label, def);
         if (c->io_failed) { return 1; }
     }
 }
@@ -402,11 +465,11 @@ static bool show_lineup(Console *c, const RmcWorldCore *w, RmcTeamId id, const R
     return !c->io_failed;
 }
 
-static bool live_line(Console *c, Statistics *s)
+static bool routine_line(Console *c, Statistics *s)
 {
-    if (s->live_lines < LIVE_LIMIT) { ++s->live_lines; return true; }
+    if (s->routine_lines < ROUTINE_LIMIT) { ++s->routine_lines; return true; }
     if (!s->suppressed) {
-        write_to(c, c->out, "Cronaca: limite di 80 righe raggiunto; statistiche complete a fine partita.\n");
+        write_to(c, c->out, "Cronaca: limite di 40 routine del tempo raggiunto; eventi importanti e statistiche completi.\n");
         s->suppressed = true;
     }
     return false;
@@ -447,7 +510,7 @@ static bool events(Console *c, const RmcMatchFlow *f, Statistics *s, const RmcMa
             if (e->outcome_code < RMC_SHOT_GOAL || e->outcome_code > RMC_SHOT_WOODWORK) { return false; }
             ++s->shots[side];
             ++s->outcomes[side][e->outcome_code - RMC_SHOT_GOAL];
-            if (live_line(c, s)) {
+            if (e->outcome_code != RMC_SHOT_GOAL) {
                 write_to(c, c->out, "LIVE %02" PRIu32 ":%02" PRIu32 " %s (#%" PRIu64 ") Player #%" PRIu64 " tiro: %s\n",
                     e->at_second / 60, e->at_second % 60, t->name, t->id.value, e->primary_actor.value,
                     outcome[e->outcome_code - RMC_SHOT_GOAL]);
@@ -455,6 +518,9 @@ static bool events(Console *c, const RmcMatchFlow *f, Statistics *s, const RmcMa
         } else if (e->type == RMC_EVENT_GOAL) {
             ++s->goals[side];
             ++s->scorers[side][lineup_index(f, side, e->primary_actor)];
+            write_to(c, c->out, "LIVE %02" PRIu32 ":%02" PRIu32 " GOL %s (#%" PRIu64 ") Player #%" PRIu64 "; score=%zu - %zu\n",
+                e->at_second / 60, e->at_second % 60, t->name, t->id.value,
+                e->primary_actor.value, s->goals[0], s->goals[1]);
         } else if (e->type == RMC_EVENT_RECOVERY) {
             if (e->outcome_code != RMC_RECOVERY_RETAINED && e->outcome_code != RMC_RECOVERY_TURNOVER) { return false; }
             ++s->recoveries[side][e->outcome_code == RMC_RECOVERY_TURNOVER ? 1 : 0];
@@ -463,18 +529,16 @@ static bool events(Console *c, const RmcMatchFlow *f, Statistics *s, const RmcMa
             ++s->tackles[side]; message = "vince il contrasto";
         } else if (e->type == RMC_EVENT_PERIOD_START) {
             if (t == NULL) { return false; }
-            if (live_line(c, s)) {
-                write_to(c, c->out, "LIVE %02" PRIu32 ":%02" PRIu32 " Inizio tempo: apre %s (#%" PRIu64 ")\n",
+            s->routine_lines = 0;
+            s->suppressed = false;
+            write_to(c, c->out, "LIVE %02" PRIu32 ":%02" PRIu32 " Inizio tempo: apre %s (#%" PRIu64 ")\n",
                     e->at_second / 60, e->at_second % 60, t->name, t->id.value);
-            }
         } else if (e->type == RMC_EVENT_PERIOD_END || e->type == RMC_EVENT_MATCH_END) {
-            if (live_line(c, s)) {
-                write_to(c, c->out, "LIVE %02" PRIu32 ":%02" PRIu32 " %s\n",
+            write_to(c, c->out, "LIVE %02" PRIu32 ":%02" PRIu32 " %s\n",
                     e->at_second / 60, e->at_second % 60,
                     e->type == RMC_EVENT_PERIOD_END ? "Fine tempo" : "Fischio finale");
-            }
         }
-        if (message != NULL && live_line(c, s)) {
+        if (message != NULL && routine_line(c, s)) {
             write_to(c, c->out, "LIVE %02" PRIu32 ":%02" PRIu32 " %s (#%" PRIu64 ") Player #%" PRIu64 " %s\n",
                 e->at_second / 60, e->at_second % 60, t->name, t->id.value, e->primary_actor.value, message);
         }
