@@ -215,8 +215,92 @@ static void test_hover_feedback(void)
     puts("M005_SDL_HOVER_CLEAR_GATE=PASS");
 }
 
+static void test_keyboard_focus(void)
+{
+    M005Gui gui;
+    m005_gui_init(&gui);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+
+    SDL_Event event = {0};
+    event.type = SDL_KEYDOWN;
+    event.key.keysym.sym = SDLK_DOWN;
+    m005_gui_event(&gui, &event);
+    assert(gui.focused_action == 0);
+
+    event.key.keysym.sym = SDLK_RIGHT;
+    m005_gui_event(&gui, &event);
+    assert(gui.focused_action == 11);
+
+    event.key.keysym.sym = SDLK_LEFT;
+    m005_gui_event(&gui, &event);
+    assert(gui.focused_action == 0);
+
+    event.key.keysym.sym = SDLK_UP;
+    m005_gui_event(&gui, &event);
+    assert(gui.focused_action == -1);
+
+    scene_click(&gui, 320, 136);
+    assert(gui.focused_action == 1);
+    assert(gui.state.clock_inspected);
+
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.x = 10;
+    motion.motion.y = 10;
+    m005_gui_event(&gui, &motion);
+    assert(gui.focused_action == 1);
+
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.button = SDL_BUTTON_LEFT;
+    event.button.x = 100;
+    event.button.y = 806;
+    m005_gui_event(&gui, &event);
+    assert(gui.state.turn == 2);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+
+    event.button.x = 400;
+    m005_gui_event(&gui, &event);
+    assert(gui.state.turn == 1);
+    assert(gui.focused_action == -1);
+
+    puts("M005_KEYBOARD_FOCUS_GATE=PASS");
+}
+
+static void test_action_availability(void)
+{
+    M005Gui gui;
+    m005_gui_init(&gui);
+
+    ChronoM005State snapshot = gui.state;
+
+    assert(m005_action_available(&gui.state, 0));
+    assert(m005_action_available(&gui.state, 1));
+    assert(!m005_action_available(&gui.state, 2));
+    assert(!m005_action_available(&gui.state, 3));
+    assert(memcmp(&snapshot, &gui.state, sizeof(snapshot)) == 0);
+
+    click(&gui, 1);
+    assert(m005_action_available(&gui.state, 2));
+    assert(!m005_action_available(&gui.state, 1));
+
+    turn(&gui);
+    assert(m005_action_available(&gui.state, 0));
+    assert(m005_action_available(&gui.state, 3));
+    assert(!m005_action_available(&gui.state, 2));
+
+    while (!gui.state.finished)
+        turn(&gui);
+
+    for (int i = 0; i < M005_GUI_ACTION_COUNT; ++i)
+        assert(!m005_action_available(&gui.state, i));
+
+    puts("M005_ACTION_AVAILABILITY_GATE=PASS");
+}
+
 int main(void)
 {
+    test_action_availability();
+    test_keyboard_focus();
     test_hover_feedback();
     test_scene_interaction();
     test_nominal();
