@@ -1063,3 +1063,30 @@ foreach(flow_test IN ITEMS match-flow match-flow-replay)
     rmc_warnings(rmc-test-${flow_test})
     add_test(NAME rmc-test-${flow_test} COMMAND rmc-test-${flow_test})
 endforeach()
+
+# M001-B1.28-D — Playable managerial stdio adapter over qualified Match Flow.
+add_library(rmc-match-cli-runner STATIC match_cli.c)
+target_link_libraries(rmc-match-cli-runner PUBLIC rmc-match-flow-selector rmc-career)
+rmc_warnings(rmc-match-cli-runner)
+
+add_executable(rmc-match-cli match_cli_main.c)
+set_target_properties(rmc-match-cli PROPERTIES OUTPUT_NAME rmc-match)
+target_link_libraries(rmc-match-cli PRIVATE rmc-match-cli-runner)
+rmc_warnings(rmc-match-cli)
+
+add_executable(rmc-test-match-cli test_match_cli.c)
+target_link_libraries(rmc-test-match-cli PRIVATE rmc-match-cli-runner)
+if(MSVC)
+    target_compile_options(rmc-test-match-cli PRIVATE /UNDEBUG)
+else()
+    target_compile_options(rmc-test-match-cli PRIVATE -UNDEBUG)
+endif()
+rmc_warnings(rmc-test-match-cli)
+add_test(NAME rmc-match-cli COMMAND rmc-test-match-cli)
+set_tests_properties(rmc-match-cli PROPERTIES TIMEOUT 180)
+add_test(NAME rmc-match-cli-integration
+    COMMAND ${CMAKE_COMMAND}
+        -DCLI=$<TARGET_FILE:rmc-match-cli>
+        -DWORK=${CMAKE_CURRENT_BINARY_DIR}/match-cli-integration
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/test_match_cli_integration.cmake)
+set_tests_properties(rmc-match-cli-integration PROPERTIES TIMEOUT 120)
