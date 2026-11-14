@@ -107,8 +107,45 @@ static void test_defeat_and_restart(void)
     puts("M002_SDL_RESTART_GATE=PASS");
 }
 
+static void test_m002_hover_routing(void)
+{
+    M002Gui gui;
+    m002_gui_init(&gui);
+    assert(gui.hovered_action == -1);
+
+    for (int i = 0; i < M002_GUI_ACTION_COUNT; ++i) {
+        SDL_Rect rect = m002_action_rect(i);
+        SDL_Event event = {0};
+        event.type = SDL_MOUSEMOTION;
+        event.motion.x = rect.x + rect.w / 2;
+        event.motion.y = rect.y + rect.h / 2;
+
+        assert(m002_action_at(event.motion.x,
+                              event.motion.y) == i);
+        m002_gui_event(&gui, &event);
+        assert(gui.hovered_action == i);
+        assert(gui.state.turn == 1);
+    }
+
+    SDL_Event outside = {0};
+    outside.type = SDL_MOUSEMOTION;
+    outside.motion.x = 0;
+    outside.motion.y = 0;
+    m002_gui_event(&gui, &outside);
+    assert(gui.hovered_action == -1);
+
+    SDL_Event restart = {0};
+    restart.type = SDL_KEYDOWN;
+    restart.key.keysym.sym = SDLK_r;
+    m002_gui_event(&gui, &restart);
+    assert(gui.hovered_action == -1);
+
+    puts("M002_HOVER_ROUTING_GATE=PASS");
+}
+
 int main(void)
 {
+    test_m002_hover_routing();
     test_victory_and_paradox();
     test_defeat_and_restart();
     puts("CHRONOOOPS_M002_SDL_EVENTS_GATE=PASS");

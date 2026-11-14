@@ -33,11 +33,13 @@ static const M002GuiAction m002_actions[] = {
 typedef struct {
     ChronoM002State state;
     char message[256];
+    int hovered_action;
 } M002Gui;
 
 static void m002_gui_init(M002Gui *gui)
 {
     chrono_m002_init(&gui->state);
+    gui->hovered_action = -1;
     snprintf(gui->message, sizeof(gui->message),
              "M002: riattiva il Cronofono e salda il debito causale.");
 }
@@ -71,6 +73,15 @@ static bool m002_contains(SDL_Rect r, int x, int y)
 {
     return x >= r.x && x < r.x + r.w &&
            y >= r.y && y < r.y + r.h;
+}
+
+static int m002_action_at(int x, int y)
+{
+    for (int i = 0; i < M002_GUI_ACTION_COUNT; ++i) {
+        if (m002_contains(m002_action_rect(i), x, y))
+            return i;
+    }
+    return -1;
 }
 
 static void m002_gui_apply(M002Gui *gui, int index)
@@ -112,6 +123,12 @@ static void m002_gui_end_turn(M002Gui *gui)
 
 static void m002_gui_event(M002Gui *gui, const SDL_Event *event)
 {
+    if (event->type == SDL_MOUSEMOTION) {
+        gui->hovered_action =
+            m002_action_at(event->motion.x, event->motion.y);
+        return;
+    }
+
     if (event->type == SDL_KEYDOWN && event->key.repeat == 0) {
         if (event->key.keysym.sym == SDLK_r)
             m002_gui_init(gui);
@@ -131,12 +148,9 @@ static void m002_gui_event(M002Gui *gui, const SDL_Event *event)
     } else if (m002_contains((SDL_Rect){345, 735, 220, 43}, x, y)) {
         m002_gui_init(gui);
     } else {
-        for (int i = 0; i < M002_GUI_ACTION_COUNT; ++i) {
-            if (m002_contains(m002_action_rect(i), x, y)) {
-                m002_gui_apply(gui, i);
-                break;
-            }
-        }
+        int index = m002_action_at(x, y);
+        if (index >= 0)
+            m002_gui_apply(gui, index);
     }
 }
 
@@ -228,19 +242,30 @@ static void m002_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
         SDL_Rect rect = m002_action_rect(i);
         bool active = m002_actions[i].action == CHRONO_M002_WAIT ||
             m002_actions[i].player == s->active_player;
+        bool hovered = !s->finished && gui->hovered_action == i;
         SDL_Color color = s->finished
             ? (SDL_Color){43, 50, 65, 255}
+            : hovered && active ? (SDL_Color){55, 124, 169, 255}
+            : hovered ? (SDL_Color){84, 73, 91, 255}
             : active ? (SDL_Color){35, 90, 135, 255}
                      : (SDL_Color){39, 49, 65, 255};
 
         m002_rect(renderer, rect, color);
+        if (hovered) {
+            SDL_Color border = active
+                ? (SDL_Color){239, 194, 111, 255}
+                : (SDL_Color){161, 183, 205, 255};
+            SDL_SetRenderDrawColor(renderer,
+                                   border.r, border.g, border.b, 255);
+            SDL_RenderDrawRect(renderer, &rect);
+        }
         m002_text(renderer, font, rect.x + 10, rect.y + 12,
                   white, m002_actions[i].label);
     }
 
     m002_rect(renderer, (SDL_Rect){32, 735, 300, 43},
               (SDL_Color){154, 100, 42, 255});
-    m002_text(renderer, font, 47, 746, white, "TERMINA TURNO");
+    m002_text(renderer, font, 47, 746, white, "TERMINA TURNO [SPAZIO]");
 
     m002_rect(renderer, (SDL_Rect){345, 735, 220, 43},
               (SDL_Color){88, 65, 105, 255});
