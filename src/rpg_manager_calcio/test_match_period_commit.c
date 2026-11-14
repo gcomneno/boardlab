@@ -299,16 +299,108 @@ static void test_deterministic_replay(void)
     ) == 0);
 }
 
+static void reject_plan_unchanged(const RmcMatchState *state, size_t count)
+{
+    RmcMatchPeriodPlan plan;
+    memset(&plan, 0xa5, sizeof(plan));
+    unsigned char before[sizeof(plan)];
+    memcpy(before, &plan, sizeof(plan));
+    const RmcMatchState state_before = *state;
+    assert(!rmc_match_period_plan(&world, state, count, &plan));
+    assert(memcmp(before, &plan, sizeof(plan)) == 0);
+    assert(memcmp(&state_before, state, sizeof(*state)) == 0);
+}
+
+static void test_period_planner(void)
+{
+    RmcMatchState state = first_half(120);
+    /* At the boundary, closure precedes the exhausted action window. */
+    state.possession.team_id = state.fixture.home_team;
+    state.possession.initiator = state.home_lineup.players[1];
+    state.possession.controller = state.home_lineup.players[1];
+    state.possession.action_count = RMC_POSSESSION_MAX_ACTIONS;
+    state.possession.elapsed_seconds = 60;
+    const RmcMatchState before = state;
+    RmcMatchPeriodPlan plan;
+    memset(&plan, 0xa5, sizeof(plan));
+    assert(rmc_match_period_plan(&world, &state, 7, &plan));
+    assert(memcmp(&before, &state, sizeof(state)) == 0);
+    assert(plan.event_count == 1);
+    assert(plan.next_state.period == RMC_MATCH_HALF_TIME);
+    assert(plan.next_state.mode == RMC_MATCH_PERIOD_ENDED);
+    assert(plan.next_state.possession.team_id.value == 0);
+    assert(plan.next_state.possession.action_count == 0);
+    assert(plan.next_state.second_half_start_second == 2820);
+    assert(plan.events[0].id == 8);
+    assert(plan.events[0].type == RMC_EVENT_PERIOD_END);
+    assert(plan.events[0].at_second == 2820);
+    assert(plan.events[0].cause_event_id == 0);
+    assert(plan.events[0].match_id.value == state.fixture.id.value);
+    assert(plan.events[0].shot.model_version == 0);
+    assert(plan.events[1].id == 0);
+
+    /* Pure planning produces exactly the wrapper's existing result. */
+    RmcMatchState committed = state;
+    RmcMatchEvent storage[4] = {{0}};
+    RmcMatchEventLog log;
+    assert(rmc_match_event_log_init(&state, storage, 4, &log));
+    RmcMatchPeriodPlan empty_prefix;
+    assert(rmc_match_period_plan(&world, &state, 0, &empty_prefix));
+    assert(rmc_match_period_commit(&world, &committed, &log));
+    assert(memcmp(&committed, &empty_prefix.next_state, sizeof(committed)) == 0);
+    assert(log.count == empty_prefix.event_count);
+    assert(memcmp(storage, empty_prefix.events,
+                  log.count * sizeof(storage[0])) == 0);
+
+    state = second_half(120, 180);
+    assert(rmc_match_period_plan(&world, &state, 9, &plan));
+    assert(plan.event_count == 2);
+    assert(plan.next_state.period == RMC_MATCH_FINISHED);
+    assert(plan.next_state.terminal_reason == RMC_MATCH_TERMINAL_COMPLETED);
+    assert(plan.next_state.mode == RMC_MATCH_PERIOD_ENDED);
+    assert(plan.events[0].type == RMC_EVENT_PERIOD_END);
+    assert(plan.events[0].id == 10 && plan.events[0].cause_event_id == 0);
+    assert(plan.events[1].type == RMC_EVENT_MATCH_END);
+    assert(plan.events[1].id == 11 && plan.events[1].cause_event_id == 10);
+    assert(plan.events[0].at_second == 5700 && plan.events[1].at_second == 5700);
+    assert(plan.events[1].shot.model_version == 0);
+
+    state.elapsed_seconds--;
+    reject_plan_unchanged(&state, 0);
+    state.elapsed_seconds += 2;
+    reject_plan_unchanged(&state, 0);
+    state.elapsed_seconds--;
+    state.mode = RMC_MATCH_RESTART_PENDING;
+    reject_plan_unchanged(&state, 0);
+    state.mode = RMC_MATCH_MANAGEMENT_WINDOW;
+    reject_plan_unchanged(&state, 0);
+    state.mode = RMC_MATCH_BALL_IN_PLAY;
+    reject_plan_unchanged(&state, SIZE_MAX);
+    reject_plan_unchanged(&initial, 0);
+    reject_plan_unchanged(&plan.next_state, 0);
+    state.fixture.id.value = 0;
+    reject_plan_unchanged(&state, 0);
+
+    unsigned char plan_before[sizeof(plan)];
+    memcpy(plan_before, &plan, sizeof(plan));
+    assert(!rmc_match_period_plan(NULL, &state, 0, &plan));
+    assert(!rmc_match_period_plan(&world, NULL, 0, &plan));
+    assert(!rmc_match_period_plan(&world, &state, 0, NULL));
+    assert(memcmp(plan_before, &plan, sizeof(plan)) == 0);
+}
+
 int main(void)
 {
     setup();
 
+    test_period_planner();
     test_first_half_commit();
     test_second_half_commit();
     test_insufficient_capacity();
     test_invalid_transition_and_log();
     test_deterministic_replay();
 
+    puts("PERIOD_CLOSURE_PLANNER_AND_PRECEDENCE=PASS");
     puts("PERIOD_COMMIT_FIRST_HALF=PASS");
     puts("PERIOD_COMMIT_SECOND_HALF=PASS");
     puts("PERIOD_COMMIT_CAPACITY_ATOMICITY=PASS");

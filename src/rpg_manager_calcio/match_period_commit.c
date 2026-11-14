@@ -19,13 +19,13 @@ static RmcMatchEvent period_event(
     return event;
 }
 
-bool rmc_match_period_commit(
+bool rmc_match_period_plan(
     const RmcWorldCore *world,
-    RmcMatchState *state,
-    RmcMatchEventLog *log)
+    const RmcMatchState *state,
+    size_t preceding_event_count,
+    RmcMatchPeriodPlan *destination)
 {
-    if (world == NULL || state == NULL || log == NULL ||
-        log->events == NULL ||
+    if (world == NULL || state == NULL || destination == NULL ||
         (state->period != RMC_MATCH_FIRST_HALF &&
          state->period != RMC_MATCH_SECOND_HALF)) {
         return false;
@@ -33,55 +33,48 @@ bool rmc_match_period_commit(
 
     const size_t required =
         state->period == RMC_MATCH_SECOND_HALF ? 2u : 1u;
-
-    if (log->count > log->capacity ||
-        log->capacity - log->count < required ||
-        log->count > UINT64_MAX - required) {
+    if (preceding_event_count > SIZE_MAX - required ||
+        preceding_event_count > UINT64_MAX - required) {
         return false;
     }
 
-    RmcMatchState next = *state;
-
+    RmcMatchPeriodPlan next = {0};
+    next.next_state = *state;
     if (!rmc_match_sequence_apply(
-            world, &next, RMC_SEQUENCE_END_PERIOD)) {
+            world, &next.next_state, RMC_SEQUENCE_END_PERIOD)) {
         return false;
     }
 
     const uint64_t first_id =
-        (uint64_t)log->count + UINT64_C(1);
-
-    const RmcMatchEvent first =
+        (uint64_t)preceding_event_count + UINT64_C(1);
+    next.event_count = required;
+    next.events[0] =
         period_event(state, first_id, RMC_EVENT_PERIOD_END, 0);
-
-    const RmcMatchEvent second =
-        period_event(
-            state, first_id + UINT64_C(1),
-            RMC_EVENT_MATCH_END, first_id);
-
-    const RmcMatchEventLog original_log = *log;
-    const RmcMatchEvent saved_first =
-        log->events[log->count];
-
-    RmcMatchEvent saved_second = {0};
-
     if (required == 2u) {
-        saved_second = log->events[log->count + 1u];
+        next.events[1] = period_event(
+            state, first_id + UINT64_C(1), RMC_EVENT_MATCH_END, first_id);
     }
 
-    if (!rmc_match_event_log_append(
-            world, state, log, &first)) {
+    *destination = next;
+    return true;
+}
+
+bool rmc_match_period_commit(
+    const RmcWorldCore *world,
+    RmcMatchState *state,
+    RmcMatchEventLog *log)
+{
+    if (state == NULL || log == NULL) {
         return false;
     }
 
-    if (required == 2u &&
-        !rmc_match_event_log_append(
-            world, state, log, &second)) {
-        log->events[original_log.count] = saved_first;
-        log->events[original_log.count + 1u] = saved_second;
-        *log = original_log;
+    RmcMatchPeriodPlan plan;
+    if (!rmc_match_period_plan(world, state, log->count, &plan) ||
+        !rmc_match_event_log_append_batch(
+            world, state, log, plan.events, plan.event_count)) {
         return false;
     }
 
-    *state = next;
+    *state = plan.next_state;
     return true;
 }

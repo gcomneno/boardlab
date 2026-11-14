@@ -6,6 +6,31 @@
 
 #include <stdbool.h>
 
+typedef struct {
+    RmcMatchState next_state;
+    RmcMatchEvent events[2];
+    size_t event_count;
+} RmcMatchPeriodPlan;
+
+/*
+ * Pure deadline closure plan for a validated active BALL_IN_PLAY state.
+ * preceding_event_count includes any action events planned by the caller.
+ * IDs follow that count; no log is read or written. At the deadline,
+ * END_PERIOD takes precedence over the 32-action window, using the
+ * existing sequence/lifecycle rules. Earlier/later clocks, illegal
+ * modes and insufficient ID headroom are rejected.
+ *
+ * Produces HALF_TIME + PERIOD_END or FINISHED + PERIOD_END, MATCH_END.
+ * No restarts, time advancement, heap or RNG. All outputs (including
+ * unused event slots) remain unchanged on rejection.
+ */
+bool rmc_match_period_plan(
+    const RmcWorldCore *world,
+    const RmcMatchState *state,
+    size_t preceding_event_count,
+    RmcMatchPeriodPlan *destination
+);
+
 /*
  * M001-B — Atomic period completion, version 1.
  *
