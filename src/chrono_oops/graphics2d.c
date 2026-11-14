@@ -4,6 +4,7 @@
 #include "graphics2d_m002.c"
 #include "graphics2d_m003.c"
 #include "graphics2d_m004.c"
+#include "graphics2d_m005.c"
 #endif
 
 #include <SDL2/SDL.h>
@@ -360,45 +361,44 @@ static void draw_mission_menu(SDL_Renderer *renderer, TTF_Font *font)
 {
     SDL_Color white = {235, 241, 250, 255};
     SDL_Color muted = {155, 179, 205, 255};
+    const char *titles[] = {
+        "1  |  M001 - Il ponte che non c'era... poi anatra",
+        "2  |  M002 - Il prestito di domani",
+        "3  |  M003 - Il messaggio che non doveva arrivare",
+        "4  |  M004 - Due eventi, una causa",
+        "5  |  M005 - Il minuto che non e' mai esistito"
+    };
+    const char *descriptions[] = {
+        "Recupera la capsula temporale: Ponte oppure Papera.",
+        "Riattiva il Cronofono e salda il debito causale.",
+        "Salva le persone senza cancellare la testimonianza.",
+        "Collega Faro e Registro allo stesso impulso storico.",
+        "Dimostra la cronologia reale con prove indipendenti."
+    };
+    SDL_Color colors[] = {
+        {35, 90, 135, 255},
+        {31, 106, 96, 255},
+        {90, 66, 117, 255},
+        {110, 81, 44, 255},
+        {42, 91, 109, 255}
+    };
 
     SDL_SetRenderDrawColor(renderer, 11, 23, 39, 255);
     SDL_RenderClear(renderer);
-
-    label(renderer, font, 70, 60, white,
+    label(renderer, font, 70, 42, white,
           "CHRONOOOPS! 2D  |  SELEZIONE MISSIONE");
-    label(renderer, font, 70, 102, muted,
+    label(renderer, font, 70, 83, muted,
           "Due epoche, una cronologia, conseguenze deterministiche.");
 
-    rectangle(renderer, (SDL_Rect){70, 170, 1140, 110},
-              (SDL_Color){35, 90, 135, 255});
-    label(renderer, font, 100, 192, white,
-          "1  |  M001 - Il ponte che non c'era... poi anatra");
-    label(renderer, font, 100, 232, white,
-          "Recupera la capsula temporale: Ponte oppure Papera.");
-
-    rectangle(renderer, (SDL_Rect){70, 300, 1140, 110},
-              (SDL_Color){31, 106, 96, 255});
-    label(renderer, font, 100, 322, white,
-          "2  |  M002 - Il prestito di domani");
-    label(renderer, font, 100, 362, white,
-          "Riattiva il Cronofono e salda il debito causale.");
-
-    rectangle(renderer, (SDL_Rect){70, 430, 1140, 110},
-              (SDL_Color){90, 66, 117, 255});
-    label(renderer, font, 100, 452, white,
-          "3  |  M003 - Il messaggio che non doveva arrivare");
-    label(renderer, font, 100, 492, white,
-          "Salva le persone senza cancellare la testimonianza.");
-
-    rectangle(renderer, (SDL_Rect){70, 560, 1140, 110},
-              (SDL_Color){110, 81, 44, 255});
-    label(renderer, font, 100, 582, white,
-          "4  |  M004 - Due eventi, una causa");
-    label(renderer, font, 100, 622, white,
-          "Collega Faro e Registro allo stesso impulso storico.");
+    for (int i = 0; i < 5; ++i) {
+        int y = 145 + i * 106;
+        rectangle(renderer, (SDL_Rect){70, y, 1140, 94}, colors[i]);
+        label(renderer, font, 100, y + 13, white, titles[i]);
+        label(renderer, font, 100, y + 52, white, descriptions[i]);
+    }
 
     label(renderer, font, 70, 715, muted,
-          "Seleziona con mouse o tasti 1 / 2 / 3 / 4. ESC per uscire.");
+          "Seleziona con mouse o tasti 1 / 2 / 3 / 4 / 5. ESC per uscire.");
     SDL_RenderPresent(renderer);
 }
 #endif
@@ -448,9 +448,11 @@ int main(void)
     M002Gui m002;
     M003Gui m003;
     M004Gui m004;
+    M005Gui m005;
     m002_gui_init(&m002);
     m003_gui_init(&m003);
     m004_gui_init(&m004);
+    m005_gui_init(&m005);
     int selected_mission = 0;
 #endif
 
@@ -484,21 +486,18 @@ int main(void)
                         choice = 3;
                     else if (event.key.keysym.sym == SDLK_4)
                         choice = 4;
+                    else if (event.key.keysym.sym == SDLK_5)
+                        choice = 5;
                 } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                            event.button.button == SDL_BUTTON_LEFT) {
-                    SDL_Rect first = {70, 170, 1140, 110};
-                    SDL_Rect second = {70, 300, 1140, 110};
-                    SDL_Rect third = {70, 430, 1140, 110};
-                    SDL_Rect fourth = {70, 560, 1140, 110};
                     int x = event.button.x, y = event.button.y;
-                    if (contains(first, x, y))
-                        choice = 1;
-                    else if (contains(second, x, y))
-                        choice = 2;
-                    else if (contains(third, x, y))
-                        choice = 3;
-                    else if (contains(fourth, x, y))
-                        choice = 4;
+                    for (int i = 0; i < 5; ++i) {
+                        SDL_Rect item = {70, 145 + i * 106, 1140, 94};
+                        if (contains(item, x, y)) {
+                            choice = i + 1;
+                            break;
+                        }
+                    }
                 }
                 if (choice == 1) {
                     chrono_init(&state);
@@ -518,6 +517,10 @@ int main(void)
                     m004_gui_init(&m004);
                     selected_mission = 4;
                     SDL_SetWindowTitle(window, "ChronoOops! 2D - Missione 004");
+                } else if (choice == 5) {
+                    m005_gui_init(&m005);
+                    selected_mission = 5;
+                    SDL_SetWindowTitle(window, "ChronoOops! 2D - Missione 005");
                 }
                 continue;
             }
@@ -531,6 +534,10 @@ int main(void)
             }
             if (selected_mission == 4) {
                 m004_gui_event(&m004, &event);
+                continue;
+            }
+            if (selected_mission == 5) {
+                m005_gui_event(&m005, &event);
                 continue;
             }
 #endif
@@ -548,6 +555,9 @@ int main(void)
             SDL_RenderPresent(renderer);
         } else if (selected_mission == 4) {
             m004_gui_draw(renderer, font, &m004);
+            SDL_RenderPresent(renderer);
+        } else if (selected_mission == 5) {
+            m005_gui_draw(renderer, font, &m005);
             SDL_RenderPresent(renderer);
         } else {
             draw(renderer, font, &state, message);
