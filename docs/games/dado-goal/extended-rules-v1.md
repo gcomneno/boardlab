@@ -103,7 +103,76 @@ silently changing their probability or persistence semantics.
 
 Any probability change requires explicit approval.
 
-## 7. Ruleset convergence
+## 7. Match statistics
+
+Extended defines a richer canonical statistical view of each completed match.
+
+Statistics remain derived data. They must be reproducible from canonical roll
+events and structured match events and must never become an independent source
+of truth.
+
+### 7.1 Ball possession
+
+Ball possession is defined from valid die rolls.
+
+Each valid die roll performed by a team counts as one possession unit.
+
+For team `A`:
+
+`possession(A) = rolls(A) / (rolls(A) + rolls(B)) * 100`
+
+Displayed possession percentages are rounded to whole percentages and must be
+presented as complementary values summing to exactly 100%.
+
+This definition is intentionally physical-game compatible: in a tabletop match,
+possession can be reproduced simply by counting the valid die rolls performed
+by each team.
+
+Simulation qualification over 100,000 matches with the current 10-hands-per-team
+structure produced:
+
+- mean home possession: 50.02%;
+- 5th percentile: 40.91%;
+- median: 50.00%;
+- 95th percentile: 59.09%;
+- only 0.60% of matches outside the 35%-65% interval.
+
+This distribution is accepted as the Extended v1 possession model.
+
+### 7.2 Extended statistical baseline
+
+The canonical match statistics model must support at least:
+
+- possession;
+- goals;
+- shots / attacking conclusions;
+- shots wide;
+- shots saved or blocked;
+- posts / crossbars;
+- corner kicks;
+- free kicks from the edge of the area;
+- penalties;
+- passes;
+- yellow cards;
+- red cards;
+- injuries.
+
+Existing roll-event categories are reinterpreted consistently with Extended:
+
+- the former `Cross!` statistical category becomes corner kicks;
+- the former `Mezza rovesciata` statistical category becomes free kicks from
+  the edge of the area;
+- `FUORI!` remains distinguishable from `Respinto!` and `Parato!`;
+- `PALO/TRAVERSA` remains a separate category;
+- penalty attempts remain separately countable.
+
+Injury totals are derived from structured canonical match events rather than
+from die-face counts.
+
+The exact presentation order and UI layout of these statistics are an
+implementation concern and may evolve without changing their canonical meaning.
+
+## 8. Ruleset convergence
 
 Single-player and authoritative multiplayer must ultimately implement the same
 Extended gameplay rules.
@@ -114,7 +183,7 @@ must not be treated as a permanent product split.
 AUTO behaviour remains surface-specific where already designed differently;
 this contract does not force single-player AUTO semantics onto multiplayer.
 
-## 8. Historical compatibility
+## 9. Historical compatibility
 
 References to Dado Goal Original in historical changelogs, release notes and
 archaeological documentation remain valid and must not be rewritten.
@@ -124,7 +193,7 @@ active baseline now defer to this Extended rules contract for gameplay rules,
 while retaining their own transport, persistence, lifecycle and authority
 constraints.
 
-## 9. Implementation boundary
+## 10. Implementation boundary
 
 This document defines the gameplay baseline only.
 
