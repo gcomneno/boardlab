@@ -85,7 +85,7 @@ if(TARGET PkgConfig::CHRONO_SDL2 AND TARGET PkgConfig::CHRONO_SDL2_TTF)
         mission004.c
         mission005.c
     )
-    target_compile_definitions(chrono-oops-2d PRIVATE CHRONO_WITH_M002)
+    target_compile_definitions(chrono-oops-2d PRIVATE CHRONO_WITH_M002 SDL_MAIN_HANDLED)
     target_link_libraries(chrono-oops-2d PRIVATE
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
