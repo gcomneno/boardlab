@@ -1900,3 +1900,67 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Dado Goal #116 championship tournament. */
+.tournament-heading,
+.tournament-summary {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+#tournament-participants {
+  width: 100%;
+  min-height: 12rem;
+  margin: 8px 0;
+}
+
+.tournament-error {
+  min-height: 1.4em;
+}
+
+.tournament-table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.tournament-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tournament-table th,
+.tournament-table td {
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.tournament-table th:nth-child(2),
+.tournament-table td:nth-child(2) {
+  text-align: left;
+}
+
+.tournament-matchday {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  margin: 1rem 0;
+}
+
+.tournament-matchday section {
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.tournament-matchday h3 {
+  margin-top: 0;
+}
+
+.tournament-matchday ul {
+  margin-bottom: 0;
+  padding-left: 1.25rem;
+}

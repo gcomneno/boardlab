@@ -29,6 +29,18 @@ import {
 } from "./manager-store.mjs";
 import { createMatchRecord, teamStatistics } from "./team-history.mjs";
 import {
+  championshipStandings,
+  completeFixture,
+} from "./tournament.mjs";
+import {
+  clearTournamentRecovery,
+  createTournamentDocument,
+  loadTournament,
+  loadTournamentRecovery,
+  saveTournament,
+  saveTournamentRecovery,
+} from "./tournament-store.mjs";
+import {
   createPlayerRatings,
   RATING_FIELDS,
   RATING_LEVELS,
@@ -494,6 +506,8 @@ let footballCatalogue = null;
 let selectedMatchTeams = [null, null];
 let managementState = createManagementDocument();
 let managerState = null;
+let tournamentState = null;
+let activeTournamentFixtureId = null;
 let matchRecorded = false;
 
 try {
@@ -508,7 +522,48 @@ try {
   managerState = null;
 }
 
+try {
+  tournamentState = loadTournament(window.localStorage);
+} catch {
+  tournamentState = null;
+}
 
+try {
+  const recovery = loadTournamentRecovery(window.localStorage);
+
+  if (recovery) {
+    const canonicalMatchExists = managementState.matches.some(
+      match => match.matchId === recovery.matchId
+    );
+    const sameChampionship =
+      tournamentState?.championshipId === recovery.championshipId;
+    const fixture = sameChampionship
+      ? tournamentState.fixtures.find(
+          candidate => candidate.fixtureId === recovery.fixtureId
+        )
+      : null;
+
+    if (canonicalMatchExists && fixture?.matchId === null) {
+      const reconciled = completeFixture(
+        tournamentState,
+        recovery.fixtureId,
+        recovery.matchId,
+      );
+      saveTournament(window.localStorage, reconciled);
+      tournamentState = reconciled;
+      clearTournamentRecovery(window.localStorage);
+    } else if (
+      canonicalMatchExists &&
+      fixture?.matchId === recovery.matchId
+    ) {
+      clearTournamentRecovery(window.localStorage);
+    } else if (!canonicalMatchExists || !sameChampionship) {
+      clearTournamentRecovery(window.localStorage);
+    }
+  }
+} catch {
+  // Keep recoverable persisted state untouched for a later reload.
+}
 
 function recordCompletedMatch() {
   if (matchRecorded || state.phase !== "finished") return;
@@ -545,12 +600,60 @@ function recordCompletedMatch() {
   // is unavailable. Generic and Manager saves remain independent.
   matchRecorded = true;
 
+  let canonicalMatchPersisted = false;
+  let tournamentRecoveryPrepared = false;
+
+  if (tournamentState && activeTournamentFixtureId) {
+    try {
+      saveTournamentRecovery(window.localStorage, {
+        championshipId: tournamentState.championshipId,
+        fixtureId: activeTournamentFixtureId,
+        matchId: record.matchId,
+      });
+      tournamentRecoveryPrepared = true;
+    } catch {
+      // Gameplay remains valid even when recovery persistence is unavailable.
+    }
+  }
+
   try {
     saveManagement(window.localStorage, nextState);
     managementState = nextState;
+    canonicalMatchPersisted = true;
   } catch {
     // Local persistence failure must never affect gameplay.
   }
+
+  if (!canonicalMatchPersisted && tournamentRecoveryPrepared) {
+    try {
+      clearTournamentRecovery(window.localStorage);
+    } catch {
+      // A stale journal without a canonical match is discarded on reload.
+    }
+  }
+
+  if (canonicalMatchPersisted &&
+      tournamentState &&
+      activeTournamentFixtureId) {
+    try {
+      const nextTournament = completeFixture(
+        tournamentState,
+        activeTournamentFixtureId,
+        record.matchId,
+      );
+      saveTournament(window.localStorage, nextTournament);
+      tournamentState = nextTournament;
+      activeTournamentFixtureId = null;
+
+      if (tournamentRecoveryPrepared) {
+        clearTournamentRecovery(window.localStorage);
+      }
+    } catch {
+      // A durable journal reconciles the canonical match on next reload.
+    }
+  }
+
+  renderTournament();
 
   if (managerState &&
       byId("manager-enabled").checked &&
@@ -1387,8 +1490,185 @@ async function loadLiveCatalogue() {
   renderCatalogueTeams();
   syncNewManagerControls();
   renderManagerDashboard();
+  renderTournament();
 }
 
+
+function tournamentTeamName(teamId) {
+  return allCatalogueTeams().find(team =>
+    String(team.providerTeamId) === String(teamId)
+  )?.name ?? String(teamId);
+}
+
+function nextTournamentFixture() {
+  return tournamentState?.fixtures.find(fixture => fixture.matchId === null) ?? null;
+}
+
+function renderTournament() {
+  const setup = byId("tournament-setup");
+  const dashboard = byId("tournament-dashboard");
+  if (!setup || !dashboard) return;
+
+  setup.hidden = Boolean(tournamentState);
+  dashboard.hidden = !tournamentState;
+
+  if (!tournamentState) {
+    const teams = [...allCatalogueTeams()].sort(
+      (left, right) => left.name.localeCompare(
+        right.name, undefined, { sensitivity: "base" }
+      )
+    );
+    const list = byId("tournament-participants");
+    const selected = new Set(
+      [...list.selectedOptions].map(option => option.value)
+    );
+    list.replaceChildren(...teams.map(team => {
+      const option = new Option(team.name, String(team.providerTeamId));
+      option.selected = selected.has(option.value);
+      return option;
+    }));
+    return;
+  }
+
+  const standings = championshipStandings(
+    tournamentState,
+    managementState.matches,
+  );
+  const body = byId("tournament-standings");
+  body.replaceChildren(...standings.map(row => {
+    const tr = document.createElement("tr");
+    for (const value of [
+      row.position,
+      row.team.name,
+      row.played,
+      row.won,
+      row.drawn,
+      row.lost,
+      row.goalsFor,
+      row.goalsAgainst,
+      row.goalDifference,
+      row.points,
+    ]) {
+      const td = document.createElement("td");
+      td.textContent = String(value);
+      tr.append(td);
+    }
+    return tr;
+  }));
+
+  const completedFixtures = tournamentState.fixtures.filter(
+    fixture => fixture.matchId !== null
+  );
+  const completed = completedFixtures.length;
+  const next = nextTournamentFixture();
+  const total = tournamentState.fixtures.length;
+  const finalMatchday = Math.max(
+    ...tournamentState.fixtures.map(fixture => fixture.matchday)
+  );
+  const currentMatchday = next?.matchday ?? finalMatchday;
+  const matchdayFixtures = tournamentState.fixtures.filter(
+    fixture => fixture.matchday === currentMatchday
+  );
+  const recordsById = new Map(
+    managementState.matches.map(record => [record.matchId, record])
+  );
+
+  byId("tournament-progress").textContent = `${completed} / ${total}`;
+  byId("tournament-status").textContent = next
+    ? `In corso · giornata ${currentMatchday} di ${finalMatchday}`
+    : `Completato · ${finalMatchday} giornate`;
+
+  byId("tournament-next").textContent = next
+    ? `Prossima: ${tournamentTeamName(next.homeProviderTeamId)} – ` +
+      `${tournamentTeamName(next.awayProviderTeamId)}`
+    : "Nessuna partita pendente";
+
+  const resultItems = matchdayFixtures
+    .filter(fixture => fixture.matchId !== null)
+    .map(fixture => {
+      const record = recordsById.get(fixture.matchId);
+      const item = document.createElement("li");
+      item.textContent = record
+        ? `${tournamentTeamName(fixture.homeProviderTeamId)} ` +
+          `${record.score.home}–${record.score.away} ` +
+          `${tournamentTeamName(fixture.awayProviderTeamId)}`
+        : `${tournamentTeamName(fixture.homeProviderTeamId)} – ` +
+          `${tournamentTeamName(fixture.awayProviderTeamId)}`;
+      return item;
+    });
+
+  const pendingItems = matchdayFixtures
+    .filter(fixture => fixture.matchId === null)
+    .map(fixture => {
+      const item = document.createElement("li");
+      item.textContent =
+        `${tournamentTeamName(fixture.homeProviderTeamId)} – ` +
+        `${tournamentTeamName(fixture.awayProviderTeamId)}`;
+      return item;
+    });
+
+  byId("tournament-results").replaceChildren(...resultItems);
+  byId("tournament-results-empty").hidden = resultItems.length !== 0;
+  byId("tournament-pending").replaceChildren(...pendingItems);
+  byId("tournament-pending-empty").hidden = pendingItems.length !== 0;
+
+  byId("tournament-play-next").disabled =
+    !next || activeTournamentFixtureId !== null;
+}
+
+function createTournamentFromSelection() {
+  const participants = [...byId("tournament-participants").selectedOptions]
+    .map(option => allCatalogueTeams().find(team =>
+      String(team.providerTeamId) === option.value
+    ))
+    .filter(Boolean);
+
+  try {
+    const document = createTournamentDocument({
+      championshipId: crypto.randomUUID(),
+      participants,
+    });
+    saveTournament(window.localStorage, document);
+    tournamentState = document;
+    activeTournamentFixtureId = null;
+    byId("tournament-error").textContent = "";
+    renderTournament();
+  } catch (error) {
+    byId("tournament-error").textContent = error.message;
+  }
+}
+
+function playNextTournamentFixture() {
+  const fixture = nextTournamentFixture();
+  if (!fixture) return;
+
+  const home = allCatalogueTeams().find(team =>
+    String(team.providerTeamId) === fixture.homeProviderTeamId
+  );
+  const away = allCatalogueTeams().find(team =>
+    String(team.providerTeamId) === fixture.awayProviderTeamId
+  );
+  if (!home || !away) return;
+
+  for (const [seat, team] of [[0, home], [1, away]]) {
+    const competitionValue = `${team.competitionId}:${team.season}`;
+    byId("competition").value = competitionValue;
+    renderCatalogueTeams();
+    byId(`team-${seat}`).value = String(team.providerTeamId);
+    applySelectedTeamColor(seat);
+  }
+
+  activeTournamentFixtureId = fixture.fixtureId;
+  start(true);
+  renderTournament();
+}
+
+byId("tournament-create").addEventListener(
+  "click", createTournamentFromSelection
+);
+byId("tournament-play-next").addEventListener(
+  "click", playNextTournamentFixture
+);
 
 function manualTeamPalette(seat) {
   const primary = byId(`color-${seat}`).value;

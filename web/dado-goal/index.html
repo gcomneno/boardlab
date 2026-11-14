@@ -130,6 +130,66 @@
       </div>
     </section>
 
+    <section id="tournament-panel" class="panel tournament-panel"
+             aria-labelledby="tournament-title">
+      <div class="tournament-heading">
+        <div>
+          <p class="manager-kicker">Dado Goal!</p>
+          <h2 id="tournament-title">Campionato</h2>
+        </div>
+      </div>
+
+      <div id="tournament-setup">
+        <p>Seleziona almeno 4 squadre, in numero pari.</p>
+        <label for="tournament-participants">Partecipanti</label>
+        <select id="tournament-participants" multiple size="8"></select>
+        <p id="tournament-error" class="tournament-error"
+           role="status"></p>
+        <button id="tournament-create" type="button">
+          Crea campionato
+        </button>
+      </div>
+
+      <div id="tournament-dashboard" hidden>
+        <div class="tournament-summary">
+          <span>Partite giocate:
+            <strong id="tournament-progress">0 / 0</strong>
+          </span>
+          <strong id="tournament-status">—</strong>
+          <span id="tournament-next">—</span>
+          <button id="tournament-play-next" type="button">
+            Gioca prossima partita
+          </button>
+        </div>
+
+        <div class="tournament-matchday">
+          <section aria-labelledby="tournament-results-title">
+            <h3 id="tournament-results-title">Risultati giornata</h3>
+            <p id="tournament-results-empty">Nessun risultato.</p>
+            <ul id="tournament-results"></ul>
+          </section>
+          <section aria-labelledby="tournament-pending-title">
+            <h3 id="tournament-pending-title">Partite da giocare</h3>
+            <p id="tournament-pending-empty">Nessuna partita pendente.</p>
+            <ul id="tournament-pending"></ul>
+          </section>
+        </div>
+
+        <div class="tournament-table-wrap">
+          <table class="tournament-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Squadra</th><th>G</th><th>V</th>
+                <th>N</th><th>P</th><th>GF</th><th>GS</th>
+                <th>DR</th><th>Pt</th>
+              </tr>
+            </thead>
+            <tbody id="tournament-standings"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <section class="panel settings" aria-label="Impostazioni partita">
       <label for="language" class="locale-setting">
         <span data-i18n="language">Lingua</span>

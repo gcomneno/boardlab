@@ -5,6 +5,8 @@ import {
 
 export const TOURNAMENT_SCHEMA_VERSION = 1;
 export const TOURNAMENT_STORAGE_KEY = "dado-goal.tournament.v1";
+export const TOURNAMENT_RECOVERY_STORAGE_KEY =
+  "dado-goal.tournament-recovery.v1";
 
 function validateDocument(data) {
   if (!data || data.schemaVersion !== TOURNAMENT_SCHEMA_VERSION) {
@@ -127,4 +129,59 @@ export function clearTournament(storage) {
   }
 
   storage.removeItem(TOURNAMENT_STORAGE_KEY);
+}
+
+function validateRecovery(data) {
+  if (!data ||
+      typeof data.championshipId !== "string" ||
+      data.championshipId.length === 0 ||
+      typeof data.fixtureId !== "string" ||
+      data.fixtureId.length === 0 ||
+      typeof data.matchId !== "string" ||
+      data.matchId.length === 0) {
+    throw new TypeError("invalid tournament recovery journal");
+  }
+
+  return {
+    championshipId: data.championshipId,
+    fixtureId: data.fixtureId,
+    matchId: data.matchId,
+  };
+}
+
+export function saveTournamentRecovery(storage, recovery) {
+  if (!storage || typeof storage.setItem !== "function") {
+    throw new TypeError("storage is unavailable");
+  }
+
+  storage.setItem(
+    TOURNAMENT_RECOVERY_STORAGE_KEY,
+    JSON.stringify(validateRecovery(recovery)),
+  );
+}
+
+export function loadTournamentRecovery(storage) {
+  if (!storage || typeof storage.getItem !== "function") {
+    throw new TypeError("storage is unavailable");
+  }
+
+  const source = storage.getItem(TOURNAMENT_RECOVERY_STORAGE_KEY);
+  if (source === null) return null;
+
+  let data;
+  try {
+    data = JSON.parse(source);
+  } catch {
+    throw new TypeError("invalid tournament recovery JSON");
+  }
+
+  return validateRecovery(data);
+}
+
+export function clearTournamentRecovery(storage) {
+  if (!storage || typeof storage.removeItem !== "function") {
+    throw new TypeError("storage is unavailable");
+  }
+
+  storage.removeItem(TOURNAMENT_RECOVERY_STORAGE_KEY);
 }
