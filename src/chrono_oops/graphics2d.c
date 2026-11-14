@@ -214,6 +214,57 @@ static bool action_for_player(ChronoAction action, ChronoPlayer player)
     }
 }
 
+typedef struct {
+    int focused_action;
+    int hovered_action;
+    int focused_bottom;
+} M001Focus;
+
+static M001Focus m001_focus = {-1, -1, 0};
+
+static void m001_focus_reset(void)
+{
+    m001_focus = (M001Focus){-1, -1, 0};
+}
+
+static int m001_action_at(int x, int y)
+{
+    for (int i = 0; i < ACTION_COUNT; ++i)
+        if (contains(action_rect(i), x, y))
+            return i;
+    return -1;
+}
+
+static bool m001_action_available(const ChronoState *state, int index)
+{
+    if (state == NULL || index < 0 || index >= ACTION_COUNT)
+        return false;
+
+    ChronoState probe = *state;
+    return chrono_apply(&probe, actions[index].id) == CHRONO_OK;
+}
+
+static const char *m001_action_owner(int index)
+{
+    if (actions[index].id == CHRONO_ACTION_WAIT)
+        return "A/B";
+
+    return action_for_player(actions[index].id, CHRONO_PLAYER_A)
+        ? "A" : "B";
+}
+
+static void m001_focus_rect(SDL_Renderer *renderer, SDL_Rect rect)
+{
+    SDL_SetRenderDrawColor(renderer, 245, 72, 72, 255);
+    for (int thickness = 0; thickness < 3; ++thickness) {
+        SDL_Rect border = {
+            rect.x + thickness, rect.y + thickness,
+            rect.w - 2 * thickness, rect.h - 2 * thickness
+        };
+        SDL_RenderDrawRect(renderer, &border);
+    }
+}
+
 static void draw(SDL_Renderer *renderer, TTF_Font *font,
                  const ChronoState *state, const char *message)
 {
@@ -232,32 +283,58 @@ static void draw(SDL_Renderer *renderer, TTF_Font *font,
     label(renderer, font, 32, 28, white, header);
 
     draw_world(renderer, font, state);
-    label(renderer, font, 32, 309, muted,
-          "AZIONI  |  Il motore C11 convalida ogni scelta");
+    label(renderer, font, 32, 309, muted, "AZIONI DISPONIBILI");
 
     for (int i = 0; i < ACTION_COUNT; ++i) {
         SDL_Rect rect = action_rect(i);
-        SDL_Color background =
-            state->finished ? (SDL_Color){ 43, 50, 65, 255 } :
-            action_for_player(actions[i].id, state->active_player)
-                ? (SDL_Color){ 35, 90, 135, 255 }
-                : (SDL_Color){ 39, 49, 65, 255 };
+        bool available = m001_action_available(state, i);
+        bool hovered = !state->finished && m001_focus.hovered_action == i;
+        SDL_Color background = available
+            ? hovered ? (SDL_Color){55, 124, 169, 255}
+                      : (SDL_Color){35, 90, 135, 255}
+            : hovered ? (SDL_Color){65, 73, 87, 255}
+                      : (SDL_Color){39, 49, 65, 255};
+
         rectangle(renderer, rect, background);
+        if (m001_focus.focused_action == i) {
+            m001_focus_rect(renderer, rect);
+        } else if (hovered) {
+            SDL_Color border = available
+                ? (SDL_Color){239, 194, 111, 255}
+                : (SDL_Color){130, 145, 160, 255};
+            SDL_SetRenderDrawColor(renderer,
+                                   border.r, border.g, border.b, 255);
+            SDL_RenderDrawRect(renderer, &rect);
+        }
+
         label(renderer, font, rect.x + 10, rect.y + 5,
-              white, actions[i].label);
+              available ? white : muted, actions[i].label);
+        label(renderer, font, rect.x + rect.w - 48, rect.y + 5,
+              available ? white : muted, m001_action_owner(i));
     }
 
-    rectangle(renderer, (SDL_Rect){ 32, 730, 300, 43 },
-              (SDL_Color){ 154, 100, 42, 255 });
-    label(renderer, font, 47, 741, white, "TERMINA TURNO");
+    rectangle(renderer, (SDL_Rect){32, 725, 1216, 33},
+              (SDL_Color){29, 49, 72, 255});
+    rectangle(renderer, (SDL_Rect){32, 725, 4, 33},
+              (SDL_Color){245, 167, 87, 255});
+    label(renderer, font, 46, 732,
+          (SDL_Color){245, 167, 87, 255}, "EVENTO");
+    label(renderer, font, 136, 732, white, message);
 
-    rectangle(renderer, (SDL_Rect){ 345, 730, 220, 43 },
-              (SDL_Color){ 88, 65, 105, 255 });
-    label(renderer, font, 360, 741, white, "RICOMINCIA");
+    rectangle(renderer, (SDL_Rect){32, 790, 300, 43},
+              (SDL_Color){154, 100, 42, 255});
+    label(renderer, font, 47, 801, white, "TERMINA TURNO");
 
-    label(renderer, font, 32, 790, white, message);
-    label(renderer, font, 32, 814, muted,
-          "Mouse: seleziona azione  |  SPAZIO: termina turno  |  R: ricomincia  |  ESC: esci");
+    rectangle(renderer, (SDL_Rect){345, 790, 220, 43},
+              (SDL_Color){88, 65, 105, 255});
+    label(renderer, font, 360, 801, white, "RICOMINCIA");
+
+    if (m001_focus.focused_action < 0) {
+        SDL_Rect focus = m001_focus.focused_bottom == 0
+            ? (SDL_Rect){32, 790, 300, 43}
+            : (SDL_Rect){345, 790, 220, 43};
+        m001_focus_rect(renderer, focus);
+    }
     SDL_RenderPresent(renderer);
 }
 
@@ -290,28 +367,77 @@ static void handle_event(const SDL_Event *event, ChronoState *state,
     bool end_turn = false;
     int clicked = -1;
 
+    if (event->type == SDL_MOUSEMOTION) {
+        m001_focus.hovered_action =
+            m001_action_at(event->motion.x, event->motion.y);
+        return;
+    }
+
     if (event->type == SDL_KEYDOWN && event->key.repeat == 0) {
-        restart = event->key.keysym.sym == SDLK_r;
-        end_turn = event->key.keysym.sym == SDLK_SPACE;
+        SDL_Keycode key = event->key.keysym.sym;
+
+        if (key == SDLK_LEFT || key == SDLK_RIGHT) {
+            int column = key == SDLK_RIGHT ? 1 : 0;
+            if (m001_focus.focused_action >= 0) {
+                int row = m001_focus.focused_action % 11;
+                m001_focus.focused_action = column * 11 + row;
+            } else {
+                m001_focus.focused_bottom = column;
+            }
+            return;
+        }
+
+        if (key == SDLK_UP || key == SDLK_DOWN) {
+            if (m001_focus.focused_action < 0) {
+                int row = key == SDLK_UP ? 10 : 0;
+                m001_focus.focused_action =
+                    m001_focus.focused_bottom * 11 + row;
+            } else {
+                int column = m001_focus.focused_action / 11;
+                int row = m001_focus.focused_action % 11;
+                row += key == SDLK_UP ? -1 : 1;
+                if (row < 0 || row >= 11) {
+                    m001_focus.focused_action = -1;
+                    m001_focus.focused_bottom = column;
+                } else {
+                    m001_focus.focused_action = column * 11 + row;
+                }
+            }
+            return;
+        }
+
+        if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
+            if (m001_focus.focused_action >= 0)
+                clicked = m001_focus.focused_action;
+            else if (m001_focus.focused_bottom == 0)
+                end_turn = true;
+            else
+                restart = true;
+        } else {
+            restart = key == SDLK_r;
+            end_turn = key == SDLK_SPACE;
+        }
     }
 
     if (event->type == SDL_MOUSEBUTTONDOWN &&
         event->button.button == SDL_BUTTON_LEFT) {
         int x = event->button.x;
         int y = event->button.y;
-        restart = contains((SDL_Rect){ 345, 730, 220, 43 }, x, y);
-        end_turn = contains((SDL_Rect){ 32, 730, 300, 43 }, x, y);
+        restart = contains((SDL_Rect){345, 790, 220, 43}, x, y);
+        end_turn = contains((SDL_Rect){32, 790, 300, 43}, x, y);
 
-        for (int i = 0; i < ACTION_COUNT; ++i) {
-            if (contains(action_rect(i), x, y)) {
-                clicked = i;
-                break;
-            }
+        clicked = m001_action_at(x, y);
+        if (clicked >= 0)
+            m001_focus.focused_action = clicked;
+        else if (end_turn) {
+            m001_focus.focused_action = -1;
+            m001_focus.focused_bottom = 0;
         }
     }
 
     if (restart) {
         chrono_init(state);
+        m001_focus_reset();
         snprintf(message, capacity, "Nuova partita M001.");
     } else if (end_turn) {
         ChronoTrace trace;
@@ -583,6 +709,7 @@ int main(void)
                 }
                 if (choice == 1) {
                     chrono_init(&state);
+                    m001_focus_reset();
                     snprintf(message, sizeof(message),
                              "Missione 001 iniziata: recupera la capsula.");
                     selected_mission = 1;
