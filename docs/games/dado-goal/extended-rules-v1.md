@@ -56,17 +56,20 @@ A penalty result cannot generate another penalty.
 
 ## 4. Corner kick
 
-The existing `Cross!` face is reinterpreted as the start of a corner-kick
-sequence.
-
-The gameplay meaning is:
+The existing `Cross!` face is reinterpreted as:
 
 `CALCIO D'ANGOLO / CROSS`
 
 The corner itself is the set piece; the cross is its execution.
 
-The exact deterministic resolution sequence for the corner is intentionally
-left for a dedicated implementation contract before engine changes are made.
+This does not introduce a new die or a new gameplay phase.
+
+The existing flow is preserved:
+
+`team -> pink`
+
+Therefore, when the `CALCIO D'ANGOLO / CROSS` face is rolled, the attack
+continues directly with the existing pink die.
 
 ## 5. Free kick from the edge of the area
 
@@ -74,11 +77,17 @@ The existing `Mezza rovesciata` face is replaced by:
 
 `PUNIZIONE DAL LIMITE`
 
-This becomes a distinct set-piece situation rather than another generic
+This becomes a direct set-piece situation rather than another generic
 attacking technique.
 
-The exact deterministic resolution sequence for the free kick is intentionally
-left for a dedicated implementation contract before engine changes are made.
+This does not introduce a new die or a new gameplay phase.
+
+The existing flow is preserved:
+
+`pink -> result`
+
+Therefore, when `PUNIZIONE DAL LIMITE` is rolled, the attack continues
+directly with the existing result die.
 
 ## 6. Injuries
 
@@ -122,8 +131,8 @@ This document defines the gameplay baseline only.
 Before implementation:
 
 - penalty resolution may proceed directly from the frozen die defined here;
-- corner resolution requires a dedicated deterministic design;
-- free-kick resolution requires a dedicated deterministic design;
+- corner resolution reuses the existing `team -> pink` transition;
+- free-kick resolution reuses the existing `pink -> result` transition;
 - injury visibility may be improved without changing injury probability.
 
 No engine modification is authorised merely by this document beyond work
