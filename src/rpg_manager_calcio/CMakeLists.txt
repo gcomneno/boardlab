@@ -940,3 +940,26 @@ endif()
 rmc_warnings(rmc-test-match-cross-action)
 
 add_test(NAME rmc-match-cross-action COMMAND rmc-test-match-cross-action)
+
+# M001-B1.26-B — Frozen Shot v1 and atomic deadline closure.
+add_library(rmc-match-shot-action STATIC match_shot_action.c)
+target_include_directories(rmc-match-shot-action PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(rmc-match-shot-action PUBLIC
+    rmc-match-clock
+    rmc-match-period-commit
+    rmc-match-probability
+    rmc-streams
+)
+rmc_warnings(rmc-match-shot-action)
+
+add_executable(rmc-test-match-shot-action test_match_shot_action.c)
+target_link_libraries(rmc-test-match-shot-action PRIVATE rmc-match-shot-action)
+if(MSVC)
+    target_compile_options(rmc-test-match-shot-action PRIVATE /UNDEBUG)
+else()
+    target_compile_options(rmc-test-match-shot-action PRIVATE -UNDEBUG)
+endif()
+rmc_warnings(rmc-test-match-shot-action)
+add_test(NAME rmc-match-shot-action COMMAND rmc-test-match-shot-action)
