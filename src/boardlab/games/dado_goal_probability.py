@@ -8,9 +8,11 @@ from fractions import Fraction
 from math import comb
 
 from boardlab.games.dado_goal import (
+    PENALTY_FACES,
     PINK_FACES,
     RESULT_FACES,
     TEAM_FACES,
+    PenaltyFace,
     PinkFace,
     ResultFace,
     TeamFace,
@@ -46,11 +48,12 @@ def reach_result_given_pink_probability() -> Fraction:
 
 
 def goal_given_result_probability() -> Fraction:
-    """Eventually score after any number of repeated penalties."""
-    goal = _face_probability(RESULT_FACES, ResultFace.GOAL)
-    repeat = _face_probability(RESULT_FACES, ResultFace.PENALTY)
+    """Score directly or through the dedicated penalty die."""
+    direct_goal = _face_probability(RESULT_FACES, ResultFace.GOAL)
+    penalty = _face_probability(RESULT_FACES, ResultFace.PENALTY)
+    penalty_goal = _face_probability(PENALTY_FACES, PenaltyFace.GOAL)
 
-    return goal / (1 - repeat)
+    return direct_goal + penalty * penalty_goal
 
 
 def goal_per_hand_probability() -> Fraction:

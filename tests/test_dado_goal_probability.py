@@ -18,17 +18,17 @@ from boardlab.games.dado_goal_probability import (
 def test_exact_stage_probabilities() -> None:
     assert reach_pink_probability() == Fraction(3, 5)
     assert reach_result_given_pink_probability() == Fraction(1, 2)
-    assert goal_given_result_probability() == Fraction(1, 5)
+    assert goal_given_result_probability() == Fraction(1, 4)
 
 
 def test_exact_goal_probability() -> None:
-    assert goal_per_hand_probability() == Fraction(3, 50)
+    assert goal_per_hand_probability() == Fraction(3, 40)
 
 
 @pytest.mark.parametrize("n", [1, 2, 5, 10, 20])
 def test_binomial_distribution(n: int) -> None:
     distribution = goal_distribution(n)
-    p = Fraction(3, 50)
+    p = Fraction(3, 40)
     q = 1 - p
 
     assert len(distribution) == n + 1
@@ -48,7 +48,7 @@ def test_expected_goals_match_distribution(n: int) -> None:
     )
 
     assert expectation == expected_goals(n)
-    assert expectation == n * Fraction(3, 50)
+    assert expectation == n * Fraction(3, 40)
 
 
 @pytest.mark.parametrize("invalid", [0, -1, True, 1.5, "10", None])
@@ -60,10 +60,10 @@ def test_invalid_match_length_is_rejected(invalid: object) -> None:
 
 def test_single_hand_distribution() -> None:
     assert goal_distribution(1) == (
-        Fraction(47, 50),
-        Fraction(3, 50),
+        Fraction(37, 40),
+        Fraction(3, 40),
     )
 
 
 def test_ten_hand_expectation() -> None:
-    assert expected_goals(10) == Fraction(3, 5)
+    assert expected_goals(10) == Fraction(3, 4)

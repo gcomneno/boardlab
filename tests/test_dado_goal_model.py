@@ -5,9 +5,11 @@ from dataclasses import replace
 import pytest
 
 from boardlab.games.dado_goal import (
+    PENALTY_FACES,
     PINK_FACES,
     RESULT_FACES,
     TEAM_FACES,
+    PenaltyFace,
     Phase,
     PinkFace,
     ResultFace,
@@ -28,6 +30,8 @@ def test_dice_distributions() -> None:
     assert len(set(PINK_FACES)) == 6
     assert len(RESULT_FACES) == 6
     assert len(set(RESULT_FACES)) == 6
+    assert len(PENALTY_FACES) == 6
+    assert PENALTY_FACES.count(PenaltyFace.GOAL) == 3
 
 
 @pytest.mark.parametrize("face", [TeamFace.SHOT, TeamFace.CROSS])
@@ -40,7 +44,7 @@ def test_attack_always_reaches_pink(face: TeamFace) -> None:
     assert successor.completed_hands == (0, 0)
 
 
-def test_passage_and_repeated_penalties_preserve_hand() -> None:
+def test_passage_and_penalty_resolution_preserve_hand_until_resolution() -> None:
     state = initial_state(2)
 
     for _ in range(10):
@@ -50,15 +54,13 @@ def test_passage_and_repeated_penalties_preserve_hand() -> None:
 
     state = apply_roll(state, TeamFace.SHOT)
     state = apply_roll(state, PinkFace.HEADER)
+    state = apply_roll(state, ResultFace.PENALTY)
 
-    for _ in range(10):
-        state = apply_roll(state, ResultFace.PENALTY)
-
-    assert state.phase is Phase.RESULT
+    assert state.phase is Phase.PENALTY
     assert state.completed_hands == (0, 0)
     assert state.goals == (0, 0)
 
-    state = apply_roll(state, ResultFace.GOAL)
+    state = apply_roll(state, PenaltyFace.GOAL)
 
     assert state.phase is Phase.TEAM
     assert state.active_player == 1
@@ -162,3 +164,21 @@ def test_invalid_hand_counter_is_rejected() -> None:
 
     with pytest.raises(ValueError, match="Invalid"):
         apply_roll(state, TeamFace.SHOT)
+
+
+@pytest.mark.parametrize(
+    "face",
+    [
+        PenaltyFace.WOODWORK,
+        PenaltyFace.SAVED,
+        PenaltyFace.WIDE,
+    ],
+)
+def test_penalty_failure_ends_hand(face: PenaltyFace) -> None:
+    state = apply_roll(initial_state(1), TeamFace.SHOT)
+    state = apply_roll(state, PinkFace.HEADER)
+    state = apply_roll(state, ResultFace.PENALTY)
+    state = apply_roll(state, face)
+
+    assert state.goals == (0, 0)
+    assert state.completed_hands == (1, 0)

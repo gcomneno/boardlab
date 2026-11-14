@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from boardlab.games.dado_goal import (
+    PenaltyFace,
     Phase,
     PinkFace,
     ResultFace,
@@ -34,6 +35,7 @@ FACES = {
     Phase.TEAM: TeamFace,
     Phase.PINK: PinkFace,
     Phase.RESULT: ResultFace,
+    Phase.PENALTY: PenaltyFace,
 }
 
 

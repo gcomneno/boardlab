@@ -12,6 +12,7 @@ class Phase(Enum):
     TEAM = "team"
     PINK = "pink"
     RESULT = "result"
+    PENALTY = "penalty"
     FINISHED = "finished"
 
 
@@ -40,6 +41,13 @@ class ResultFace(Enum):
     SAVED = "Parato!"
 
 
+class PenaltyFace(Enum):
+    GOAL = "GOAL!"
+    WOODWORK = "PALO/TRAVERSA"
+    SAVED = "PARATO/RESPINTO"
+    WIDE = "FUORI"
+
+
 TEAM_FACES = (
     TeamFace.SHOT,
     TeamFace.SHOT,
@@ -51,8 +59,16 @@ TEAM_FACES = (
 
 PINK_FACES = tuple(PinkFace)
 RESULT_FACES = tuple(ResultFace)
+PENALTY_FACES = (
+    PenaltyFace.GOAL,
+    PenaltyFace.GOAL,
+    PenaltyFace.GOAL,
+    PenaltyFace.WOODWORK,
+    PenaltyFace.SAVED,
+    PenaltyFace.WIDE,
+)
 
-type DieFace = TeamFace | PinkFace | ResultFace
+type DieFace = TeamFace | PinkFace | ResultFace | PenaltyFace
 
 
 @dataclass(frozen=True)
@@ -170,8 +186,19 @@ def apply_roll(state: State, face: DieFace) -> State:
             )
         return _end_hand(state)
 
-    if not isinstance(face, ResultFace):
-        raise ValueError("Expected a result-die face")
-    if face is ResultFace.PENALTY:
-        return state
-    return _end_hand(state, scored=face is ResultFace.GOAL)
+    if state.phase is Phase.RESULT:
+        if not isinstance(face, ResultFace):
+            raise ValueError("Expected a result-die face")
+        if face is ResultFace.PENALTY:
+            return State(
+                state.hands_per_team,
+                state.active_player,
+                state.completed_hands,
+                state.goals,
+                Phase.PENALTY,
+            )
+        return _end_hand(state, scored=face is ResultFace.GOAL)
+
+    if not isinstance(face, PenaltyFace):
+        raise ValueError("Expected a penalty-die face")
+    return _end_hand(state, scored=face is PenaltyFace.GOAL)

@@ -12,6 +12,7 @@ from threading import RLock
 from typing import Any
 
 from boardlab.games.dado_goal import (
+    PENALTY_FACES,
     PINK_FACES,
     RESULT_FACES,
     TEAM_FACES,
@@ -34,6 +35,7 @@ FACES = {
     Phase.TEAM: TEAM_FACES,
     Phase.PINK: PINK_FACES,
     Phase.RESULT: RESULT_FACES,
+    Phase.PENALTY: PENALTY_FACES,
 }
 
 

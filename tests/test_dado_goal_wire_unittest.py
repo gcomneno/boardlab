@@ -108,6 +108,8 @@ class WireSchemaTests(unittest.TestCase):
         state = apply_roll(state, PinkFace.HEADER)
         state = apply_roll(state, ResultFace.PENALTY)
 
+        self.assertIs(state.phase, Phase.PENALTY)
+
         first = encode_state(state)
         second = encode_state(decode_state(json.loads(json.dumps(first))))
 
