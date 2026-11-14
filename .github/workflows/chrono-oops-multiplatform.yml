@@ -26,7 +26,7 @@ jobs:
             launch: ./chrono-oops
           - os: windows-latest
             platform: windows-x64
-            executable: build/chrono-oops/Release/chrono-oops.exe
+            executable: build/chrono-oops/chrono-oops.exe
             launch: .\chrono-oops.exe
           - os: macos-latest
             platform: macos-arm64
@@ -37,27 +37,129 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure Release
+      - name: Install SDL2 dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev pkg-config fonts-dejavu-core
+
+      - name: Install SDL2 dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install sdl2 sdl2_ttf pkg-config
+
+      - name: Configure Release (Linux/macOS)
+        if: runner.os != 'Windows'
         run: >
           cmake -S src/chrono_oops
           -B build/chrono-oops
           -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build CLI and tests
+      - name: Configure MSYS2 / MinGW64 (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-SDL2_ttf
+
+      - name: Configure Release (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: >
+          cmake -S src/chrono_oops
+          -B build/chrono-oops
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build CLI, GUI and tests (Linux/macOS)
+        if: runner.os != 'Windows'
         run: cmake --build build/chrono-oops --config Release --parallel 2
 
-      - name: Run all five C11 tests
+      - name: Build CLI, GUI and tests (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: cmake --build build/chrono-oops --parallel 2
+
+      - name: Test campaign (Linux/macOS)
+        if: runner.os != 'Windows'
         run: >
           ctest --test-dir build/chrono-oops
           --build-config Release
           --output-on-failure
 
+      - name: Test campaign (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: ctest --test-dir build/chrono-oops --output-on-failure
+
+      - name: Require graphical build and all 11 tests (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          test -x build/chrono-oops/chrono-oops-2d
+          ctest --test-dir build/chrono-oops -N | grep -Eq 'Total Tests: 11'
+
+      - name: Require graphical build and all 11 tests (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          test -f build/chrono-oops/chrono-oops.exe
+          test -f build/chrono-oops/chrono-oops-2d.exe
+          ctest --test-dir build/chrono-oops -N | grep -Eq 'Total Tests: 11'
+
+      - name: Collect Windows runtime DLLs
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          mkdir -p dist/windows-runtime
+          for exe in build/chrono-oops/chrono-oops.exe build/chrono-oops/chrono-oops-2d.exe; do
+            ldd "$exe" | awk '{print $3}' | grep -E '^/mingw64/bin/.*\.dll$' >> dist/windows-runtime-list.txt || true
+          done
+          sort -u dist/windows-runtime-list.txt -o dist/windows-runtime-list.txt
+          while IFS= read -r dll; do
+            cp "$dll" dist/windows-runtime/
+          done < dist/windows-runtime-list.txt
+          test -n "$(find dist/windows-runtime -maxdepth 1 -iname '*SDL2*.dll' -print -quit)"
+          test -n "$(find dist/windows-runtime -maxdepth 1 -iname '*SDL2_ttf*.dll' -print -quit)"
+
+      - name: Collect Windows runtime DLLs
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          mkdir -p dist/windows-runtime
+          for exe in build/chrono-oops/chrono-oops.exe build/chrono-oops/chrono-oops-2d.exe; do
+            ldd "$exe" | awk '{print $3}' | grep -E '^/mingw64/bin/.*\.dll$' >> dist/windows-runtime-list.txt || true
+          done
+          sort -u dist/windows-runtime-list.txt -o dist/windows-runtime-list.txt
+          while IFS= read -r dll; do
+            cp "$dll" dist/windows-runtime/
+          done < dist/windows-runtime-list.txt
+          test -n "$(find dist/windows-runtime -maxdepth 1 -iname '*SDL2*.dll' -print -quit)"
+          test -n "$(find dist/windows-runtime -maxdepth 1 -iname '*SDL2_ttf*.dll' -print -quit)"
       - name: Stage native executable and instructions
         shell: pwsh
         run: |
           $stage = "dist/chrono-oops-${{ matrix.platform }}"
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item "${{ matrix.executable }}" "$stage/"
+          if ("${{ runner.os }}" -eq "Windows") {
+            $gui = "build/chrono-oops/chrono-oops-2d.exe"
+            if (!(Test-Path $gui)) { throw "Missing Windows 2D executable" }
+            Copy-Item $gui "$stage/"
+            $dlls = @(Get-ChildItem "dist/windows-runtime" -Filter "*.dll")
+            if ($dlls.Count -eq 0) { throw "Missing Windows runtime DLLs" }
+            Copy-Item "dist/windows-runtime/*.dll" "$stage/"
+          } else {
+            $gui = "build/chrono-oops/chrono-oops-2d"
+            if (!(Test-Path $gui)) { throw "Missing 2D executable" }
+            Copy-Item $gui "$stage/"
+          }
           Copy-Item "src/chrono_oops/README.it.md" "$stage/"
           Copy-Item "src/chrono_oops/README.md" "$stage/"
           @(
@@ -66,9 +168,13 @@ jobs:
             ""
             "Extract this ZIP before running."
             "Open a terminal in the extracted folder."
-            "Run: ${{ matrix.launch }}"
+            "Run CLI: ${{ matrix.launch }}"
+            "Linux/macOS GUI: ./chrono-oops-2d"
+            "Windows GUI: .\\chrono-oops-2d.exe"
             ""
-            "No external runtime dependencies are bundled."
+            "Linux/macOS GUI requires system SDL2 and SDL2_ttf."
+            "Windows: required MinGW/SDL2 DLLs are included."
+            "A system font is required on all platforms."
           ) | Set-Content -Encoding utf8 "$stage/RUN.txt"
 
           $archive = "dist/chrono-oops-${{ matrix.platform }}.zip"

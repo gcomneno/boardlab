@@ -17,7 +17,57 @@ must remain explicit, deterministic, and testable.
 This directory contains a playable five-mission CLI campaign
 implemented with deterministic C11 engines. The following learning
 sections focus primarily on the Mission 001 engine.
-There is no graphical interface.
+A native SDL2 graphical interface is also available for all five missions
+on systems where SDL2 and SDL2_ttf are installed.
+
+## Native graphical campaign and distribution
+
+ChronoOops! provides two executable applications:
+
+- `chrono-oops`: the five-mission terminal campaign.
+- `chrono-oops-2d`: the five-mission graphical campaign.
+
+The graphical interface supports mouse interaction, arrow-key navigation,
+Enter to activate the focused control, Space to end a turn, R to restart
+and Escape to return to the mission menu. Action availability is shown
+directly in the interface.
+
+### Build locally
+
+From `src/chrono_oops`:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
+```
+
+The graphical target is built only when SDL2 and SDL2_ttf development
+dependencies are found. The terminal campaign remains available without
+these optional graphical dependencies.
+
+### Native archives
+
+The multiplatform CI workflow targets Linux x86-64, Windows x86-64 and
+macOS Apple Silicon. Archive generation and runtime qualification are
+separate release gates; a platform is not considered released merely
+because the workflow is configured.
+
+Extract an archive before launching its executables. CI ZIP archives
+place executables in the extracted directory: on Linux/macOS run
+`./chrono-oops` or `./chrono-oops-2d`; on Windows run
+`chrono-oops.exe` or `chrono-oops-2d.exe`. CPack TGZ/ZIP archives
+instead place executables under `bin/`: run `./bin/chrono-oops`
+or `./bin/chrono-oops-2d` on Linux/macOS.
+
+Linux/macOS graphical builds require compatible SDL2 and SDL2_ttf
+runtime libraries installed on the system. Windows packaging is intended
+to include the required MinGW/SDL2 DLLs. A readable system font must
+be available; `CHRONO_FONT_PATH` can specify a custom font file.
+
+The MIT license is included in the distribution. macOS binaries are
+not automatically signed or notarized.
+
 
 ## CLI campaign — Missions 001–005
 

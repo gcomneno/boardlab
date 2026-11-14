@@ -11,6 +11,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 enum {
     VIEW_W = 1280,
@@ -340,16 +341,45 @@ static void draw(SDL_Renderer *renderer, TTF_Font *font,
 
 static TTF_Font *open_font(void)
 {
+    const char *override = getenv("CHRONO_FONT_PATH");
+    if (override != NULL && override[0] != '\0') {
+        TTF_Font *font = TTF_OpenFont(override, 15);
+        if (font)
+            return font;
+    }
+
     const char *paths[] = {
+#if defined(_WIN32)
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "C:\\Windows\\Fonts\\segoeui.ttf",
+#elif defined(__APPLE__)
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "/Library/Fonts/Arial.ttf",
+#else
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+#endif
     };
+
     for (unsigned i = 0; i < sizeof(paths) / sizeof(paths[0]); ++i) {
         TTF_Font *font = TTF_OpenFont(paths[i], 15);
         if (font)
             return font;
     }
+
+#if defined(_WIN32)
+    const char *windows_dir = getenv("WINDIR");
+    if (windows_dir != NULL && windows_dir[0] != '\0') {
+        char path[1024];
+        int written = snprintf(path, sizeof(path),
+                               "%s\\Fonts\\arial.ttf", windows_dir);
+        if (written > 0 && (size_t)written < sizeof(path))
+            return TTF_OpenFont(path, 15);
+    }
+#endif
+
     return NULL;
 }
 
