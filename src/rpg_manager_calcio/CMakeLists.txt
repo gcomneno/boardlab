@@ -813,3 +813,48 @@ add_test(
     NAME rmc-match-carry-action
     COMMAND rmc-test-match-carry-action
 )
+
+# M001-B1.23 — Contested dribbling action.
+add_library(rmc-match-dribble-action STATIC
+    match_dribble_action.c
+)
+
+target_include_directories(rmc-match-dribble-action PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(rmc-match-dribble-action PUBLIC
+    rmc-match-clock
+    rmc-match-sequence
+    rmc-match-event-log
+    rmc-match-probability
+    rmc-streams
+)
+
+rmc_warnings(rmc-match-dribble-action)
+
+add_executable(rmc-test-match-dribble-action
+    test_match_dribble_action.c
+)
+
+target_link_libraries(rmc-test-match-dribble-action PRIVATE
+    rmc-match-dribble-action
+    rmc-match-transitions
+)
+
+if(MSVC)
+    target_compile_options(
+        rmc-test-match-dribble-action PRIVATE /UNDEBUG
+    )
+else()
+    target_compile_options(
+        rmc-test-match-dribble-action PRIVATE -UNDEBUG
+    )
+endif()
+
+rmc_warnings(rmc-test-match-dribble-action)
+
+add_test(
+    NAME rmc-match-dribble-action
+    COMMAND rmc-test-match-dribble-action
+)
