@@ -995,3 +995,40 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang
 endif()
 rmc_warnings(rmc-test-match-restart-action)
 add_test(NAME rmc-match-restart-action COMMAND rmc-test-match-restart-action)
+
+# M001-B1.28-B — Separate atomic period-opening kickoffs.
+add_library(rmc-match-opening-kickoff STATIC match_opening_kickoff.c)
+target_include_directories(rmc-match-opening-kickoff PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(rmc-match-opening-kickoff PUBLIC
+    rmc-match-event-log
+    rmc-match-sequence
+    rmc-match-stoppage
+)
+rmc_warnings(rmc-match-opening-kickoff)
+
+add_executable(rmc-test-match-opening-kickoff test_match_opening_kickoff.c)
+target_link_libraries(rmc-test-match-opening-kickoff PRIVATE
+    rmc-match-opening-kickoff
+    rmc-match-transitions
+    rmc-match-restart-action
+    rmc-match-shot-action
+    rmc-match-pass-action
+    rmc-match-carry-action
+    rmc-match-dribble-action
+    rmc-match-tackle-action
+    rmc-match-recovery
+    rmc-match-interruption
+)
+if(MSVC)
+    target_compile_options(rmc-test-match-opening-kickoff PRIVATE /UNDEBUG)
+else()
+    target_compile_options(rmc-test-match-opening-kickoff PRIVATE -UNDEBUG)
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_definitions(rmc-test-match-opening-kickoff PRIVATE RMC_WRAP_MALLOC)
+    target_link_options(rmc-test-match-opening-kickoff PRIVATE "-Wl,--wrap=malloc")
+endif()
+rmc_warnings(rmc-test-match-opening-kickoff)
+add_test(NAME rmc-match-opening-kickoff COMMAND rmc-test-match-opening-kickoff)
