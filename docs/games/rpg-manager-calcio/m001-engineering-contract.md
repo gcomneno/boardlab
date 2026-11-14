@@ -152,6 +152,52 @@ Ogni calciatore possiede:
 
 Gli attributi di carattere sono inclusi nei sedici attributi generali: non devono essere duplicati in un secondo profilo numerico.
 
+### Catalogo canonico dei sedici attributi generali
+
+Gli indici dell'array persistente `attributes[16]` hanno
+il seguente significato normativo, nell'ordine indicato:
+
+| Indice | Categoria | Attributo |
+|---:|---|---|
+| 0 | Tecnico | Passaggio |
+| 1 | Tecnico | Controllo |
+| 2 | Tecnico | Dribbling |
+| 3 | Tecnico | Tiro |
+| 4 | Tecnico | Cross |
+| 5 | Tecnico | Contrasto |
+| 6 | Fisico | Velocità |
+| 7 | Fisico | Resistenza |
+| 8 | Fisico | Forza |
+| 9 | Tattico | Posizionamento |
+| 10 | Tattico | Visione |
+| 11 | Tattico | Marcatura |
+| 12 | Caratteriale | Disciplina |
+| 13 | Caratteriale | Leadership |
+| 14 | Caratteriale | Determinazione |
+| 15 | Caratteriale | Collaborazione |
+
+Gli indici dell'array specialistico
+`goalkeeper_attributes[4]` sono:
+
+| Indice | Attributo |
+|---:|---|
+| 0 | Riflessi |
+| 1 | Presa |
+| 2 | Uscite |
+| 3 | Posizionamento da portiere |
+
+Questa mappatura costituisce parte della semantica
+persistente associata a `GeneratorVersion` e `RulesVersion`.
+
+I pesi di efficacia sono specifici del ruolo o dello slot;
+non modificano il significato degli attributi né i loro valori.
+
+L'introduzione del catalogo non altera gli intervalli di
+generazione, il consumo delle estrazioni casuali, i seed,
+i vettori deterministici o le versioni correnti.
+
+
+
 Il ruolo determina le compatibilità e i pesi delle capacità, non modifica direttamente gli attributi.
 
 ## 3.3 Energia, fatica e morale
@@ -248,19 +294,83 @@ La ricerca della formazione valida è un problema di assegnazione uno-a-uno: nes
 
 ## 4.5 Diversità delle proposte
 
-Le tre squadre proposte devono essere selezionate tra le otto effettivamente generate.
+Le tre squadre proposte devono essere selezionate tra le otto
+effettivamente generate. Una differenza di sola denominazione
+non è sufficiente.
 
-I loro profili devono differire almeno su due delle seguenti dimensioni:
+### Selezione deterministica v1
 
-- Fascia di forza iniziale.
-- Fascia di età media.
-- Profilo tattico prevalente.
-- Potenziale aggregato stimato.
-- Affiatamento iniziale.
+Ogni squadra è classificata su cinque dimensioni canoniche:
 
-Una differenza di sola denominazione non è sufficiente.
+1. Fascia di forza degli undici migliori in formazione legale.
+2. Fascia di età media dei 18 calciatori.
+3. Fascia di potenziale medio dei 18 calciatori.
+4. Fascia di coesione iniziale della squadra.
+5. Profilo tattico: possesso, gioco diretto o contropiede.
 
-Il sistema deve poter utilizzare una selezione deterministica di ripiego se non trova tre profili sufficientemente diversi; non deve entrare in un ciclo di rigenerazione illimitato.
+Le fasce numeriche sono:
+
+| Dimensione | Bassa | Media | Alta |
+|---|---|---|---|
+| Forza ottimizzata | < 660 | 660–694 | >= 695 |
+| Età media | < 24,50 | 24,50–27,49 | >= 27,50 |
+| Potenziale medio | < 72,00 | 72,00–78,99 | >= 79,00 |
+| Coesione iniziale | < 54 | 54–66 | >= 67 |
+
+La forza è il punteggio totale della migliore formazione
+calcolato dal modello di efficacia iniziale v1 (§4.6).
+
+Le fasce di età e potenziale sono determinate mediante
+aritmetica intera sulle somme dei 18 giocatori, senza
+floating point e senza arrotondamenti intermedi:
+
+- Età bassa: `100 * sum(age) < 2450 * 18`.
+- Età alta: `100 * sum(age) >= 2750 * 18`.
+- Potenziale basso: `100 * sum(potential) < 7200 * 18`.
+- Potenziale alto: `100 * sum(potential) >= 7900 * 18`.
+
+I valori rimanenti appartengono alla fascia media.
+Il confronto utilizza le cinque dimensioni e non i nomi
+delle squadre.
+
+Per ogni coppia di squadre si conta il numero di dimensioni
+su cui le rispettive classificazioni differiscono: da 0 a 5.
+
+La selezione esamina tutte le 56 terne di indici distinti
+`a < b < c` tra le otto squadre generate.
+
+Una terna è conforme se tutte e tre le coppie differiscono
+su almeno due dimensioni.
+
+Se esistono terne conformi, si considerano esclusivamente
+quelle conformi. Fra esse si sceglie massimizzando, in ordine:
+
+1. Il minimo dei tre conteggi di differenza.
+2. La somma dei tre conteggi di differenza.
+
+In caso di ulteriore parità prevale la terna di indici
+lessicograficamente minore, nell'ordine canonico del mondo.
+
+Se non esiste alcuna terna conforme, si applica un fallback
+deterministico: si esaminano tutte le 56 terne e si scelgono
+con gli stessi criteri di massimo minimo, massimo totale
+e spareggio lessicografico. L'output deve indicare
+esplicitamente `fallback_used=true`.
+
+Quando la selezione è conforme, `fallback_used=false`.
+
+L'output conserva gli indici canonici ordinati, i TeamId
+corrispondenti e i tre conteggi di differenza nell'ordine
+delle coppie `(a,b)`, `(a,c)`, `(b,c)`.
+
+Non sono ammesse rigenerazioni, consumo di PRNG, alterazioni
+del World Core o creazione di squadre esterne all'universo.
+
+La qualificazione iniziale delle soglie ha esaminato
+100 universi e 5.600 terne: 2.997 terne conformi,
+100 universi con almeno una terna conforme e zero
+fallback necessari nella campagna. Questa evidenza non
+elimina l'obbligo del fallback per seed differenti.
 
 ## 4.6 Forza delle squadre
 
@@ -271,6 +381,91 @@ Non coincide con la media aritmetica dei sedici attributi.
 Per M001 l'algoritmo deve creare squadre entro una fascia di forza iniziale controllata, senza pretendere che abbiano probabilità identiche di vittoria.
 
 Il rapporto tra le tre proposte deve essere verificato sulle formazioni valide, non su un valore nominale astratto.
+
+### Modello di efficacia iniziale v1
+
+La forza iniziale è determinata dalla migliore assegnazione
+uno-a-uno di undici calciatori agli slot di una formazione
+legale. Si confrontano obbligatoriamente 4-4-2, 4-3-3 e 3-5-2.
+
+Per ciascuna coppia compatibile calciatore/slot si calcolano
+tre componenti intere, ciascuna nell'intervallo 0–100:
+
+- `A`: efficacia degli attributi pertinenti allo slot.
+- `F`: condizione fisica iniziale.
+- `O`: organizzazione e affiatamento iniziali.
+
+Il punteggio individuale è:
+
+`E = floor((70*A + 15*F + 15*O) / 100)`
+
+La compatibilità secondaria applica una penalità esplicita:
+
+`E_secondary = max(0, E - 10)`
+
+La compatibilità primaria non applica tale penalità.
+Gli slot incompatibili non possono ricevere assegnazioni.
+
+#### Attributi pertinenti allo slot
+
+Ogni slot usa quattro attributi in ordine di peso:
+30%, 25%, 25%, 20%.
+
+| Slot | 30% | 25% | 25% | 20% |
+|---|---|---|---|---|
+| POR | Riflessi | Posizionamento portiere | Presa | Uscite |
+| TD, TS | Contrasto | Velocità | Marcatura | Passaggio |
+| DC | Marcatura | Contrasto | Forza | Posizionamento |
+| ED, ES | Velocità | Cross | Resistenza | Controllo |
+| CC | Passaggio | Visione | Controllo | Posizionamento |
+| MED | Posizionamento | Contrasto | Marcatura | Passaggio |
+| AD, AS | Dribbling | Velocità | Tiro | Controllo |
+| ATT | Tiro | Posizionamento | Controllo | Velocità |
+
+La componente `A` è la somma pesata intera dei quattro
+attributi, divisa per 100 con arrotondamento verso il basso.
+
+La componente fisica è:
+
+`F = floor((energy + fitness) / 2)`
+
+La componente organizzativa è:
+
+`O = floor((cohesion + tactical_familiarity +
+lineup_continuity + department_chemistry[d]) / 4)`
+
+`d` è il reparto del calciatore assegnato; tutti gli indicatori
+provengono dallo stato autorevole del mondo generato.
+
+Le relazioni chimiche delle singole coppie non contribuiscono
+direttamente alla matrice di assegnazione, perché costituiscono
+interazioni tra giocatori e non punteggi indipendenti per slot.
+
+Il profilo tattico nominale non introduce bonus additivi
+automatici. Eventuali effetti tattici contestuali sono
+responsabilità delle regole sportive specifiche.
+
+#### Ottimizzazione e confronto
+
+La funzione obiettivo massimizza la somma dei punteggi `E`
+degli undici calciatori assegnati agli undici slot legali,
+senza riutilizzare alcun calciatore.
+
+Si utilizza l'algoritmo generale di assegnazione bipartita
+a peso massimo di BoardLab C11.
+
+La stessa valutazione viene eseguita per tutte e tre le
+formazioni. Prevale quella con somma massima; in caso di
+parità prevale la prima nell'ordine canonico delle formazioni.
+
+Il punteggio complessivo è una misura comparativa della
+forza iniziale, non una probabilità di vittoria.
+
+Il calcolo utilizza esclusivamente aritmetica intera.
+Non modifica attributi persistenti, seed, flussi PRNG
+o contatori di identità.
+
+
 
 ---
 
