@@ -9,7 +9,7 @@ Tracking: https://github.com/gcomneno/boardlab/issues/27
 Enable two players on separate computers to share an authoritative
 Dado Goal match through a single HTTPS browser origin.
 
-Preserve Dado Goal Original rules, probabilities and lifecycle v4.
+Preserve the current Dado Goal gameplay baseline defined by `extended-rules-v1.md`, together with the lifecycle v4 transport and authority constraints.
 
 ## Architecture
 

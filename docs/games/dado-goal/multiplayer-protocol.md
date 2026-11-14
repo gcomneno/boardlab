@@ -9,8 +9,7 @@ Priority: P0
 Allow two real players to complete a Dado Goal match
 from separate browsers.
 
-The multiplayer implementation must preserve the
-confirmed Dado Goal Original rules.
+The multiplayer implementation must preserve the current gameplay baseline defined by `extended-rules-v1.md`.
 
 No strategic AI is required.
 

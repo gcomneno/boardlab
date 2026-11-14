@@ -9,8 +9,7 @@ Tracking: https://github.com/gcomneno/boardlab/issues/27
 Introduce bounded match lifetime and retention for the
 durable authoritative multiplayer implementation.
 
-Do not change Dado Goal Original rules, dice probabilities,
-browser animations, or unrelated BoardLab games.
+Do not change the active gameplay baseline defined by `extended-rules-v1.md`, browser animations, or unrelated BoardLab games.
 
 ## 2. Schema versioning
 

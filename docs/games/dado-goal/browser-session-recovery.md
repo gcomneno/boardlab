@@ -11,7 +11,7 @@ refreshing or reopening the same browser.
 Server-side persistence and browser-side credential retention
 are independent capabilities.
 
-No changes to Dado Goal Original rules are permitted.
+Browser session recovery must not modify gameplay rules; the active gameplay baseline is defined by `extended-rules-v1.md`.
 
 ## 2. Consent model
 
