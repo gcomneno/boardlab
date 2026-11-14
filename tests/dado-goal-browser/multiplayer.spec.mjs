@@ -87,11 +87,15 @@ test("multiplayer authoritative host/join browser smoke", async ({ browser }) =>
       await snapshot(host)
     );
 
-    const beforeRoll = await snapshot(host);
+    const initialDieLabel = await host.locator("#die").getAttribute(
+      "aria-label"
+    );
 
     await host.locator("#roll").click();
 
-    await expect.poll(async () => snapshot(host)).not.toEqual(beforeRoll);
+    await expect.poll(async () =>
+      host.locator("#die").getAttribute("aria-label")
+    ).not.toBe(initialDieLabel);
 
     await expect.poll(async () => snapshot(guest)).toEqual(
       await snapshot(host)
