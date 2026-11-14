@@ -964,3 +964,34 @@ else()
 endif()
 rmc_warnings(rmc-test-match-shot-action)
 add_test(NAME rmc-match-shot-action COMMAND rmc-test-match-shot-action)
+
+# M001-B1.27-B — Instantaneous causal Shot v1 restarts.
+add_library(rmc-match-restart-action STATIC match_restart_action.c)
+target_include_directories(rmc-match-restart-action PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_link_libraries(rmc-match-restart-action PUBLIC
+    rmc-match-event-log
+    rmc-match-sequence
+    rmc-match-stoppage
+)
+rmc_warnings(rmc-match-restart-action)
+
+add_executable(rmc-test-match-restart-action test_match_restart_action.c)
+target_link_libraries(rmc-test-match-restart-action PRIVATE
+    rmc-match-restart-action
+    rmc-match-shot-action
+    rmc-match-pass-action
+)
+if(MSVC)
+    target_compile_options(rmc-test-match-restart-action PRIVATE /UNDEBUG)
+else()
+    target_compile_options(rmc-test-match-restart-action PRIVATE -UNDEBUG)
+endif()
+# Exercise allocation failure before commit without adding a production hook.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_definitions(rmc-test-match-restart-action PRIVATE RMC_WRAP_MALLOC)
+    target_link_options(rmc-test-match-restart-action PRIVATE "-Wl,--wrap=malloc")
+endif()
+rmc_warnings(rmc-test-match-restart-action)
+add_test(NAME rmc-match-restart-action COMMAND rmc-test-match-restart-action)
