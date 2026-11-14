@@ -356,49 +356,137 @@ static void handle_event(const SDL_Event *event, ChronoState *state,
     }
 }
 
+static SDL_Rect mission_menu_rect(int index)
+{
+    return (SDL_Rect){70, 145 + index * 106, 1140, 94};
+}
+
+static int mission_menu_pick(int x, int y)
+{
+    for (int i = 0; i < 5; ++i) {
+        if (contains(mission_menu_rect(i), x, y))
+            return i + 1;
+    }
+    return 0;
+}
+
 #ifdef CHRONO_WITH_M002
+static void mission_menu_symbol(SDL_Renderer *renderer, int index,
+                                int cx, int cy, SDL_Color color)
+{
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+
+    SDL_Rect frame = {cx - 31, cy - 29, 62, 58};
+    SDL_RenderDrawRect(renderer, &frame);
+
+    if (index == 0) {
+        SDL_RenderDrawLine(renderer, cx - 23, cy + 12, cx + 23, cy + 12);
+        SDL_RenderDrawLine(renderer, cx - 19, cy + 12, cx, cy - 8);
+        SDL_RenderDrawLine(renderer, cx, cy - 8, cx + 19, cy + 12);
+        SDL_RenderDrawLine(renderer, cx - 19, cy - 8, cx - 19, cy + 20);
+        SDL_RenderDrawLine(renderer, cx + 19, cy - 8, cx + 19, cy + 20);
+    } else if (index == 1) {
+        SDL_RenderDrawLine(renderer, cx - 19, cy - 18, cx + 19, cy - 18);
+        SDL_RenderDrawLine(renderer, cx - 19, cy + 18, cx + 19, cy + 18);
+        SDL_RenderDrawLine(renderer, cx - 19, cy - 18, cx + 19, cy + 18);
+        SDL_RenderDrawLine(renderer, cx + 19, cy - 18, cx - 19, cy + 18);
+    } else if (index == 2) {
+        SDL_Rect envelope = {cx - 21, cy - 12, 42, 26};
+        SDL_RenderDrawRect(renderer, &envelope);
+        SDL_RenderDrawLine(renderer, cx - 21, cy - 12, cx, cy + 3);
+        SDL_RenderDrawLine(renderer, cx, cy + 3, cx + 21, cy - 12);
+    } else if (index == 3) {
+        SDL_RenderDrawLine(renderer, cx, cy - 22, cx, cy + 22);
+        SDL_RenderDrawLine(renderer, cx - 22, cy - 4, cx + 22, cy - 4);
+        SDL_Rect left = {cx - 22, cy + 10, 14, 8};
+        SDL_Rect right = {cx + 8, cy + 10, 14, 8};
+        SDL_RenderDrawRect(renderer, &left);
+        SDL_RenderDrawRect(renderer, &right);
+    } else {
+        SDL_Rect clock = {cx - 19, cy - 19, 38, 38};
+        SDL_RenderDrawRect(renderer, &clock);
+        SDL_RenderDrawLine(renderer, cx, cy, cx, cy - 13);
+        SDL_RenderDrawLine(renderer, cx, cy, cx + 11, cy + 7);
+    }
+}
+
 static void draw_mission_menu(SDL_Renderer *renderer, TTF_Font *font)
 {
-    SDL_Color white = {235, 241, 250, 255};
-    SDL_Color muted = {155, 179, 205, 255};
-    const char *titles[] = {
-        "1  |  M001 - Il ponte che non c'era... poi anatra",
-        "2  |  M002 - Il prestito di domani",
-        "3  |  M003 - Il messaggio che non doveva arrivare",
-        "4  |  M004 - Due eventi, una causa",
-        "5  |  M005 - Il minuto che non e' mai esistito"
-    };
-    const char *descriptions[] = {
-        "Recupera la capsula temporale: Ponte oppure Papera.",
-        "Riattiva il Cronofono e salda il debito causale.",
-        "Salva le persone senza cancellare la testimonianza.",
-        "Collega Faro e Registro allo stesso impulso storico.",
-        "Dimostra la cronologia reale con prove indipendenti."
-    };
-    SDL_Color colors[] = {
+    const SDL_Color white = {235, 241, 250, 255};
+    const SDL_Color muted = {155, 179, 205, 255};
+    const SDL_Color gold = {239, 194, 111, 255};
+    const SDL_Color colors[5] = {
         {35, 90, 135, 255},
         {31, 106, 96, 255},
         {90, 66, 117, 255},
         {110, 81, 44, 255},
         {42, 91, 109, 255}
     };
+    const char *titles[5] = {
+        "M001  IL PONTE CHE NON C'ERA",
+        "M002  IL PRESTITO DI DOMANI",
+        "M003  IL MESSAGGIO PROIBITO",
+        "M004  DUE EVENTI, UNA CAUSA",
+        "M005  IL MINUTO IMPOSSIBILE"
+    };
+    const char *descriptions[5] = {
+        "Un ponte, una papera e una capsula da recuperare.",
+        "Il Cronofono e un debito attraverso il tempo.",
+        "Salva le persone, preserva la testimonianza.",
+        "Ricollega due conseguenze a un solo evento.",
+        "Ricostruisci la storia usando prove indipendenti."
+    };
+
+    int mouse_x = 0, mouse_y = 0;
+    SDL_GetMouseState(&mouse_x, &mouse_y);
+    int hovered = mission_menu_pick(mouse_x, mouse_y) - 1;
 
     SDL_SetRenderDrawColor(renderer, 11, 23, 39, 255);
     SDL_RenderClear(renderer);
-    label(renderer, font, 70, 42, white,
-          "CHRONOOOPS! 2D  |  SELEZIONE MISSIONE");
-    label(renderer, font, 70, 83, muted,
-          "Due epoche, una cronologia, conseguenze deterministiche.");
+
+    rectangle(renderer, (SDL_Rect){0, 0, VIEW_W, 120},
+              (SDL_Color){16, 32, 53, 255});
+    label(renderer, font, 70, 20, gold, "CHRONOOOPS!  /  ARCHIVIO TEMPORALE");
+    label(renderer, font, 70, 46, white,
+          "SCEGLI UNA MISSIONE. CAMBIA IL PASSATO. AFFRONTA IL FUTURO.");
+
+    SDL_SetRenderDrawColor(renderer, 90, 139, 168, 255);
+    SDL_RenderDrawLine(renderer, 70, 107, 1210, 107);
+    label(renderer, font, 72, 84, gold, "1985");
+    label(renderer, font, 1140, 84, gold, "2025");
 
     for (int i = 0; i < 5; ++i) {
-        int y = 145 + i * 106;
-        rectangle(renderer, (SDL_Rect){70, y, 1140, 94}, colors[i]);
-        label(renderer, font, 100, y + 13, white, titles[i]);
-        label(renderer, font, 100, y + 52, white, descriptions[i]);
+        SDL_Rect card = mission_menu_rect(i);
+        bool active = i == hovered;
+        SDL_Color c = colors[i];
+
+        rectangle(renderer, card, (SDL_Color){20, 36, 56, 255});
+        rectangle(renderer, (SDL_Rect){card.x, card.y, 7, card.h}, c);
+        rectangle(renderer, (SDL_Rect){card.x + 8, card.y + 5,
+                  card.w - 16, card.h - 10},
+                  active ? (SDL_Color){42, 67, 90, 255}
+                         : (SDL_Color){26, 45, 65, 255});
+
+        SDL_SetRenderDrawColor(renderer,
+                               active ? gold.r : c.r,
+                               active ? gold.g : c.g,
+                               active ? gold.b : c.b, 255);
+        SDL_RenderDrawRect(renderer, &card);
+
+        mission_menu_symbol(renderer, i, 1125, card.y + 47,
+                            active ? gold : white);
+
+        label(renderer, font, 102, card.y + 17,
+              active ? gold : white, titles[i]);
+        label(renderer, font, 102, card.y + 53, muted, descriptions[i]);
+        label(renderer, font, 998, card.y + 38, gold,
+              active ? "ENTRA" : ">>");
     }
 
     label(renderer, font, 70, 715, muted,
-          "Seleziona con mouse o tasti 1 / 2 / 3 / 4 / 5. ESC per uscire.");
+          "MOUSE / 1-5  SELEZIONA     ESC  ESCI");
+    label(renderer, font, 70, 750, gold,
+          "1985  >  CAUSA  >  CONSEGUENZA  >  2025");
     SDL_RenderPresent(renderer);
 }
 #endif
@@ -491,13 +579,7 @@ int main(void)
                 } else if (event.type == SDL_MOUSEBUTTONDOWN &&
                            event.button.button == SDL_BUTTON_LEFT) {
                     int x = event.button.x, y = event.button.y;
-                    for (int i = 0; i < 5; ++i) {
-                        SDL_Rect item = {70, 145 + i * 106, 1140, 94};
-                        if (contains(item, x, y)) {
-                            choice = i + 1;
-                            break;
-                        }
-                    }
+                    choice = mission_menu_pick(x, y);
                 }
                 if (choice == 1) {
                     chrono_init(&state);

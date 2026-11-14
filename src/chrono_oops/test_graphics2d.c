@@ -244,8 +244,43 @@ static void test_action_player_highlighting(void)
     puts("GUI_PLAYER_ACTION_HIGHLIGHT_GATE=PASS");
 }
 
+static void test_mission_menu_hitboxes(void)
+{
+    for (int i = 0; i < 5; ++i) {
+        SDL_Rect r = mission_menu_rect(i);
+        int mission = i + 1;
+
+        assert(r.w > 0 && r.h > 0);
+        assert(mission_menu_pick(r.x, r.y) == mission);
+        assert(mission_menu_pick(r.x + r.w - 1,
+                                 r.y + r.h - 1) == mission);
+        assert(mission_menu_pick(r.x + r.w / 2,
+                                 r.y + r.h / 2) == mission);
+
+        assert(mission_menu_pick(r.x - 1, r.y) == 0);
+        assert(mission_menu_pick(r.x + r.w, r.y) == 0);
+        assert(mission_menu_pick(r.x, r.y + r.h) != mission);
+
+        for (int j = 0; j < 5; ++j) {
+            if (j != i) {
+                SDL_Rect other = mission_menu_rect(j);
+                assert(!contains(other, r.x + r.w / 2,
+                                       r.y + r.h / 2));
+            }
+        }
+    }
+
+    assert(mission_menu_pick(0, 0) == 0);
+    assert(mission_menu_pick(1279, 839) == 0);
+    assert(mission_menu_pick(70, 134) == 0);
+    assert(mission_menu_pick(70, 239) == 0);
+
+    puts("MISSION_MENU_HITBOX_GATE=PASS");
+}
+
 int main(void)
 {
+    test_mission_menu_hitboxes();
     test_action_player_highlighting();
     test_bridge();
     test_duck();
