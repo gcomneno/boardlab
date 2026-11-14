@@ -7,7 +7,8 @@
 static void click(M005Gui *gui, int index)
 {
     assert(index >= 0 && index < M005_GUI_ACTION_COUNT);
-    SDL_Rect rect = m005_action_rect(index);
+    SDL_Rect rect = m005_action_rect(index, gui->state.active_player);
+    assert(rect.w > 0 && rect.h > 0);
     SDL_Event event = {0};
     event.type = SDL_MOUSEBUTTONDOWN;
     event.button.button = SDL_BUTTON_LEFT;
@@ -146,8 +147,78 @@ static void test_defeat_and_restart(void)
     puts("M005_SDL_RESTART_GATE=PASS");
 }
 
+
+static void scene_click(M005Gui *gui, int x, int y)
+{
+    SDL_Event event = {0};
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.button = SDL_BUTTON_LEFT;
+    event.button.x = x;
+    event.button.y = y;
+    m005_gui_event(gui, &event);
+}
+
+static void test_scene_interaction(void)
+{
+    M005Gui gui;
+    m005_gui_init(&gui);
+
+    scene_click(&gui, 320, 136);
+    scene_click(&gui, 320, 136);
+    assert(gui.state.clock_inspected);
+    assert(gui.state.clock_loss_identified);
+    turn(&gui);
+
+    scene_click(&gui, 760, 170);
+    scene_click(&gui, 760, 170);
+    assert(gui.state.archive_consulted);
+    assert(gui.state.inversion_detected);
+    turn(&gui);
+
+    scene_click(&gui, 150, 170);
+    scene_click(&gui, 500, 240);
+    assert(gui.state.real_order_observed);
+    assert(gui.state.independent_evidence_preserved);
+    turn(&gui);
+
+    scene_click(&gui, 1115, 240);
+    assert(gui.state.evidence_compared);
+    puts("M005_SDL_SCENE_INTERACTION_GATE=PASS");
+}
+
+
+static void test_hover_feedback(void)
+{
+    M005Gui gui;
+    m005_gui_init(&gui);
+
+    SDL_Event event = {0};
+    event.type = SDL_MOUSEMOTION;
+    event.motion.x = 320;
+    event.motion.y = 136;
+    m005_gui_event(&gui, &event);
+
+    assert(gui.hovered_action == 1);
+    puts("M005_SDL_CLOCK_HOVER_GATE=PASS");
+
+    scene_click(&gui, 320, 136);
+    assert(gui.state.clock_inspected);
+
+    m005_gui_event(&gui, &event);
+    assert(gui.hovered_action == 2);
+    puts("M005_SDL_CONTEXTUAL_HOVER_GATE=PASS");
+
+    event.motion.x = 10;
+    event.motion.y = 10;
+    m005_gui_event(&gui, &event);
+    assert(gui.hovered_action == -1);
+    puts("M005_SDL_HOVER_CLEAR_GATE=PASS");
+}
+
 int main(void)
 {
+    test_hover_feedback();
+    test_scene_interaction();
     test_nominal();
     test_superficial_recovery();
     test_defeat_and_restart();
