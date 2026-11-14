@@ -735,6 +735,7 @@ target_include_directories(rmc-match-recovery PUBLIC
 
 target_link_libraries(rmc-match-recovery PUBLIC
     rmc-match-pass-action
+    rmc-match-tackle-action
     rmc-match-sequence
     rmc-match-clock
     rmc-match-event-log
@@ -750,6 +751,7 @@ add_executable(rmc-test-match-recovery
 target_link_libraries(rmc-test-match-recovery PRIVATE
     rmc-match-recovery
     rmc-match-transitions
+    rmc-match-sequence-apply
 )
 
 if(MSVC)
@@ -857,4 +859,49 @@ rmc_warnings(rmc-test-match-dribble-action)
 add_test(
     NAME rmc-match-dribble-action
     COMMAND rmc-test-match-dribble-action
+)
+
+# M001-B1.24 — Defender-initiated tackle action.
+add_library(rmc-match-tackle-action STATIC
+    match_tackle_action.c
+)
+
+target_include_directories(rmc-match-tackle-action PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(rmc-match-tackle-action PUBLIC
+    rmc-match-clock
+    rmc-match-sequence
+    rmc-match-event-log
+    rmc-match-probability
+    rmc-streams
+)
+
+rmc_warnings(rmc-match-tackle-action)
+
+add_executable(rmc-test-match-tackle-action
+    test_match_tackle_action.c
+)
+
+target_link_libraries(rmc-test-match-tackle-action PRIVATE
+    rmc-match-tackle-action
+    rmc-match-transitions
+)
+
+if(MSVC)
+    target_compile_options(
+        rmc-test-match-tackle-action PRIVATE /UNDEBUG
+    )
+else()
+    target_compile_options(
+        rmc-test-match-tackle-action PRIVATE -UNDEBUG
+    )
+endif()
+
+rmc_warnings(rmc-test-match-tackle-action)
+
+add_test(
+    NAME rmc-match-tackle-action
+    COMMAND rmc-test-match-tackle-action
 )

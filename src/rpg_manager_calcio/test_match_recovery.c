@@ -1,5 +1,7 @@
 #include "match_recovery.h"
 #include "match_transitions.h"
+#include "match_tackle_action.h"
+#include "match_sequence_apply.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -140,6 +142,56 @@ static void prepare_loose(
     assert(!"No failed pass found in deterministic search");
 }
 
+/* Generate the cause through production tackle resolution. */
+static void prepare_tackle_loose(
+    RmcMatchState *state,
+    RmcPcg32 *rng,
+    RmcMatchEvent storage[3],
+    RmcMatchEventLog *log,
+    uint32_t action_count,
+    uint32_t at_second,
+    bool second_half)
+{
+    RmcPcg32 candidate = match_rng();
+
+    for (unsigned attempt = 0; attempt < 1024; ++attempt) {
+        *state = active_state();
+        state->possession.action_count = action_count;
+        state->elapsed_seconds = at_second;
+        if (second_half) {
+            state->period = RMC_MATCH_SECOND_HALF;
+            state->second_half_start_second = 2700;
+        }
+        *rng = candidate;
+        memset(storage, 0, 3 * sizeof(storage[0]));
+        assert(rmc_match_event_log_init(state, storage, 3, log));
+        const RmcTackleAction action = {
+            .team_id = state->fixture.away_team,
+            .carrier = state->possession.controller,
+            .defender = state->away_lineup.players[1],
+            .duration_seconds = 5
+        };
+        RmcTackleResult result = {0};
+        assert(rmc_match_tackle_apply(
+            &world, state, rng, log, &action, &result
+        ));
+        if (result.outcome == RMC_TACKLE_OUTCOME_LOOSE_BALL) {
+            assert(state->possession.controller.value == 0);
+            assert(state->possession.team_id.value ==
+                   state->fixture.home_team.value);
+            assert(state->possession.action_count == action_count + 1);
+            assert(log->count == 1);
+            assert(storage[0].type == RMC_EVENT_ACTION);
+            assert(storage[0].outcome_code == RMC_TACKLE_OUTCOME_LOOSE_BALL);
+            assert(storage[0].team_id.value == state->possession.team_id.value);
+            assert(storage[0].primary_actor.value == action.defender.value);
+            return;
+        }
+        (void)rmc_pcg32_next(&candidate);
+    }
+    assert(!"No tackle loose ball found in deterministic search");
+}
+
 static void reject_unchanged(
     RmcMatchState *state,
     RmcPcg32 *rng,
@@ -182,16 +234,20 @@ static void reject_unchanged(
     ) == 0);
 }
 
-static void test_both_outcomes_and_causality(void)
+static void test_both_outcomes_and_causality(bool from_tackle)
 {
     RmcMatchState loose;
     RmcPcg32 loose_rng;
     RmcMatchEvent cause_storage[3] = {{0}};
     RmcMatchEventLog cause_log = {0};
 
-    prepare_loose(
-        &loose, &loose_rng, cause_storage, &cause_log
-    );
+    if (from_tackle) {
+        prepare_tackle_loose(
+            &loose, &loose_rng, cause_storage, &cause_log, 0, 0, false
+        );
+    } else {
+        prepare_loose(&loose, &loose_rng, cause_storage, &cause_log);
+    }
 
     const RmcRecoveryAction action = recovery_action(&loose);
     const RmcMatchEvent cause = cause_storage[0];
@@ -243,6 +299,12 @@ static void test_both_outcomes_and_causality(void)
         assert(storage[1].at_second == state.elapsed_seconds);
         assert(storage[1].primary_actor.value ==
                result.winner.value);
+        assert(storage[1].match_id.value == state.fixture.id.value);
+        assert(storage[1].team_id.value == state.possession.team_id.value);
+        assert(storage[1].secondary_actor.value ==
+               (retained ? action.challenger.value : action.incumbent.value));
+        assert(storage[1].outcome_code == (uint32_t)result.outcome);
+        assert(memcmp(&storage[0], &cause, sizeof(cause)) == 0);
 
         if (retained) {
             retained_seen = true;
@@ -276,6 +338,9 @@ static void test_both_outcomes_and_causality(void)
         assert(rmc_match_state_valid(&world, &state));
 
         /* Once the ball is controlled, it cannot be recovered again. */
+        reject_unchanged(&state, &rng, &log, &action);
+        /* Even clearing the controller cannot make the resolved cause latest. */
+        state.possession.controller.value = 0;
         reject_unchanged(&state, &rng, &log, &action);
 
         if (retained_seen && turnover_seen) {
@@ -355,28 +420,41 @@ static void test_invalid_actions_and_atomicity(void)
     reject_unchanged(&state, &rng, &log, &valid);
 }
 
-static void test_deterministic_replay(void)
+static void test_deterministic_replay(bool from_tackle)
 {
     RmcMatchState first;
     RmcPcg32 first_rng;
     RmcMatchEvent first_storage[3] = {{0}};
     RmcMatchEventLog first_log = {0};
 
-    prepare_loose(
-        &first, &first_rng, first_storage, &first_log
-    );
+    if (from_tackle) {
+        prepare_tackle_loose(
+            &first, &first_rng, first_storage, &first_log, 0, 0, false
+        );
+    } else {
+        prepare_loose(&first, &first_rng, first_storage, &first_log);
+    }
 
     RmcMatchState second = first;
     RmcPcg32 second_rng = first_rng;
     RmcMatchEvent second_storage[3] = {{0}};
     RmcMatchEventLog second_log = {0};
 
-    assert(rmc_match_event_log_init(
-        &second, second_storage, 3, &second_log
-    ));
-    assert(rmc_match_event_log_append(
-        &world, &second, &second_log, &first_storage[0]
-    ));
+    if (from_tackle) {
+        prepare_tackle_loose(
+            &second, &second_rng, second_storage, &second_log, 0, 0, false
+        );
+        assert(memcmp(&first, &second, sizeof(first)) == 0);
+        assert(memcmp(&first_rng, &second_rng, sizeof(first_rng)) == 0);
+        assert(memcmp(first_storage, second_storage, sizeof(first_storage)) == 0);
+    } else {
+        assert(rmc_match_event_log_init(
+            &second, second_storage, 3, &second_log
+        ));
+        assert(rmc_match_event_log_append(
+            &world, &second, &second_log, &first_storage[0]
+        ));
+    }
 
     const RmcRecoveryAction action = recovery_action(&first);
     RmcRecoveryResult first_result = {0};
@@ -407,13 +485,159 @@ static void test_deterministic_replay(void)
            second_result.winner.value);
 }
 
+static void test_tackle_cause_rejections(void)
+{
+    RmcMatchState state;
+    RmcPcg32 rng;
+    RmcMatchEvent storage[3] = {{0}};
+    RmcMatchEventLog log = {0};
+    prepare_tackle_loose(&state, &rng, storage, &log, 0, 0, false);
+    const RmcRecoveryAction action = recovery_action(&state);
+    const RmcMatchEvent cause = storage[0];
+
+    const uint32_t invalid_outcomes[] = {
+        RMC_PASS_OUTCOME_COMPLETED, RMC_TACKLE_OUTCOME_RETAINED,
+        RMC_TACKLE_OUTCOME_WON, 0, 101, 201, UINT32_MAX
+    };
+    for (size_t i = 0;
+         i < sizeof(invalid_outcomes) / sizeof(invalid_outcomes[0]); ++i) {
+        storage[0].outcome_code = invalid_outcomes[i];
+        reject_unchanged(&state, &rng, &log, &action);
+    }
+    storage[0] = cause;
+    storage[0].type = RMC_EVENT_RECOVERY;
+    reject_unchanged(&state, &rng, &log, &action);
+    storage[0] = cause;
+    storage[0].match_id.value = UINT64_MAX;
+    reject_unchanged(&state, &rng, &log, &action);
+    storage[0] = cause;
+    storage[0].team_id = state.fixture.away_team;
+    reject_unchanged(&state, &rng, &log, &action);
+    storage[0].team_id.value = 0;
+    reject_unchanged(&state, &rng, &log, &action);
+    storage[0] = cause;
+    storage[0].id = 0;
+    reject_unchanged(&state, &rng, &log, &action);
+    storage[0].id = 2;
+    reject_unchanged(&state, &rng, &log, &action);
+    storage[0] = cause;
+    storage[0].at_second = state.elapsed_seconds + 1;
+    reject_unchanged(&state, &rng, &log, &action);
+    storage[0] = cause;
+    storage[0].cause_event_id = cause.id;
+    reject_unchanged(&state, &rng, &log, &action);
+    storage[0] = cause;
+
+    state.possession.controller = action.incumbent;
+    reject_unchanged(&state, &rng, &log, &action);
+    state.possession.controller.value = 0;
+    RmcRecoveryAction bad = action;
+    bad.incumbent = state.away_lineup.players[2];
+    reject_unchanged(&state, &rng, &log, &bad);
+    bad = action;
+    bad.challenger = state.home_lineup.players[1];
+    reject_unchanged(&state, &rng, &log, &bad);
+
+    /* An older qualifying event does not authorize recovery. */
+    RmcMatchEvent later = {
+        .id = 2, .match_id = state.fixture.id,
+        .at_second = state.elapsed_seconds,
+        .type = RMC_EVENT_TACTICAL_DECISION
+    };
+    assert(rmc_match_event_log_append(&world, &state, &log, &later));
+    reject_unchanged(&state, &rng, &log, &action);
+
+    /* A latest qualifying cause still cannot predate its predecessor. */
+    storage[1] = cause;
+    storage[1].id = 2;
+    storage[1].at_second = cause.at_second - 1;
+    reject_unchanged(&state, &rng, &log, &action);
+}
+
+static void test_action_window_and_period_precedence(void)
+{
+    /* Repeat in each half, before and exactly at its period deadline. */
+    for (unsigned second_half = 0; second_half < 2; ++second_half) {
+        for (unsigned at_end = 0; at_end < 2; ++at_end) {
+            RmcMatchState state;
+            RmcPcg32 rng;
+            RmcMatchEvent storage[3] = {{0}};
+            RmcMatchEventLog log = {0};
+            const uint32_t start = second_half ? 2700 : 0;
+            prepare_tackle_loose(
+                &state, &rng, storage, &log,
+                RMC_POSSESSION_MAX_ACTIONS - 1,
+                start + (at_end ? 2695 : 0), second_half != 0
+            );
+            assert(state.possession.action_count == RMC_POSSESSION_MAX_ACTIONS);
+            const RmcRecoveryAction action = recovery_action(&state);
+            reject_unchanged(&state, &rng, &log, &action);
+            const RmcMatchState before = state;
+            const RmcPcg32 before_rng = rng;
+            const RmcMatchEventLog before_log = log;
+            RmcMatchEvent before_storage[3];
+            memcpy(before_storage, storage, sizeof(storage));
+            RmcSequenceDecision decision = RMC_SEQUENCE_ALLOW_ACTION;
+            assert(rmc_match_sequence_decide(&world, &state, &decision));
+
+            if (at_end) {
+                assert(decision == RMC_SEQUENCE_END_PERIOD);
+                assert(!rmc_match_sequence_apply(
+                    &world, &state, RMC_SEQUENCE_RESET_ACTION_WINDOW
+                ));
+                assert(memcmp(&state, &before, sizeof(state)) == 0);
+                reject_unchanged(&state, &rng, &log, &action);
+                assert(rmc_match_sequence_apply(
+                    &world, &state, RMC_SEQUENCE_END_PERIOD
+                ));
+                assert(state.period == (second_half
+                    ? RMC_MATCH_FINISHED : RMC_MATCH_HALF_TIME));
+                assert(state.mode == RMC_MATCH_PERIOD_ENDED);
+                reject_unchanged(&state, &rng, &log, &action);
+            } else {
+                assert(decision == RMC_SEQUENCE_RESET_ACTION_WINDOW);
+                assert(rmc_match_sequence_apply(
+                    &world, &state, RMC_SEQUENCE_RESET_ACTION_WINDOW
+                ));
+                RmcMatchState expected = before;
+                expected.possession.action_count = 0;
+                assert(memcmp(&state, &expected, sizeof(state)) == 0);
+                assert(state.possession.controller.value == 0);
+                assert(memcmp(&rng, &before_rng, sizeof(rng)) == 0);
+                assert(memcmp(&log, &before_log, sizeof(log)) == 0);
+                assert(memcmp(storage, before_storage, sizeof(storage)) == 0);
+                assert(rmc_match_sequence_decide(&world, &state, &decision));
+                assert(decision == RMC_SEQUENCE_ALLOW_ACTION);
+                RmcRecoveryResult result = {0};
+                assert(rmc_match_recovery_apply(
+                    &world, &state, &rng, &log, &action, &result
+                ));
+                assert(log.count == 2);
+                assert(storage[1].cause_event_id == before_storage[0].id);
+                assert(memcmp(&storage[0], &before_storage[0],
+                              sizeof(storage[0])) == 0);
+                reject_unchanged(&state, &rng, &log, &action);
+            }
+            if (at_end) {
+                assert(memcmp(&rng, &before_rng, sizeof(rng)) == 0);
+                assert(memcmp(&log, &before_log, sizeof(log)) == 0);
+                assert(memcmp(storage, before_storage, sizeof(storage)) == 0);
+            }
+        }
+    }
+}
+
 int main(void)
 {
     setup();
 
-    test_both_outcomes_and_causality();
+    test_both_outcomes_and_causality(false);
+    test_both_outcomes_and_causality(true);
     test_invalid_actions_and_atomicity();
-    test_deterministic_replay();
+    test_deterministic_replay(false);
+    test_deterministic_replay(true);
+    test_tackle_cause_rejections();
+    test_action_window_and_period_precedence();
 
     puts("RECOVERY_BOTH_OUTCOMES=PASS");
     puts("RECOVERY_TURNOVER_COORDINATES=PASS");
@@ -421,6 +645,10 @@ int main(void)
     puts("RECOVERY_NO_DUPLICATE_RESOLUTION=PASS");
     puts("RECOVERY_INVALID_REJECTION_ATOMICITY=PASS");
     puts("RECOVERY_PCG32_REPLAY=PASS");
+    puts("RECOVERY_TACKLE_BOTH_OUTCOMES_AND_CAUSALITY=PASS");
+    puts("RECOVERY_TACKLE_CAUSE_REJECTION=PASS");
+    puts("RECOVERY_ACTION_32_RESET_PRESERVES_LOOSE_BALL=PASS");
+    puts("RECOVERY_PERIOD_END_PRECEDENCE=PASS");
 
     return 0;
 }
