@@ -82,6 +82,7 @@ if(TARGET PkgConfig::CHRONO_SDL2 AND TARGET PkgConfig::CHRONO_SDL2_TTF)
         chrono.c
         mission002.c
         mission003.c
+        mission004.c
     )
     target_compile_definitions(chrono-oops-2d PRIVATE CHRONO_WITH_M002)
     target_link_libraries(chrono-oops-2d PRIVATE
@@ -145,5 +146,24 @@ if(TARGET chrono-oops-2d)
     add_test(
         NAME chrono-2d-mission-003
         COMMAND chrono-test-2d-003
+    )
+endif()
+
+# Mission 004 SDL regression: dual causal propagation, reversible
+# single-effect paths, verification invalidation, victory and restart.
+if(TARGET chrono-oops-2d)
+    add_executable(chrono-test-2d-004
+        test_graphics2d_m004.c
+        mission004.c
+    )
+    target_link_libraries(chrono-test-2d-004 PRIVATE
+        PkgConfig::CHRONO_SDL2
+        PkgConfig::CHRONO_SDL2_TTF
+    )
+    chrono_warnings(chrono-test-2d-004)
+    chrono_test_assertions(chrono-test-2d-004)
+    add_test(
+        NAME chrono-2d-mission-004
+        COMMAND chrono-test-2d-004
     )
 endif()
