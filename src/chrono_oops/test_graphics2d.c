@@ -147,7 +147,7 @@ static void event_action(ChronoState *state, char *message,
 static void event_turn(ChronoState *state, char *message,
                        bool *running)
 {
-    send_click(state, message, running, 50, 750);
+    send_click(state, message, running, 50, 806);
 }
 
 static void event_play(ChronoState *state, char *message,
@@ -202,7 +202,7 @@ static void test_sdl_event_routes(void)
         printf("SDL_MOUSE_%s_VICTORY=PASS\n",
                route == 0 ? "BRIDGE" : "DUCK");
 
-        send_click(&state, message, &running, 365, 750);
+        send_click(&state, message, &running, 365, 806);
         assert(!state.finished && state.turn == 1);
         assert(strstr(message, "Nuova partita") != NULL);
         printf("SDL_MOUSE_RESTART_GATE=PASS\n");
@@ -244,8 +244,106 @@ static void test_action_player_highlighting(void)
     puts("GUI_PLAYER_ACTION_HIGHLIGHT_GATE=PASS");
 }
 
+static void test_mission_menu_hitboxes(void)
+{
+    for (int i = 0; i < 5; ++i) {
+        SDL_Rect r = mission_menu_rect(i);
+        int mission = i + 1;
+
+        assert(r.w > 0 && r.h > 0);
+        assert(mission_menu_pick(r.x, r.y) == mission);
+        assert(mission_menu_pick(r.x + r.w - 1,
+                                 r.y + r.h - 1) == mission);
+        assert(mission_menu_pick(r.x + r.w / 2,
+                                 r.y + r.h / 2) == mission);
+
+        assert(mission_menu_pick(r.x - 1, r.y) == 0);
+        assert(mission_menu_pick(r.x + r.w, r.y) == 0);
+        assert(mission_menu_pick(r.x, r.y + r.h) != mission);
+
+        for (int j = 0; j < 5; ++j) {
+            if (j != i) {
+                SDL_Rect other = mission_menu_rect(j);
+                assert(!contains(other, r.x + r.w / 2,
+                                       r.y + r.h / 2));
+            }
+        }
+    }
+
+    assert(mission_menu_pick(0, 0) == 0);
+    assert(mission_menu_pick(1279, 839) == 0);
+    assert(mission_menu_pick(70, 134) == 0);
+    assert(mission_menu_pick(70, 239) == 0);
+
+    puts("MISSION_MENU_HITBOX_GATE=PASS");
+}
+
+static void test_m001_focus_and_availability(void)
+{
+    ChronoState state;
+    chrono_init(&state);
+    m001_focus_reset();
+
+    char message[220] = "";
+    bool running = true;
+    ChronoState snapshot = state;
+
+    assert(m001_focus.focused_action == -1);
+    assert(m001_focus.focused_bottom == 0);
+    assert(m001_action_available(&state, 0));
+    assert(m001_action_available(&state, 1));
+    assert(!m001_action_available(&state, 2));
+    assert(!m001_action_available(&state, 3));
+    assert(memcmp(&snapshot, &state, sizeof(state)) == 0);
+    assert(strcmp(m001_action_owner(0), "A/B") == 0);
+    assert(strcmp(m001_action_owner(3), "B") == 0);
+
+    SDL_Event event = {0};
+    event.type = SDL_KEYDOWN;
+    event.key.keysym.sym = SDLK_DOWN;
+    handle_event(&event, &state, message, sizeof(message), &running);
+    assert(m001_focus.focused_action == 0);
+
+    event.key.keysym.sym = SDLK_RIGHT;
+    handle_event(&event, &state, message, sizeof(message), &running);
+    assert(m001_focus.focused_action == 11);
+
+    event.key.keysym.sym = SDLK_LEFT;
+    handle_event(&event, &state, message, sizeof(message), &running);
+    assert(m001_focus.focused_action == 0);
+
+    event.key.keysym.sym = SDLK_UP;
+    handle_event(&event, &state, message, sizeof(message), &running);
+    assert(m001_focus.focused_action == -1);
+
+    SDL_Rect rect = action_rect(1);
+    send_click(&state, message, &running, rect.x + 20, rect.y + 10);
+    assert(m001_focus.focused_action == 1);
+    assert(m001_action_available(&state, 2));
+
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.x = 0;
+    motion.motion.y = 0;
+    handle_event(&motion, &state, message, sizeof(message), &running);
+    assert(m001_focus.focused_action == 1);
+
+    send_click(&state, message, &running, 50, 806);
+    assert(m001_focus.focused_action == -1);
+    assert(m001_focus.focused_bottom == 0);
+    assert(state.turn == 2);
+
+    send_click(&state, message, &running, 365, 806);
+    assert(m001_focus.focused_action == -1);
+    assert(state.turn == 1);
+    assert(running);
+    puts("M001_FOCUS_AVAILABILITY_GATE=PASS");
+}
+
 int main(void)
 {
+    test_m001_focus_and_availability();
+    test_mission_menu_hitboxes();
     test_action_player_highlighting();
     test_bridge();
     test_duck();
