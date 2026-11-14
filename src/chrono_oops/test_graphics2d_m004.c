@@ -159,8 +159,115 @@ static void test_defeat_and_restart(void)
     puts("M004_SDL_RESTART_GATE=PASS");
 }
 
+static void test_m004_keyboard_and_mouse_focus(void)
+{
+    M004Gui gui;
+    m004_gui_init(&gui);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+
+    SDL_Event event = {0};
+    event.type = SDL_KEYDOWN;
+    event.key.keysym.sym = SDLK_DOWN;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 0);
+
+    event.key.keysym.sym = SDLK_UP;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+
+    event.key.keysym.sym = SDLK_RIGHT;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_bottom == 1);
+
+    event.key.keysym.sym = SDLK_UP;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 14);
+
+    event.key.keysym.sym = SDLK_LEFT;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 6);
+
+    event.key.keysym.sym = SDLK_DOWN;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 7);
+
+    event.key.keysym.sym = SDLK_RIGHT;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 14);
+
+    event.key.keysym.sym = SDLK_DOWN;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 1);
+
+    event.key.keysym.sym = SDLK_LEFT;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_bottom == 0);
+
+    click(&gui, 3);
+    assert(gui.focused_action == 3);
+
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.x = 0;
+    motion.motion.y = 0;
+    m004_gui_event(&gui, &motion);
+    assert(gui.focused_action == 3);
+
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.button = SDL_BUTTON_LEFT;
+    event.button.x = 100;
+    event.button.y = 806;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+    assert(gui.state.turn == 2);
+
+    event.button.x = 400;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+    assert(gui.state.turn == 1);
+
+    puts("M004_2D_FOCUS_NAVIGATION_GATE=PASS");
+}
+
+static void test_m004_action_availability(void)
+{
+    M004Gui gui;
+    m004_gui_init(&gui);
+
+    ChronoM004State snapshot = gui.state;
+
+    assert(m004_action_available(&gui.state, 0));
+    assert(m004_action_available(&gui.state, 1));
+    assert(!m004_action_available(&gui.state, 2));
+    assert(!m004_action_available(&gui.state, 3));
+    assert(!m004_action_available(&gui.state, 8));
+    assert(strcmp(m004_action_owner(0), "A/B") == 0);
+    assert(strcmp(m004_action_owner(1), "A") == 0);
+    assert(strcmp(m004_action_owner(3), "B") == 0);
+    assert(memcmp(&snapshot, &gui.state, sizeof(snapshot)) == 0);
+
+    click(&gui, 1);
+    assert(m004_action_available(&gui.state, 2));
+    assert(!m004_action_available(&gui.state, 1));
+
+    turn(&gui);
+    assert(m004_action_available(&gui.state, 0));
+    assert(m004_action_available(&gui.state, 3));
+    assert(!m004_action_available(&gui.state, 2));
+
+    while (!gui.state.finished)
+        turn(&gui);
+
+    for (int i = 0; i < M004_GUI_ACTION_COUNT; ++i)
+        assert(!m004_action_available(&gui.state, i));
+
+    puts("M004_ACTION_AVAILABILITY_UX_GATE=PASS");
+}
+
 int main(void)
 {
+    test_m004_action_availability();
+    test_m004_keyboard_and_mouse_focus();
     test_nominal_victory();
     test_recovery(5, CHRONO_M004_CONFIG_BEACON);
     test_recovery(6, CHRONO_M004_CONFIG_REGISTER);
