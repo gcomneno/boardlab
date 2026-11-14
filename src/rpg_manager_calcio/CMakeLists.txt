@@ -1032,3 +1032,34 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang
 endif()
 rmc_warnings(rmc-test-match-opening-kickoff)
 add_test(NAME rmc-match-opening-kickoff COMMAND rmc-test-match-opening-kickoff)
+
+# M001-B1.28-C — Stateful flow and pure Selector v1; existing engines unchanged.
+add_library(rmc-match-flow STATIC match_flow.c)
+target_include_directories(rmc-match-flow PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rmc-match-flow PUBLIC
+    rmc-match-opening-kickoff rmc-match-restart-action rmc-match-period-commit
+    rmc-match-pass-action rmc-match-carry-action rmc-match-dribble-action
+    rmc-match-tackle-action rmc-match-cross-action rmc-match-shot-action
+    rmc-match-recovery)
+rmc_warnings(rmc-match-flow)
+
+add_library(rmc-match-flow-selector STATIC match_flow_selector.c)
+target_link_libraries(rmc-match-flow-selector PUBLIC rmc-match-flow)
+rmc_warnings(rmc-match-flow-selector)
+
+foreach(flow_test IN ITEMS match-flow match-flow-replay)
+    string(REPLACE "-" "_" flow_source "${flow_test}")
+    add_executable(rmc-test-${flow_test} test_${flow_source}.c)
+    target_link_libraries(rmc-test-${flow_test} PRIVATE rmc-match-flow-selector rmc-career)
+    if(MSVC)
+        target_compile_options(rmc-test-${flow_test} PRIVATE /UNDEBUG)
+    else()
+        target_compile_options(rmc-test-${flow_test} PRIVATE -UNDEBUG)
+    endif()
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_definitions(rmc-test-${flow_test} PRIVATE RMC_WRAP_MALLOC)
+        target_link_options(rmc-test-${flow_test} PRIVATE "-Wl,--wrap=malloc")
+    endif()
+    rmc_warnings(rmc-test-${flow_test})
+    add_test(NAME rmc-test-${flow_test} COMMAND rmc-test-${flow_test})
+endforeach()
