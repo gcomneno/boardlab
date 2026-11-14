@@ -100,14 +100,14 @@ if [ "$STATUS" -eq 0 ]; then
     rm -f "$WORKER_LOG"
 
     if [ -n "$WRANGLER_CLI" ]; then
-        "$NODE_RUNTIME" "$WRANGLER_CLI" \
+        setsid "$NODE_RUNTIME" "$WRANGLER_CLI" \
             dev \
             --local \
             --port 8787 \
             --config "$CF/wrangler.jsonc" \
             >"$WORKER_LOG" 2>&1 &
     else
-        npx --yes wrangler@4.160.1 \
+        setsid npx --yes wrangler@4.160.1 \
             dev \
             --local \
             --port 8787 \
@@ -161,7 +161,7 @@ if [ "$STATUS" -eq 0 ]; then
 fi
 
 if [ -n "${WORKER_PID:-}" ]; then
-    kill "$WORKER_PID" 2>/dev/null || true
+    kill -- "-$WORKER_PID" 2>/dev/null || true
     wait "$WORKER_PID" 2>/dev/null || true
 fi
 
