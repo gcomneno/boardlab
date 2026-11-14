@@ -23,10 +23,7 @@ const roma = {
 test("records simulated match result with provider identities", () => {
   const match = createMatchRecord({
     matchId: "match-001",
-    matchId: "match-003",
-      matchId: "match-004",
-      matchId: "match-invalid",
-      playedAt: "2026-11-02T12:00:00Z",
+    playedAt: "2026-11-02T12:00:00Z",
     home: napoli,
     away: roma,
     homeGoals: 2,
