@@ -126,6 +126,6 @@ test("penalty is always explicitly announced by radio commentary", () => {
 
   assert.match(italian, /RIGORE|dischetto/i);
   assert.match(english, /PENALTY|spot/i);
-  assert.equal(afterPenalty.phase, "result");
+  assert.equal(afterPenalty.phase, "penalty");
   assert.equal(afterPenalty.player, attack.player);
 });

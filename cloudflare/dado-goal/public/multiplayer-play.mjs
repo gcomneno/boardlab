@@ -1,5 +1,5 @@
 
-import { newMatch, applyRoll } from "./engine.mjs";
+import { newMatch } from "./engine.mjs";
 import {
   MultiplayerClient,
   MultiplayerAPIError,
@@ -43,7 +43,7 @@ import {
   describeMatchEvent
 } from "./commentary.mjs";
 import { multiplayerMatchEvents } from "./multiplayer-commentary.mjs";
-import { DICE_ART } from "./dice-art.mjs";
+import { DICE_ART, PENALTY_DICE_ART } from "./dice-art.mjs";
 import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
 import { socialColors } from "./team-colors.mjs";
 
@@ -88,6 +88,7 @@ const phaseNames = {
   team: "teamDie",
   pink: "pinkDie",
   result: "finalDie",
+  penalty: "penaltyDie",
 };
 
 const phaseName = phase => translate(phaseNames[phase]);
@@ -106,6 +107,10 @@ const diceFaces = {
   result: [
     "Respinto!", "GOAL!", "FUORI!",
     "PALO/TRAVERSA", "RIGORE", "Parato!",
+  ],
+  penalty: [
+    "GOAL!", "GOAL!", "GOAL!",
+    "PALO/TRAVERSA", "PARATO/RESPINTO", "FUORI",
   ],
 };
 
@@ -126,6 +131,8 @@ const dieFaceMessageKeys = Object.freeze({
   "PALO/TRAVERSA": "faceWoodwork",
   "RIGORE": "facePenalty",
   "Parato!": "faceSaved",
+  "PARATO/RESPINTO": "facePenaltySaved",
+  "FUORI": "facePenaltyWide",
 });
 
 function displayDieFace(face) {
@@ -135,6 +142,7 @@ function displayDieFace(face) {
 }
 
 function diceKind(phase, player) {
+  if (phase === "penalty") return "penalty";
   return phase === "team"
     ? (player === 0 ? "yellow" : "blue")
     : phase === "pink" ? "pink" : "final";
@@ -143,8 +151,7 @@ function diceKind(phase, player) {
 const teamPalettes = [null, null];
 
 function visualTeamPalette(player) {
-  return teamPalettes[player] ??
-    (colors[player] ? [colors[player]] : ["#f2c94c"]);
+  return teamPalettes[player] ?? [colors[player]];
 }
 
 function shade(hex, factor) {
@@ -177,13 +184,13 @@ function buildDie3d(phase, player) {
   const die = byId("die");
   die.classList.remove("kickoff-ball");
   const kind = diceKind(phase, player);
-  const art = DICE_ART[kind];
+  const art = kind === "penalty" ? PENALTY_DICE_ART : DICE_ART[kind];
 
   if (!Array.isArray(art) || art.length !== 6) {
     throw new RangeError("Invalid 3D die faces");
   }
 
-  const color = visualTeamPalette(player)[0];
+  const color = colors[player];
   die.style.removeProperty("--die-light");
   die.style.removeProperty("--die-dark");
   die.style.removeProperty("--die-ink");
@@ -234,8 +241,6 @@ let rosters = [];
 let refereeStates = [];
 let extraordinaryState;
 let commentaryEnabled = true;
-let autoEnabled = false;
-let autoRunning = false;
 let lastCommentary = null;
 let lastRefereeEvent = null;
 let lastExtraordinaryEvent = null;
@@ -277,12 +282,8 @@ function syncMultiplayerControls() {
 }
 
 function render() {
-  syncMultiplayerControls();
-
   if (!state) {
     byId("roll").disabled = true;
-    byId("auto").disabled = true;
-    byId("commentary-toggle").disabled = true;
     byId("result").textContent = "⚽";
     byId("match-clock").textContent = "—";
     return;
@@ -413,17 +414,24 @@ function render() {
   }
 
   byId("guide-pink").classList.toggle("active", state.phase === "pink");
-  byId("guide-result").classList.toggle("active", state.phase === "result");
+  byId("guide-result").classList.toggle(
+    "active",
+    state.phase === "result" || state.phase === "penalty",
+  );
 
   const [home, away] = matchStatistics(rollEvents);
   const metrics = [
     ["goals", "goals"],
+    ["possession", "possession"],
     ["shots", "shots"],
-    ["crosses", "crosses"],
-    ["passes", "passes"],
+    ["wide", "wide"],
+    ["blocked", "blocked"],
     ["saves", "saves"],
     ["woodwork", "woodwork"],
+    ["corners", "corners"],
+    ["freeKicks", "freeKicks"],
     ["penalties", "penalties"],
+    ["passes", "passes"],
   ];
   byId("match-stats").replaceChildren(
     ...metrics.map(([label, key]) => {
@@ -434,13 +442,17 @@ function render() {
       values.className = "stat-values";
 
       const left = document.createElement("strong");
-      left.textContent = String(home[key]);
+      left.textContent = key === "possession"
+        ? `${home[key]}%`
+        : String(home[key]);
 
       const name = document.createElement("span");
       name.textContent = translate(label);
 
       const right = document.createElement("strong");
-      right.textContent = String(away[key]);
+      right.textContent = key === "possession"
+        ? `${away[key]}%`
+        : String(away[key]);
 
       values.append(left, name, right);
 
@@ -489,19 +501,8 @@ function render() {
     byId(`color-${seat}-secondary`).disabled =
       playing || !byId(`color-${seat}-enabled`).checked;
   }
-  const localSeat = snapshot?.seat;
-  const localTurn =
-    localSeat === 0 || localSeat === 1
-      ? state.player === localSeat
-      : false;
-  byId("roll").disabled = !playing || isRolling || !localTurn;
-  byId("commentary-toggle").disabled = !playing;
-
-  const autoButton = byId("auto");
-  autoButton.disabled =
-    !playing || isRolling || (!localTurn && !autoEnabled);
-  autoButton.textContent = autoEnabled ? "■ AUTO" : "▶ AUTO";
-  autoButton.setAttribute("aria-pressed", String(autoEnabled));
+  byId("roll").disabled = !playing || isRolling;
+  byId("auto").disabled = !playing;
   const selectedTeamIds = [0, 1].map(
     seat => byId(`team-${seat}`).value
   );
@@ -512,11 +513,9 @@ function render() {
   byId("phase").textContent = finished
     ? translate("matchFinished")
     : phaseName(state.phase);
-  const activeTeamName = names[state.player] ||
-    `Squadra ${state.player + 1}`;
   byId("turn").textContent = finished
     ? translate("finalWhistle")
-    : formatMessage("matchTurn", { name: activeTeamName });
+    : formatMessage("matchTurn", { name: names[state.player] });
   byId("roll").textContent = finished
     ? translate("matchFinished")
     : isRolling
@@ -664,14 +663,12 @@ function syncCompetitionSelector() {
 async function reloadLiveCatalogue() {
   footballCatalogue = null;
   renderCatalogueTeams();
-  syncMultiplayerControls();
 
   try {
     await loadLiveCatalogue();
   } catch {
     footballCatalogue = null;
     renderCatalogueTeams();
-    syncMultiplayerControls();
   }
 }
 
@@ -699,7 +696,6 @@ async function loadLiveCatalogue() {
 
   footballCatalogue = importCatalogueJson(await response.text());
   renderCatalogueTeams();
-  syncMultiplayerControls();
 }
 
 
@@ -870,8 +866,6 @@ function start(activate = true) {
 
   state = newMatch(n);
   matchStarted = activate;
-  autoEnabled = false;
-  autoRunning = false;
   isRolling = false;
   rollEvents = [];
   matchEvents = [];
@@ -925,7 +919,6 @@ async function roll() {
     !snapshot ||
     snapshot.status !== "active" ||
     state.phase === "finished" ||
-    snapshot.seat !== state.player ||
     isRolling ||
     multiplayerBusy
   ) {
@@ -972,64 +965,6 @@ async function roll() {
   }
 }
 
-async function runAutoForLocalTurn() {
-  if (
-    autoRunning ||
-    !autoEnabled ||
-    !snapshot ||
-    snapshot.status !== "active" ||
-    state.phase === "finished" ||
-    snapshot.seat !== state.player
-  ) {
-    return;
-  }
-
-  const localSeat = snapshot.seat;
-  autoRunning = true;
-  render();
-
-  try {
-    while (
-      autoEnabled &&
-      snapshot &&
-      snapshot.status === "active" &&
-      state.phase !== "finished" &&
-      snapshot.seat === localSeat &&
-      state.player === localSeat
-    ) {
-      const turnEnded = await roll();
-      if (turnEnded) break;
-    }
-  } finally {
-    autoRunning = false;
-    if (!snapshot || snapshot.status !== "active" ||
-        state.phase === "finished") {
-      autoEnabled = false;
-    }
-    render();
-  }
-}
-
-async function toggleAutoRoll() {
-  if (autoEnabled) {
-    autoEnabled = false;
-    render();
-    return;
-  }
-
-  if (
-    !snapshot ||
-    snapshot.status !== "active" ||
-    state.phase === "finished" ||
-    snapshot.seat !== state.player
-  ) {
-    return;
-  }
-
-  autoEnabled = true;
-  render();
-  await runAutoForLocalTurn();
-}
 
 function selectedMultiplayerTeam(seat) {
   const team = selectedCatalogueTeam(seat);
@@ -1063,97 +998,18 @@ function selectedMultiplayerTeams() {
 
 function adoptAuthoritativeSnapshot(nextSnapshot) {
   snapshot = nextSnapshot;
-  if (
-    Array.isArray(snapshot.teamNames) &&
-    snapshot.teamNames.length === 2 &&
-    snapshot.teamNames.every(name =>
-      typeof name === "string" && name.trim().length > 0)
-  ) {
-    names = snapshot.teamNames.map(name => name.trim());
-  } else {
-    names = names.map((name, index) =>
-      typeof name === "string" && name.trim()
-        ? name
-        : `Squadra ${index + 1}`
-    );
-  }
-  if (
-    Array.isArray(snapshot.teams) &&
-    snapshot.teams.length === 2
-  ) {
-    snapshot.teams.forEach((team, seat) => {
-      if (!team || typeof team !== "object") return;
-
-      if (Array.isArray(team.colors) && team.colors.length > 0) {
-        teamPalettes[seat] = [...team.colors];
-        colors[seat] = team.colors[0];
-      }
-
-      const logo = byId(`pitch-logo-${seat}`);
-      if (logo) {
-        const selected = selectedCatalogueTeam(seat);
-        const fallbackLogo =
-          selected?.name === team.name ? selected.logo : null;
-        const logoUrl =
-          typeof team.logo === "string" && team.logo
-            ? team.logo
-            : fallbackLogo;
-
-        if (logoUrl) {
-          logo.src = logoUrl;
-          logo.alt = team.name ?? names[seat] ?? "";
-          logo.hidden = false;
-        } else {
-          logo.hidden = true;
-          logo.removeAttribute("src");
-          logo.alt = "";
-        }
-      }
-    });
-  }
-
   state = snapshot.state;
   matchStarted = snapshot.status === "active" ||
     snapshot.status === "finished";
-
-  if (snapshot.status === "finished" || state.phase === "finished") {
-    autoEnabled = false;
-  }
 
   rollEvents = Array.isArray(snapshot.rollEvents)
     ? snapshot.rollEvents
     : [];
 
+  matchEvents = multiplayerMatchEvents(rollEvents);
+
   if (snapshot.matchEventContext?.rosters) {
     rosters = snapshot.matchEventContext.rosters;
-  }
-
-  matchEvents = multiplayerMatchEvents(rollEvents).map(event =>
-    enrichMatchEvent(rosters[event.team], event)
-  );
-
-  lastCommentary = null;
-  if (rollEvents.length > 0) {
-    let replayState = newMatch(state.handsPerTeam);
-
-    rollEvents.forEach((event, index) => {
-      const before = replayState;
-      replayState = applyRoll(replayState, event.face);
-
-      if (index === rollEvents.length - 1) {
-        lastCommentary = {
-          event: {
-            seat: event.seat,
-            die: event.die,
-            face: event.face,
-          },
-          before,
-          after: replayState,
-          names: [...names],
-          index,
-        };
-      }
-    });
   }
 
   if (snapshot.matchEventContext?.refereeStates) {
@@ -1181,12 +1037,6 @@ function startMultiplayerSync() {
       if (refreshed.revision !== snapshot.revision ||
           refreshed.status !== snapshot.status) {
         adoptAuthoritativeSnapshot(refreshed);
-      }
-
-      if (autoEnabled &&
-          snapshot?.status === "active" &&
-          snapshot.seat === state.player) {
-        void runAutoForLocalTurn().catch(showMultiplayerError);
       }
     } catch (error) {
       console.error(error);
@@ -1226,7 +1076,6 @@ async function multiplayerCreate() {
     startMultiplayerSync();
   } finally {
     multiplayerBusy = false;
-    syncMultiplayerControls();
   }
 }
 
@@ -1238,20 +1087,16 @@ async function multiplayerJoin() {
     const { matchId, inviteToken } = decodeInvite(
       byId("invite-code").value
     );
-    const joinedSnapshot = await multiplayerClient.join(
-      matchId,
-      inviteToken
-    );
+    const joined = await multiplayerClient.join(matchId, inviteToken);
 
     if (byId("remember").checked) {
       multiplayerClient.remember();
     }
 
-    adoptAuthoritativeSnapshot(joinedSnapshot);
+    adoptAuthoritativeSnapshot(joined.snapshot);
     startMultiplayerSync();
   } finally {
     multiplayerBusy = false;
-    syncMultiplayerControls();
   }
 }
 
@@ -1290,7 +1135,7 @@ async function multiplayerLogout() {
     authenticated = false;
     snapshot = null;
     stopMultiplayerSync();
-    multiplayerClient.leave();
+    multiplayerClient.clear();
     byId("auth-status").textContent = translate("mpAuthEnded");
     render();
   } finally {
@@ -1319,58 +1164,14 @@ byId("join").addEventListener("click", () => {
   void multiplayerJoin().catch(showMultiplayerError);
 });
 
-async function copyTextToClipboard(text) {
-  let clipboardError = null;
-
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return;
-    }
-  } catch (error) {
-    clipboardError = error;
-  }
-
-  const field = byId("invite-code");
-  field.focus();
-  field.select();
-  field.setSelectionRange(0, field.value.length);
-
-  let copied = false;
-  try {
-    copied = document.execCommand("copy");
-  } catch {}
-
-  if (!copied) {
-    throw clipboardError ?? new Error("Clipboard unavailable");
-  }
-}
-
-let copyFeedbackTimer = null;
-
 byId("copy-invite").addEventListener("click", async () => {
   const invite = byId("invite-code").value.trim();
   if (!invite) return;
 
-  const button = byId("copy-invite");
-
   try {
-    await copyTextToClipboard(invite);
-
-    button.textContent = translate("mpCopied");
-    button.classList.add("copy-success");
-
-    if (copyFeedbackTimer !== null) {
-      window.clearTimeout(copyFeedbackTimer);
-    }
-
-    copyFeedbackTimer = window.setTimeout(() => {
-      button.textContent = translate("mpCopyInvite");
-      button.classList.remove("copy-success");
-      copyFeedbackTimer = null;
-    }, 1800);
+    await navigator.clipboard.writeText(invite);
   } catch {
-    showMultiplayerError(new Error(translate("mpCopyFailed")));
+    byId("invite-code").select();
   }
 });
 
@@ -1384,15 +1185,6 @@ byId("logout").addEventListener("click", () => {
 
 byId("roll").addEventListener("click", () => {
   void roll().catch(showMultiplayerError);
-});
-
-byId("auto").addEventListener("click", () => {
-  void toggleAutoRoll().catch(showMultiplayerError);
-});
-
-byId("commentary-toggle").addEventListener("click", () => {
-  commentaryEnabled = !commentaryEnabled;
-  render();
 });
 
 initializeLocale(() => {

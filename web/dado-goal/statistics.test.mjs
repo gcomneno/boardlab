@@ -3,12 +3,19 @@ import assert from "node:assert/strict";
 import { matchStatistics } from "./statistics.mjs";
 import { FACES } from "./engine.mjs";
 
-test("all 18 physical face positions have a statistics mapping", () => {
+test("all physical face positions have a statistics mapping", () => {
   const events = Object.entries(FACES).flatMap(([die, faces]) =>
     faces.map(face => ({ seat: 0, die, face }))
   );
   const teams = matchStatistics(events);
-  assert.equal(teams.flatMap(Object.values).reduce((a, b) => a + b, 0), 18);
+  const mappedTotal = teams
+    .flatMap(team => Object.entries(team))
+    .filter(([key]) => !["possession", "possessionRolls"].includes(key))
+    .reduce((sum, [, value]) => sum + value, 0);
+
+  assert.equal(mappedTotal, 24);
+  assert.equal(teams[0].possession, 100);
+  assert.equal(teams[1].possession, 0);
 });
 
 test("statistics separate teams and repeatable events", () => {
@@ -33,4 +40,37 @@ test("invalid events fail closed", () => {
   assert.throws(() => matchStatistics([
     { seat: 0, die: "pink", face: "GOAL!" },
   ]), RangeError);
+});
+
+
+test("extended set pieces and penalty die are counted canonically", () => {
+  const [home, away] = matchStatistics([
+    { seat: 0, die: "team", face: "Cross!" },
+    { seat: 0, die: "pink", face: "Mezza rovesciata" },
+    { seat: 0, die: "result", face: "RIGORE" },
+    { seat: 0, die: "penalty", face: "GOAL!" },
+    { seat: 1, die: "penalty", face: "PARATO/RESPINTO" },
+  ]);
+
+  assert.equal(home.corners, 1);
+  assert.equal(home.freeKicks, 1);
+  assert.equal(home.penalties, 1);
+  assert.equal(home.penaltyGoals, 1);
+  assert.equal(home.penaltySaved, 1);
+  assert.equal(away.penaltySaved, 0);
+});
+
+test("possession is derived from valid roll counts and sums to 100", () => {
+  const [home, away] = matchStatistics([
+    { seat: 0, die: "team", face: "Passaggio" },
+    { seat: 0, die: "team", face: "Passaggio" },
+    { seat: 0, die: "team", face: "Tiro in porta!" },
+    { seat: 1, die: "team", face: "Passaggio intercettato!" },
+  ]);
+
+  assert.equal(home.possessionRolls, 3);
+  assert.equal(away.possessionRolls, 1);
+  assert.equal(home.possession, 75);
+  assert.equal(away.possession, 25);
+  assert.equal(home.possession + away.possession, 100);
 });

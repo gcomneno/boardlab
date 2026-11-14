@@ -23,6 +23,14 @@ export const FACES = Object.freeze({
     "RIGORE",
     "Parato!",
   ]),
+  penalty: Object.freeze([
+    "GOAL!",
+    "GOAL!",
+    "GOAL!",
+    "PALO/TRAVERSA",
+    "PARATO/RESPINTO",
+    "FUORI",
+  ]),
 });
 
 export function newMatch(handsPerTeam = 10) {
@@ -103,6 +111,12 @@ export function applyRoll(state, face) {
     return endHand(next, false);
   }
 
-  if (face === "RIGORE") return next;
+  if (state.phase === "result") {
+    if (face === "RIGORE") {
+      return { ...next, phase: "penalty" };
+    }
+    return endHand(next, face === "GOAL!");
+  }
+
   return endHand(next, face === "GOAL!");
 }

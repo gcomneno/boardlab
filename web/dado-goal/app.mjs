@@ -73,7 +73,7 @@ import {
   describeMatchEvent,
   describeFinalWhistle
 } from "./commentary.mjs";
-import { DICE_ART } from "./dice-art.mjs";
+import { DICE_ART, PENALTY_DICE_ART } from "./dice-art.mjs";
 import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
 import { socialColors } from "./team-colors.mjs";
 
@@ -82,6 +82,7 @@ const phaseNames = {
   team: "teamDie",
   pink: "pinkDie",
   result: "finalDie",
+  penalty: "penaltyDie",
 };
 
 const phaseName = phase => translate(phaseNames[phase]);
@@ -100,6 +101,10 @@ const diceFaces = {
   result: [
     "Respinto!", "GOAL!", "FUORI!",
     "PALO/TRAVERSA", "RIGORE", "Parato!",
+  ],
+  penalty: [
+    "GOAL!", "GOAL!", "GOAL!",
+    "PALO/TRAVERSA", "PARATO/RESPINTO", "FUORI",
   ],
 };
 
@@ -120,6 +125,8 @@ const dieFaceMessageKeys = Object.freeze({
   "PALO/TRAVERSA": "faceWoodwork",
   "RIGORE": "facePenalty",
   "Parato!": "faceSaved",
+  "PARATO/RESPINTO": "facePenaltySaved",
+  "FUORI": "facePenaltyWide",
 });
 
 function displayDieFace(face) {
@@ -129,6 +136,7 @@ function displayDieFace(face) {
 }
 
 function diceKind(phase, player) {
+  if (phase === "penalty") return "penalty";
   return phase === "team"
     ? (player === 0 ? "yellow" : "blue")
     : phase === "pink" ? "pink" : "final";
@@ -170,7 +178,7 @@ function buildDie3d(phase, player) {
   const die = byId("die");
   die.classList.remove("kickoff-ball");
   const kind = diceKind(phase, player);
-  const art = DICE_ART[kind];
+  const art = kind === "penalty" ? PENALTY_DICE_ART : DICE_ART[kind];
 
   if (!Array.isArray(art) || art.length !== 6) {
     throw new RangeError("Invalid 3D die faces");
@@ -391,17 +399,24 @@ function render() {
   }
 
   byId("guide-pink").classList.toggle("active", state.phase === "pink");
-  byId("guide-result").classList.toggle("active", state.phase === "result");
+  byId("guide-result").classList.toggle(
+    "active",
+    state.phase === "result" || state.phase === "penalty",
+  );
 
   const [home, away] = matchStatistics(rollEvents);
   const metrics = [
     ["goals", "goals"],
+    ["possession", "possession"],
     ["shots", "shots"],
-    ["crosses", "crosses"],
-    ["passes", "passes"],
+    ["wide", "wide"],
+    ["blocked", "blocked"],
     ["saves", "saves"],
     ["woodwork", "woodwork"],
+    ["corners", "corners"],
+    ["freeKicks", "freeKicks"],
     ["penalties", "penalties"],
+    ["passes", "passes"],
   ];
   byId("match-stats").replaceChildren(
     ...metrics.map(([label, key]) => {
@@ -412,13 +427,17 @@ function render() {
       values.className = "stat-values";
 
       const left = document.createElement("strong");
-      left.textContent = String(home[key]);
+      left.textContent = key === "possession"
+        ? `${home[key]}%`
+        : String(home[key]);
 
       const name = document.createElement("span");
       name.textContent = translate(label);
 
       const right = document.createElement("strong");
-      right.textContent = String(away[key]);
+      right.textContent = key === "possession"
+        ? `${away[key]}%`
+        : String(away[key]);
 
       values.append(left, name, right);
 
@@ -1936,11 +1955,7 @@ async function roll() {
 
   await animateRoll(state.phase, player, face);
   const before = state;
-  const penaltyResolved =
-    phase === "result" &&
-    face !== "RIGORE" &&
-    rollEvents.at(-1)?.die === "result" &&
-    rollEvents.at(-1)?.face === "RIGORE";
+  const penaltyResolved = phase === "penalty";
   state = applyRoll(state, face);
   rollEvents.push({ seat: player, die: phase, face });
   lastRefereeEvent = null;
