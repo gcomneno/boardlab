@@ -2158,14 +2158,46 @@ function simulateTournamentFixture(fixture) {
   );
 
   try {
-    saveManagement(window.localStorage, nextManagement);
-    saveTournament(window.localStorage, nextTournament);
+    saveTournamentRecovery(window.localStorage, {
+      championshipId: tournamentState.championshipId,
+      fixtureId: fixture.fixtureId,
+      matchId: record.matchId,
+    });
   } catch {
+    // A background simulation must not start without durable recovery intent.
     return false;
   }
 
-  managementState = nextManagement;
-  tournamentState = nextTournament;
+  try {
+    saveManagement(window.localStorage, nextManagement);
+    managementState = nextManagement;
+    markGlobalSaveDirty();
+  } catch {
+    try {
+      clearTournamentRecovery(window.localStorage);
+    } catch {
+      // Reload discards a journal whose canonical match does not exist.
+    }
+    return false;
+  }
+
+  try {
+    saveTournament(window.localStorage, nextTournament);
+    tournamentState = nextTournament;
+  } catch {
+    // The canonical match is already durable. Advance only the in-memory
+    // tournament state so this fixture cannot be simulated twice before reload.
+    // Keep the journal: reload will persist the same association.
+    tournamentState = nextTournament;
+    return false;
+  }
+
+  try {
+    clearTournamentRecovery(window.localStorage);
+  } catch {
+    // Reload clears an already reconciled journal idempotently.
+  }
+
   return true;
 }
 

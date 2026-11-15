@@ -527,3 +527,144 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
     exportedDocument.persistent.management
   );
 });
+
+test("simulated tournament fixture recovers after tournament persistence failure", async ({ page }) => {
+  await page.goto(GAME_URL);
+
+  await page.locator("#competition").selectOption("40:2024");
+
+  const participants = page.locator("#tournament-participants");
+  const selected = await participants.locator("option").evaluateAll(options =>
+    options.slice(0, 4).map(option => option.value)
+  );
+
+  expect(selected).toHaveLength(4);
+
+  await participants.selectOption(selected);
+  await page.locator("#tournament-create").click();
+
+  const tournament = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("dado-goal.tournament.v1"))
+  );
+
+  const managedId = String(tournament.participants[0].providerTeamId);
+
+  await page.locator("#team-0").selectOption(managedId);
+  await page.locator("#manager-new-0").click();
+
+  const managerFixture = tournament.fixtures.find(fixture =>
+    fixture.matchId === null &&
+    (
+      String(fixture.homeProviderTeamId) === managedId ||
+      String(fixture.awayProviderTeamId) === managedId
+    )
+  );
+
+  expect(managerFixture).toBeTruthy();
+
+  await page.locator("#hands").fill("1");
+  await page.locator("#tournament-play-next").click();
+
+  await expect(page.locator("#roll")).toBeEnabled();
+
+  // Inject the failure before the final managed-match roll. When that roll
+  // completes the match, recordCompletedMatch() immediately simulates the
+  // remaining same-matchday fixture(s).
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    let tournamentSaveCount = 0;
+
+    Storage.prototype.setItem = function(key, value) {
+      if (key === "dado-goal.tournament.v1") {
+        tournamentSaveCount += 1;
+
+        // First save commits the interactively played Manager fixture.
+        // The second save belongs to the first same-matchday simulation.
+        if (tournamentSaveCount === 2) {
+          throw new DOMException(
+            "injected simulated tournament persistence failure",
+            "QuotaExceededError",
+          );
+        }
+      }
+
+      return original.call(this, key, value);
+    };
+  });
+
+  for (let roll = 0; roll < 100; roll += 1) {
+    const recovery = await page.evaluate(() =>
+      localStorage.getItem("dado-goal.tournament-recovery.v1")
+    );
+
+    if (recovery !== null) break;
+
+    await expect(page.locator("#roll")).toBeEnabled();
+    await page.locator("#roll").click();
+
+    await expect.poll(async () => {
+      const recovery = await page.evaluate(() =>
+        localStorage.getItem("dado-goal.tournament-recovery.v1")
+      );
+      const rollEnabled = await page.locator("#roll").isEnabled();
+
+      return recovery !== null || rollEnabled;
+    }).toBe(true);
+  }
+
+  const interrupted = await page.evaluate(() => ({
+    recovery: JSON.parse(
+      localStorage.getItem("dado-goal.tournament-recovery.v1")
+    ),
+    tournament: JSON.parse(
+      localStorage.getItem("dado-goal.tournament.v1")
+    ),
+    management: JSON.parse(
+      localStorage.getItem("dado-goal.team-management.v1")
+    ),
+  }));
+
+  expect(interrupted.recovery).toBeTruthy();
+
+  const interruptedFixture = interrupted.tournament.fixtures.find(
+    fixture => fixture.fixtureId === interrupted.recovery.fixtureId
+  );
+
+  expect(interruptedFixture).toBeTruthy();
+  expect(interruptedFixture.matchId).toBeNull();
+
+  expect(
+    interrupted.management.matches.filter(
+      match => match.matchId === interrupted.recovery.matchId
+    )
+  ).toHaveLength(1);
+
+  const matchCountBeforeReload = interrupted.management.matches.length;
+
+  await page.reload();
+
+  const recovered = await page.evaluate(() => ({
+    recovery: localStorage.getItem("dado-goal.tournament-recovery.v1"),
+    tournament: JSON.parse(
+      localStorage.getItem("dado-goal.tournament.v1")
+    ),
+    management: JSON.parse(
+      localStorage.getItem("dado-goal.team-management.v1")
+    ),
+  }));
+
+  expect(recovered.recovery).toBeNull();
+
+  const recoveredFixture = recovered.tournament.fixtures.find(
+    fixture => fixture.fixtureId === interrupted.recovery.fixtureId
+  );
+
+  expect(recoveredFixture.matchId).toBe(interrupted.recovery.matchId);
+  expect(recovered.management.matches).toHaveLength(matchCountBeforeReload);
+
+  expect(
+    recovered.management.matches.filter(
+      match => match.matchId === interrupted.recovery.matchId
+    )
+  ).toHaveLength(1);
+});
