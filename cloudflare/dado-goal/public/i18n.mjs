@@ -389,7 +389,6 @@ const bindings = Object.freeze([
   [".stat-header > strong:nth-child(2)", "metric"],
   ['[data-i18n="color"]', "color"],
   ['[data-i18n="handsPerTeam"]', "handsPerTeam"],
-  ['[data-i18n="randomHands"]', "randomHands"],
   ["#guide-pink", "pinkGuide"],
   ["#guide-result", "finalGuide"],
   ["details.panel > summary", "rulesHeading"],
@@ -421,6 +420,10 @@ export function applyLocale() {
     const elements = document.querySelectorAll(selector);
     if (!elements.length) throw new Error(`Missing i18n target: ${selector}`);
     for (const element of elements) element.textContent = translate(key);
+  }
+
+  for (const element of document.querySelectorAll('[data-i18n="randomHands"]')) {
+    element.textContent = translate("randomHands");
   }
 
   for (const [selector, key] of [
