@@ -1090,3 +1090,22 @@ add_test(NAME rmc-match-cli-integration
         -DWORK=${CMAKE_CURRENT_BINARY_DIR}/match-cli-integration
         -P ${CMAKE_CURRENT_SOURCE_DIR}/test_match_cli_integration.cmake)
 set_tests_properties(rmc-match-cli-integration PROPERTIES TIMEOUT 120)
+
+# M001-SBL-A — Read-only measurement over production flow and selectors.
+add_executable(rmc-sporting-balance sporting_balance.c)
+target_link_libraries(rmc-sporting-balance PRIVATE rmc-match-flow-selector rmc-career)
+rmc_warnings(rmc-sporting-balance)
+
+# Same translation unit, isolated reducer/oracle and resource-prefix checks.
+# No test switches or failure injection are exposed by the public executable.
+add_executable(rmc-sporting-balance-selfcheck sporting_balance.c)
+target_compile_definitions(rmc-sporting-balance-selfcheck PRIVATE RMC_SBL_SELF_CHECK)
+target_link_libraries(rmc-sporting-balance-selfcheck PRIVATE rmc-match-flow-selector rmc-career)
+rmc_warnings(rmc-sporting-balance-selfcheck)
+add_test(NAME rmc-sporting-balance-smoke
+    COMMAND ${CMAKE_COMMAND}
+        -DLAB=$<TARGET_FILE:rmc-sporting-balance>
+        -DCHECK=$<TARGET_FILE:rmc-sporting-balance-selfcheck>
+        -DWORK=${CMAKE_CURRENT_BINARY_DIR}/sporting-balance-smoke
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/test_sporting_balance.cmake)
+set_tests_properties(rmc-sporting-balance-smoke PROPERTIES TIMEOUT 120)
