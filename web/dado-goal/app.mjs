@@ -525,6 +525,7 @@ function render() {
   // Match configuration is immutable from kick-off to the final whistle.
   byId("competition").disabled = playing;
   byId("hands").disabled = playing;
+  byId("random-hands").disabled = playing;
 
   for (const seat of [0, 1]) {
     byId(`team-${seat}`).disabled = playing;
@@ -1261,6 +1262,7 @@ function globalSaveDocument() {
     configuration: {
       competition: byId("competition").value,
       hands: byId("hands").value,
+      randomHands: byId("random-hands").checked,
       teams: [0, 1].map(seat => byId(`team-${seat}`).value),
       colors: [0, 1].map(seat => ({
         primary: byId(`color-${seat}`).value,
@@ -1454,6 +1456,7 @@ function restoreGlobalRuntime(validated) {
   renderCatalogueTeams();
 
   restoreControlValue("hands", configuration.hands);
+  byId("random-hands").checked = Boolean(configuration.randomHands);
 
   for (const seat of [0, 1]) {
     const teamId = configuration.teams[seat];
@@ -2134,7 +2137,13 @@ function simulateTournamentFixture(fixture) {
     return false;
   }
 
-  const simulated = simulateMatch({ handsPerTeam });
+  const simulatedHandsPerTeam = byId("random-hands").checked
+    ? 1 + Math.floor(Math.random() * handsPerTeam)
+    : handsPerTeam;
+
+  const simulated = simulateMatch({
+    handsPerTeam: simulatedHandsPerTeam,
+  });
   const record = createMatchRecord({
     matchId: crypto.randomUUID(),
     playedAt: new Date().toISOString(),
@@ -2449,6 +2458,10 @@ function start(activate = true) {
     return;
   }
 
+  const handsPerTeam = byId("random-hands").checked
+    ? 1 + Math.floor(Math.random() * n)
+    : n;
+
   const selectedTeamIds = [0, 1].map(
     (i) => byId(`team-${i}`).value
   );
@@ -2517,7 +2530,7 @@ function start(activate = true) {
     teamPalettes[seat] = candidatePalettes[seat];
   }
 
-  state = newMatch(n);
+  state = newMatch(handsPerTeam);
   matchStarted = activate;
   autoRunning = false;
   isRolling = false;

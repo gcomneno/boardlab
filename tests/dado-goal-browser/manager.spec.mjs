@@ -433,6 +433,8 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
   await page.locator("#team-0").selectOption(selected[0]);
   await page.locator("#manager-new-0").click();
 
+  await page.locator("#random-hands").check();
+
   const before = await page.evaluate(() => ({
     tournament: JSON.parse(
       localStorage.getItem("dado-goal.tournament.v1")
@@ -469,6 +471,7 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
 
   const exportedDocument = JSON.parse(exported.source);
   expect(exportedDocument.schemaVersion).toBe(1);
+  expect(exportedDocument.configuration.randomHands).toBe(true);
   expect(exportedDocument.persistent.tournament).toBeTruthy();
   expect(exportedDocument.persistent.manager).toBeTruthy();
 
@@ -508,6 +511,7 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
     .toHaveText("Salvataggio caricato.");
   await expect(page.locator("#tournament-dashboard")).toBeVisible();
   await expect(page.locator("#manager-toggle")).toBeEnabled();
+  await expect(page.locator("#random-hands")).toBeChecked();
 
   const after = await page.evaluate(() => ({
     tournament: JSON.parse(

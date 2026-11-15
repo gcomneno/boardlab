@@ -92,3 +92,33 @@ test("single-player rejects catalogue team versus local placeholder", async ({ p
     "scegli due squadre del catalogo oppure due squadre locali"
   );
 });
+
+test("random rolls choose a bounded per-match value while fixed mode stays exact", async ({ page }) => {
+  await page.goto(GAME_URL);
+
+  await page.locator("#hands").fill("6");
+
+  await page.locator("#random-hands").uncheck();
+  await page.locator("#new").click();
+
+  const fixedHands = await page.evaluate(() =>
+    Number(document.querySelector("#hands-0").textContent.match(/\/\s*(\d+)/)?.[1])
+  );
+
+  expect(fixedHands).toBe(6);
+
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator("#new").click();
+
+  await expect(page.locator("#random-hands")).toBeEnabled();
+  await page.locator("#random-hands").check();
+  await page.locator("#new").click();
+
+  const randomHands = await page.evaluate(() =>
+    Number(document.querySelector("#hands-0").textContent.match(/\/\s*(\d+)/)?.[1])
+  );
+
+  expect(Number.isSafeInteger(randomHands)).toBe(true);
+  expect(randomHands).toBeGreaterThanOrEqual(1);
+  expect(randomHands).toBeLessThanOrEqual(6);
+});
