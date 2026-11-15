@@ -266,7 +266,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "489",
-      "name": "AC Milan",
+      "name": "Milan",
       "competitionId": "135",
       "season": "2024",
       "players": [
@@ -1750,7 +1750,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "497",
-      "name": "AS Roma",
+      "name": "Roma",
       "competitionId": "135",
       "season": "2024",
       "players": [

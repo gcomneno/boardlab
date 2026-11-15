@@ -4,38 +4,6 @@ const GAME_URL = "http://127.0.0.1:4173/web/dado-goal/";
 const MANAGER_KEY = "dado-goal.manager.v1";
 const SHARED_KEY = "dado-goal.team-management.v1";
 
-test("Manager cannot be enabled before Squadra 1 is selected", async ({ page }) => {
-  await page.goto(GAME_URL);
-
-  await expect.poll(async () =>
-    page.locator("#team-0 option").count()
-  ).toBeGreaterThan(1);
-
-  const toggle = page.locator("#manager-enabled");
-  const team0 = page.locator("#team-0");
-
-  await expect(team0).toHaveValue("");
-  await expect(toggle).toBeDisabled();
-  await expect(toggle).not.toBeChecked();
-
-  const firstClub = await team0.locator("option").nth(1).getAttribute("value");
-  expect(firstClub).toBeTruthy();
-
-  await team0.selectOption(firstClub);
-
-  await expect(toggle).toBeEnabled();
-  await toggle.check();
-
-  await expect(toggle).toBeChecked();
-  await expect(page.locator("#manager-dashboard")).toBeVisible();
-
-  const storedManager = await page.evaluate(() =>
-    localStorage.getItem("dado-goal.manager.v1")
-  );
-
-  expect(storedManager).toBeTruthy();
-});
-
 test("Manager persists an isolated catalogue-backed squad and launches normal play", async ({ page }) => {
   const runtimeErrors = [];
   page.on("pageerror", error => runtimeErrors.push(error.message));
@@ -60,8 +28,7 @@ test("Manager persists an isolated catalogue-backed squad and launches normal pl
   await page.locator("#team-0").selectOption(team0);
   await page.locator("#team-1").selectOption(team1);
 
-  await expect(page.locator("#manager-enabled")).not.toBeChecked();
-  await page.locator("#manager-enabled").check();
+  await page.locator("#manager-new-0").click();
 
   await expect(page.locator("#manager-dashboard")).toBeVisible();
   await expect(page.locator("#manager-club-name")).not.toHaveText("");
@@ -117,159 +84,155 @@ test("Manager persists an isolated catalogue-backed squad and launches normal pl
   expect(restored.club.lineup).toEqual(managerDocument.club.lineup);
   expect(restored.club.bench).toEqual(managerDocument.club.bench);
 
-  await expect(page.locator("#manager-enabled")).not.toBeChecked();
-
   expect(runtimeErrors).toEqual([]);
 });
 
-test("Manager prepares and launches the next match through the normal engine", async ({ page }) => {
+test("Manager launches its next canonical tournament fixture", async ({ page }) => {
   const runtimeErrors = [];
   page.on("pageerror", error => runtimeErrors.push(error.message));
 
   await page.goto(GAME_URL);
 
-  await expect.poll(async () =>
-    page.locator("#team-0 option").count()
-  ).toBeGreaterThan(2);
+  await page.locator("#competition").selectOption("40:2024");
 
-  const managedId = await page.locator("#team-0 option")
-    .nth(1)
-    .getAttribute("value");
+  const participants = page.locator("#tournament-participants");
+  await expect(participants).toBeEnabled();
 
-  expect(managedId).toBeTruthy();
+  const selected = await participants.locator("option").evaluateAll(options =>
+    options.slice(0, 4).map(option => option.value)
+  );
+
+  expect(selected).toHaveLength(4);
+
+  await participants.selectOption(selected);
+  await page.locator("#tournament-create").click();
+
+  const tournament = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("dado-goal.tournament.v1"))
+  );
+
+  expect(tournament).toBeTruthy();
+  expect(tournament.participants).toHaveLength(4);
+
+  const managedId = String(tournament.participants[0].providerTeamId);
 
   await page.locator("#team-0").selectOption(managedId);
-  await page.locator("#manager-enabled").check();
+  await page.locator("#manager-new-0").click();
 
   await expect(page.locator("#manager-dashboard")).toBeVisible();
-  await expect.poll(async () =>
-    page.locator("#manager-opponent option").count()
-  ).toBeGreaterThan(1);
 
-  const opponentOptions = page.locator(
-    "#manager-opponent option:not([value=''])"
+  const expectedFixture = tournament.fixtures.find(fixture =>
+    fixture.matchId === null &&
+    (
+      String(fixture.homeProviderTeamId) === managedId ||
+      String(fixture.awayProviderTeamId) === managedId
+    )
   );
-  const opponentCount = await opponentOptions.count();
 
-  let opponentId = null;
-  for (let index = 0; index < opponentCount; index += 1) {
-    const value = await opponentOptions.nth(index).getAttribute("value");
-    if (value && value !== managedId) {
-      opponentId = value;
-      break;
-    }
-  }
+  expect(expectedFixture).toBeTruthy();
 
-  expect(opponentId).toBeTruthy();
+  const expectedFixtureIndex = tournament.fixtures.findIndex(
+    fixture => fixture.fixtureId === expectedFixture.fixtureId
+  );
+  const precedingFixtures = tournament.fixtures.slice(0, expectedFixtureIndex);
 
-  await page.locator("#manager-opponent").selectOption(opponentId);
+  expect(precedingFixtures.every(fixture =>
+    String(fixture.homeProviderTeamId) !== managedId &&
+    String(fixture.awayProviderTeamId) !== managedId
+  )).toBe(true);
 
-  await expect(page.locator("#manager-play-next")).toBeEnabled();
-  await expect(page.locator("#manager-next-action"))
-    .toHaveText("Gioca la prossima partita");
-
-  const prepared = await page.evaluate(key =>
-    JSON.parse(localStorage.getItem(key)),
-  MANAGER_KEY);
-
-  expect(prepared.nextMatch).toEqual({
-    opponentProviderTeamId: opponentId,
-  });
-  expect(prepared.club.providerTeamId).toBe(managedId);
-  expect(prepared.club.lineup).toHaveLength(11);
+  await expect(page.locator("#tournament-play-next")).toBeEnabled();
 
   await page.locator("#hands").fill("1");
-  await page.locator("#manager-play-next").click();
+  await page.locator("#tournament-play-next").click();
 
-  await expect(page.locator("#team-0")).toHaveValue(managedId);
-  await expect(page.locator("#team-1")).toHaveValue(opponentId);
+  await expect(page.locator("#team-0")).toHaveValue(
+    String(expectedFixture.homeProviderTeamId)
+  );
+  await expect(page.locator("#team-1")).toHaveValue(
+    String(expectedFixture.awayProviderTeamId)
+  );
+
   await expect(page.locator("#roll")).toBeEnabled();
+  await expect(page.locator("#tournament-play-next")).toBeDisabled();
 
-  const persistedAfterLaunch = await page.evaluate(key =>
-    JSON.parse(localStorage.getItem(key)),
-  MANAGER_KEY);
+  const routed = await page.evaluate(() => ({
+    tournament: JSON.parse(
+      localStorage.getItem("dado-goal.tournament.v1")
+    ),
+    management: JSON.parse(
+      localStorage.getItem("dado-goal.team-management.v1")
+    ),
+  }));
 
-  expect(persistedAfterLaunch.nextMatch).toEqual({
-    opponentProviderTeamId: opponentId,
-  });
+  const simulatedFixtures = routed.tournament.fixtures.slice(
+    0, expectedFixtureIndex
+  );
+
+  expect(simulatedFixtures.every(fixture => fixture.matchId !== null)).toBe(true);
+  expect(
+    routed.tournament.fixtures[expectedFixtureIndex].matchId
+  ).toBeNull();
+
+  for (const fixture of simulatedFixtures) {
+    expect(
+      routed.management.matches.some(
+        match => match.matchId === fixture.matchId
+      )
+    ).toBe(true);
+  }
 
   await page.reload();
 
-  const restored = await page.evaluate(key =>
-    JSON.parse(localStorage.getItem(key)),
-  MANAGER_KEY);
+  await expect(page.locator("#manager-body")).toBeHidden();
+  await expect(page.locator("#manager-toggle")).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
+  await page.locator("#manager-toggle").click();
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
 
-  expect(restored.nextMatch).toEqual({
-    opponentProviderTeamId: opponentId,
-  });
+  const restored = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("dado-goal.tournament.v1"))
+  );
 
-  await page.locator("#manager-enabled").check();
-
-  await expect(page.locator("#manager-opponent")).toHaveValue(opponentId);
-  await expect(page.locator("#manager-play-next")).toBeEnabled();
+  expect(
+    restored.fixtures.slice(0, expectedFixtureIndex)
+      .every(fixture => fixture.matchId !== null)
+  ).toBe(true);
+  expect(restored.fixtures[expectedFixtureIndex].matchId).toBeNull();
 
   expect(runtimeErrors).toEqual([]);
 });
 
-test("Manager can start a new career with another club", async ({ page }) => {
+test("Manager can start a career from Squadra 2", async ({ page }) => {
   await page.goto(GAME_URL);
 
-  const team0 = page.locator("#team-0");
   const team1 = page.locator("#team-1");
-  const managerNew = page.locator("#manager-new-0");
+  const managerNew1 = page.locator("#manager-new-1");
 
-  await expect(managerNew).toBeDisabled();
+  await expect.poll(async () =>
+    team1.locator("option").count()
+  ).toBeGreaterThan(1);
 
-  const available = await team0.locator("option").evaluateAll(options =>
-    options.map(option => option.value).filter(Boolean)
-  );
+  const clubId = await team1.locator("option").nth(1).getAttribute("value");
+  expect(clubId).toBeTruthy();
 
-  expect(available.length).toBeGreaterThanOrEqual(2);
+  await team1.selectOption(clubId);
+  await expect(managerNew1).toBeEnabled();
 
-  const firstClub = available[0];
-  const secondClub = available[1];
+  await managerNew1.click();
 
-  await team0.selectOption(firstClub);
-  await expect(managerNew).toBeEnabled();
-
-  const quickMatchTeam1Before = await team1.inputValue();
-  const competitionBefore = await page.locator("#competition").inputValue();
-
-  await managerNew.click();
-
-  await expect(page.locator("#manager-enabled")).toBeChecked();
   await expect(page.locator("#manager-dashboard")).toBeVisible();
-  await expect(team0).toHaveValue(firstClub);
-  await expect(team1).toHaveValue(quickMatchTeam1Before);
-  await expect(page.locator("#competition")).toHaveValue(competitionBefore);
+  await expect(page.locator("#manager-new-0")).toBeHidden();
+  await expect(page.locator("#manager-new-1")).toBeHidden();
 
-  const firstStoredClub = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem("dado-goal.manager.v1"))
-      .club.providerTeamId
-  );
-  expect(String(firstStoredClub)).toBe(String(firstClub));
-
-  await expect(managerNew).toBeHidden();
-
-  await page.locator("#manager-enabled").uncheck();
-  await expect(managerNew).toBeVisible();
-
-  await team0.selectOption(secondClub);
-  await expect(managerNew).toBeEnabled();
-  await managerNew.click();
-
-  await expect(page.locator("#manager-enabled")).toBeChecked();
-  await expect(page.locator("#manager-dashboard")).toBeVisible();
-
-  const secondStoredClub = await page.evaluate(() =>
+  const storedClub = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("dado-goal.manager.v1"))
       .club.providerTeamId
   );
 
-  expect(String(secondStoredClub)).toBe(String(secondClub));
-  expect(String(secondStoredClub)).not.toBe(String(firstStoredClub));
-  await expect(team1).toHaveValue(quickMatchTeam1Before);
-  await expect(page.locator("#competition")).toHaveValue(competitionBefore);
+  expect(String(storedClub)).toBe(String(clubId));
 });
 
 test("Manager derives career summary and recent results from persisted history", async ({ page }) => {
@@ -295,7 +258,7 @@ test("Manager derives career summary and recent results from persisted history",
   expect(managedId).not.toBe(opponentId);
 
   await page.locator("#team-0").selectOption(managedId);
-  await page.locator("#manager-enabled").check();
+  await page.locator("#manager-new-0").click();
 
   await expect(page.locator("#manager-dashboard")).toBeVisible();
 
@@ -345,7 +308,13 @@ test("Manager derives career summary and recent results from persisted history",
   });
 
   await page.reload();
-  await page.locator("#manager-enabled").check();
+  await expect(page.locator("#manager-body")).toBeHidden();
+  await expect(page.locator("#manager-toggle")).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
+  await page.locator("#manager-toggle").click();
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
 
   await expect(page.locator("#manager-career-played")).toHaveText("4");
   await expect(page.locator("#manager-career-won")).toHaveText("2");
@@ -364,4 +333,197 @@ test("Manager derives career summary and recent results from persisted history",
 
   expect(persisted.management.matches).toHaveLength(4);
   expect(runtimeErrors).toEqual([]);
+});
+
+test("ending Manager career preserves the current tournament", async ({ page }) => {
+  await page.goto(GAME_URL);
+
+  await page.locator("#competition").selectOption("40:2024");
+
+  const participants = page.locator("#tournament-participants");
+  const selected = await participants.locator("option").evaluateAll(options =>
+    options.slice(0, 4).map(option => option.value)
+  );
+
+  await participants.selectOption(selected);
+  await page.locator("#tournament-create").click();
+
+  const managedId = selected[0];
+  await page.locator("#team-0").selectOption(managedId);
+  await page.locator("#manager-new-0").click();
+
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
+  await expect(page.locator("#tournament-dashboard")).toBeVisible();
+
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator("#manager-close").click();
+
+  await expect(page.locator("#manager-dashboard")).toBeHidden();
+  await expect(page.locator("#tournament-dashboard")).toBeVisible();
+
+  const persisted = await page.evaluate(() => ({
+    manager: localStorage.getItem("dado-goal.manager.v1"),
+    tournament: localStorage.getItem("dado-goal.tournament.v1"),
+  }));
+
+  expect(persisted.manager).toBeNull();
+  expect(persisted.tournament).not.toBeNull();
+});
+
+test("abandoning tournament preserves the Manager career", async ({ page }) => {
+  await page.goto(GAME_URL);
+
+  await page.locator("#competition").selectOption("40:2024");
+
+  const participants = page.locator("#tournament-participants");
+  const selected = await participants.locator("option").evaluateAll(options =>
+    options.slice(0, 4).map(option => option.value)
+  );
+
+  await participants.selectOption(selected);
+  await page.locator("#tournament-create").click();
+
+  await page.locator("#team-0").selectOption(selected[0]);
+  await page.locator("#manager-new-0").click();
+
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
+  await expect(page.locator("#tournament-dashboard")).toBeVisible();
+
+  const dialogHandled = new Promise(resolve => {
+    page.once("dialog", async dialog => {
+      await dialog.accept();
+      resolve();
+    });
+  });
+
+  await page.locator("#tournament-close").click();
+  await dialogHandled;
+
+  await expect(page.locator("#tournament-dashboard")).toBeHidden();
+  await expect(page.locator("#tournament-setup")).toBeVisible();
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
+
+  const persisted = await page.evaluate(() => ({
+    manager: localStorage.getItem("dado-goal.manager.v1"),
+    tournament: localStorage.getItem("dado-goal.tournament.v1"),
+    recovery: localStorage.getItem("dado-goal.tournament-recovery.v1"),
+  }));
+
+  expect(persisted.manager).not.toBeNull();
+  expect(persisted.tournament).toBeNull();
+  expect(persisted.recovery).toBeNull();
+});
+
+
+test("Global save restores tournament and Manager together", async ({ page }) => {
+  await page.goto(GAME_URL);
+
+  await page.locator("#competition").selectOption("40:2024");
+
+  const participants = page.locator("#tournament-participants");
+  const selected = await participants.locator("option").evaluateAll(
+    options => options.slice(0, 4).map(option => option.value)
+  );
+
+  expect(selected).toHaveLength(4);
+
+  await participants.selectOption(selected);
+  await page.locator("#tournament-create").click();
+
+  await page.locator("#team-0").selectOption(selected[0]);
+  await page.locator("#manager-new-0").click();
+
+  const before = await page.evaluate(() => ({
+    tournament: JSON.parse(
+      localStorage.getItem("dado-goal.tournament.v1")
+    ),
+    manager: JSON.parse(
+      localStorage.getItem("dado-goal.manager.v1")
+    ),
+    management: JSON.parse(
+      localStorage.getItem("dado-goal.team-management.v1")
+    ),
+  }));
+
+  await page.evaluate(() => {
+    window.__dadoGoalSaveBlob = null;
+
+    URL.createObjectURL = blob => {
+      window.__dadoGoalSaveBlob = blob;
+      return "blob:dado-goal-test";
+    };
+
+    HTMLAnchorElement.prototype.click = function () {
+      window.__dadoGoalSaveFilename = this.download;
+    };
+  });
+
+  await page.locator("#game-export").click();
+
+  const exported = await page.evaluate(async () => ({
+    filename: window.__dadoGoalSaveFilename,
+    source: await window.__dadoGoalSaveBlob.text(),
+  }));
+
+  expect(exported.filename).toBe("dado-goal-save-v1.json");
+
+  const exportedDocument = JSON.parse(exported.source);
+  expect(exportedDocument.schemaVersion).toBe(1);
+  expect(exportedDocument.persistent.tournament).toBeTruthy();
+  expect(exportedDocument.persistent.manager).toBeTruthy();
+
+  await page.evaluate(() => {
+    for (const key of [
+      "dado-goal.tournament.v1",
+      "dado-goal.tournament-recovery.v1",
+      "dado-goal.manager.v1",
+      "dado-goal.team-management.v1",
+    ]) {
+      localStorage.removeItem(key);
+    }
+  });
+
+  await page.reload();
+
+  await expect(page.locator("#tournament-dashboard")).toBeHidden();
+  await expect(page.locator("#manager-toggle")).toBeDisabled();
+
+  let importAlert = null;
+  page.once("dialog", async dialog => {
+    importAlert = dialog.message();
+    await dialog.accept();
+  });
+
+  await page.locator("#game-import-file").setInputFiles({
+    name: "dado-goal-save-v1.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(exported.source),
+  });
+
+  await page.waitForTimeout(250);
+
+  expect(importAlert).toBeNull();
+
+  await expect(page.locator("#game-save-status"))
+    .toHaveText("Salvataggio caricato.");
+  await expect(page.locator("#tournament-dashboard")).toBeVisible();
+  await expect(page.locator("#manager-toggle")).toBeEnabled();
+
+  const after = await page.evaluate(() => ({
+    tournament: JSON.parse(
+      localStorage.getItem("dado-goal.tournament.v1")
+    ),
+    manager: JSON.parse(
+      localStorage.getItem("dado-goal.manager.v1")
+    ),
+    management: JSON.parse(
+      localStorage.getItem("dado-goal.team-management.v1")
+    ),
+  }));
+
+  expect(after.tournament).toEqual(before.tournament);
+  expect(after.manager).toEqual(before.manager);
+  expect(after.management).toEqual(
+    exportedDocument.persistent.management
+  );
 });

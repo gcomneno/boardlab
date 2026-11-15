@@ -73,6 +73,18 @@ test("multiplayer authoritative host/join browser smoke", async ({ browser }) =>
     await expect(guest.locator("#stats-team-0")).toBeAttached();
     await expect(guest.locator("#stats-team-1")).toBeAttached();
 
+    // Chromium may throttle timers for a background page. Returning the
+    // host page to the foreground must trigger the immediate snapshot
+    // refresh installed by multiplayer-play.mjs.
+    await host.bringToFront();
+
+    // Headless Chromium does not reliably emit a real window focus event
+    // for bringToFront(). Exercise the production focus-refresh hook
+    // explicitly so this smoke verifies the host resynchronization path.
+    await host.evaluate(() => {
+      window.dispatchEvent(new Event("focus"));
+    });
+
     await expect(host.locator("#roll")).toBeEnabled();
     await expect(guest.locator("#roll")).toBeDisabled();
 

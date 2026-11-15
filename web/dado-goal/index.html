@@ -17,185 +17,35 @@
       <p>Quattro dadi. Due squadre. Un solo obiettivo: GOAL!</p>
     </header>
 
-    <section id="manager-panel" class="panel manager-panel"
-             aria-labelledby="manager-title">
-      <div class="manager-heading">
+    <section class="panel game-save-panel"
+             aria-labelledby="game-save-title">
+      <div class="game-save-heading">
         <div>
-          <p class="manager-kicker">Dado Goal!</p>
-          <h2 id="manager-title">Manager</h2>
-        </div>
-        <label class="manager-mode-toggle">
-          <input id="manager-enabled" type="checkbox">
-          <span>Modalità Manager</span>
-        </label>
-      </div>
-
-      <div id="manager-empty" class="manager-empty">
-        <p>
-          Attiva la modalità Manager e scegli una squadra reale
-          per iniziare una carriera d'allenatore.
-        </p>
-      </div>
-
-      <div id="manager-dashboard" hidden>
-        <div class="manager-summary">
-          <div>
-            <span class="manager-label">Club</span>
-            <strong id="manager-club-name">—</strong>
-          </div>
-          <div>
-            <span class="manager-label">Partite registrate</span>
-            <strong id="manager-match-count">0</strong>
-          </div>
-          <div>
-            <span class="manager-label">Prossima azione</span>
-            <strong id="manager-next-action">Configura la formazione</strong>
-          </div>
-        </div>
-
-        <div class="manager-next-match">
-          <div>
-            <label class="manager-label" for="manager-opponent">
-              Prossimo avversario
-            </label>
-            <select id="manager-opponent">
-              <option value="">Scegli un avversario</option>
-            </select>
-          </div>
-          <button id="manager-play-next" type="button" disabled>
-            Gioca prossima partita
-          </button>
-        </div>
-
-        <div class="manager-roster-grid">
-          <section aria-labelledby="manager-lineup-title">
-            <h3 id="manager-lineup-title">XI titolare</h3>
-            <ol id="manager-lineup" class="manager-player-list"></ol>
-          </section>
-
-          <section aria-labelledby="manager-bench-title">
-            <h3 id="manager-bench-title">Panchina</h3>
-            <ol id="manager-bench" class="manager-player-list"></ol>
-          </section>
-        </div>
-
-        <section class="manager-career-summary"
-                 aria-label="Riepilogo carriera">
-          <dl>
-            <div>
-              <dt id="manager-career-played-label">Giocate</dt>
-              <dd id="manager-career-played">0</dd>
-            </div>
-            <div>
-              <dt id="manager-career-won-label">Vinte</dt>
-              <dd id="manager-career-won">0</dd>
-            </div>
-            <div>
-              <dt id="manager-career-drawn-label">Pareggiate</dt>
-              <dd id="manager-career-drawn">0</dd>
-            </div>
-            <div>
-              <dt id="manager-career-lost-label">Perse</dt>
-              <dd id="manager-career-lost">0</dd>
-            </div>
-            <div>
-              <dt id="manager-career-goalsFor-label">Gol fatti</dt>
-              <dd id="manager-career-goalsFor">0</dd>
-            </div>
-            <div>
-              <dt id="manager-career-goalsAgainst-label">Gol subiti</dt>
-              <dd id="manager-career-goalsAgainst">0</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section class="manager-history" aria-labelledby="manager-history-title">
-          <h3 id="manager-history-title">Risultati recenti</h3>
-          <ol id="manager-history" class="manager-history-list"></ol>
-        </section>
-
-        <div class="manager-actions">
-          <button id="manager-edit" type="button">
-            ✎ Modifica formazione
-          </button>
-          <button id="manager-export" type="button">
-            ↓ Esporta salvataggio
-          </button>
-          <button id="manager-import" type="button">
-            ↑ Importa salvataggio
-          </button>
-          <input id="manager-import-file" type="file"
-                 accept="application/json,.json" hidden>
+          <p class="manager-kicker">Dati</p>
+          <h2 id="game-save-title">Salvataggio Dado Goal</h2>
         </div>
       </div>
-    </section>
-
-    <section id="tournament-panel" class="panel tournament-panel"
-             aria-labelledby="tournament-title">
-      <div class="tournament-heading">
-        <div>
-          <p class="manager-kicker">Dado Goal!</p>
-          <h2 id="tournament-title">Torneo</h2>
-        </div>
-      </div>
-
-      <div class="locale-setting">
-        <select id="competition"
-                name="competition"
-                aria-label="Campionato"></select>
-      </div>
-
-      <div id="tournament-setup">
-        <label for="tournament-participants">Partecipanti</label>
-        <select id="tournament-participants" multiple size="8"></select>
-        <p id="tournament-error" class="tournament-error"
-           role="status"></p>
-        <button id="tournament-create" type="button">
-          Crea torneo
+      <p class="game-save-description">
+        Salva o ripristina torneo, carriera Manager, storico,
+        configurazione e partita single-player in corso.
+      </p>
+      <div class="game-save-actions">
+        <button id="game-export" type="button" disabled>
+          ↓ Salva tutto
         </button>
+        <button id="game-import" type="button">
+          ↑ Carica salvataggio
+        </button>
+        <input id="game-import-file" type="file"
+               accept="application/json,.json" hidden>
       </div>
-
-      <div id="tournament-dashboard" hidden>
-        <div class="tournament-summary">
-          <span>Partite giocate:
-            <strong id="tournament-progress">0 / 0</strong>
-          </span>
-          <strong id="tournament-status">—</strong>
-          <span id="tournament-next">—</span>
-          <button id="tournament-play-next" type="button">
-            Gioca prossima partita
-          </button>
-        </div>
-
-        <div class="tournament-matchday">
-          <section aria-labelledby="tournament-results-title">
-            <h3 id="tournament-results-title">Risultati giornata</h3>
-            <p id="tournament-results-empty">Nessun risultato.</p>
-            <ul id="tournament-results"></ul>
-          </section>
-          <section aria-labelledby="tournament-pending-title">
-            <h3 id="tournament-pending-title">Partite da giocare</h3>
-            <p id="tournament-pending-empty">Nessuna partita pendente.</p>
-            <ul id="tournament-pending"></ul>
-          </section>
-        </div>
-
-        <div class="tournament-table-wrap">
-          <table class="tournament-table">
-            <thead>
-              <tr>
-                <th>#</th><th>Squadra</th><th>G</th><th>V</th>
-                <th>N</th><th>P</th><th>GF</th><th>GS</th>
-                <th>DR</th><th>Pt</th>
-              </tr>
-            </thead>
-            <tbody id="tournament-standings"></tbody>
-          </table>
-        </div>
-      </div>
+      <p id="game-save-status"
+         class="game-save-status"
+         aria-live="polite"></p>
     </section>
 
-    <section class="panel settings" aria-label="Impostazioni partita">
+    <section class="panel settings friendly-panel"
+             aria-label="Amichevole">
       <label for="language" class="locale-setting">
         <span data-i18n="language">Lingua</span>
         <select id="language" name="language">
@@ -274,7 +124,7 @@
 
 
       <div class="match-actions">
-        <button id="new" type="button">Nuova partita</button>
+        <button id="new" type="button">Gioca amichevole</button>
         <button id="reset-local-data" type="button">
           Azzera dati
         </button>
@@ -285,18 +135,196 @@
       </div>
     </section>
 
+    <section id="tournament-panel" class="panel tournament-panel"
+             aria-labelledby="tournament-title">
+      <div class="tournament-heading">
+        <div>
+          <p class="manager-kicker">Dado Goal!</p>
+          <h2 id="tournament-title">Torneo</h2>
+        </div>
+        <button id="tournament-toggle"
+                class="tournament-toggle"
+                type="button"
+                aria-controls="tournament-body"
+                aria-expanded="true">
+          Nascondi torneo
+        </button>
+      </div>
+
+      <div id="tournament-body">
+      <div class="locale-setting">
+        <select id="competition"
+                name="competition"
+                aria-label="Competizione torneo"></select>
+      </div>
+
+      <div id="tournament-setup">
+        <label for="tournament-participants">Partecipanti</label>
+        <select id="tournament-participants" multiple size="8"></select>
+        <p id="tournament-error" class="tournament-error"
+           role="status"></p>
+        <button id="tournament-create" type="button">
+          Crea torneo
+        </button>
+      </div>
+
+      <div id="tournament-dashboard" hidden>
+        <div class="tournament-summary">
+          <span>Partite giocate:
+            <strong id="tournament-progress">0 / 0</strong>
+          </span>
+          <strong id="tournament-status">—</strong>
+          <span id="tournament-next">—</span>
+          <button id="tournament-play-next" type="button">
+            Gioca partita del torneo
+          </button>
+          <button id="tournament-close" type="button">
+            Abbandona torneo
+          </button>
+        </div>
+
+        <div class="tournament-matchday-nav"
+             aria-label="Navigazione giornate">
+          <button id="tournament-matchday-prev"
+                  type="button"
+                  aria-label="Giornata precedente">◀</button>
+          <strong id="tournament-matchday-label">
+            Giornata 1
+          </strong>
+          <button id="tournament-matchday-next"
+                  type="button"
+                  aria-label="Giornata successiva">▶</button>
+        </div>
+
+        <div class="tournament-matchday">
+          <section aria-labelledby="tournament-results-title">
+            <h3 id="tournament-results-title">Risultati giornata</h3>
+            <p id="tournament-results-empty">Nessun risultato.</p>
+            <ul id="tournament-results"></ul>
+          </section>
+
+          <section aria-labelledby="tournament-pending-title">
+            <h3 id="tournament-pending-title">Partite da giocare</h3>
+            <p id="tournament-pending-empty">Nessuna partita pendente.</p>
+            <ul id="tournament-pending"></ul>
+          </section>
+        </div>
+
+        <div class="tournament-table-wrap">
+          <table class="tournament-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Squadra</th><th>G</th><th>V</th>
+                <th>N</th><th>P</th><th>GF</th><th>GS</th>
+                <th>DR</th><th>Pt</th>
+              </tr>
+            </thead>
+            <tbody id="tournament-standings"></tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <section class="panel manager-career-panel"
+             aria-labelledby="manager-career-title">
+      <div class="manager-career-heading">
+        <div>
+          <p class="manager-kicker">Carriera</p>
+          <h2 id="manager-career-title">Manager</h2>
+        </div>
+        <button id="manager-toggle"
+                class="manager-toggle"
+                type="button"
+                aria-controls="manager-body"
+                aria-expanded="false">
+          Mostra Manager
+        </button>
+      </div>
+      <div id="manager-body" hidden inert>
+      <div id="manager-dashboard" hidden>
+        <div class="manager-summary">
+          <div>
+            <span class="manager-label">Club</span>
+            <strong id="manager-club-name">—</strong>
+          </div>
+          <div>
+            <span class="manager-label">Partite registrate</span>
+            <strong id="manager-match-count">0</strong>
+          </div>
+        </div>
+
+        <div class="manager-roster-grid">
+          <section aria-labelledby="manager-lineup-title">
+            <h3 id="manager-lineup-title">XI titolare</h3>
+            <ol id="manager-lineup" class="manager-player-list"></ol>
+          </section>
+
+          <section aria-labelledby="manager-bench-title">
+            <h3 id="manager-bench-title">Panchina</h3>
+            <ol id="manager-bench" class="manager-player-list"></ol>
+          </section>
+        </div>
+
+        <section class="manager-career-summary"
+                 aria-label="Riepilogo carriera">
+          <dl>
+            <div>
+              <dt id="manager-career-played-label">Giocate</dt>
+              <dd id="manager-career-played">0</dd>
+            </div>
+            <div>
+              <dt id="manager-career-won-label">Vinte</dt>
+              <dd id="manager-career-won">0</dd>
+            </div>
+            <div>
+              <dt id="manager-career-drawn-label">Pareggiate</dt>
+              <dd id="manager-career-drawn">0</dd>
+            </div>
+            <div>
+              <dt id="manager-career-lost-label">Perse</dt>
+              <dd id="manager-career-lost">0</dd>
+            </div>
+            <div>
+              <dt id="manager-career-goalsFor-label">Gol fatti</dt>
+              <dd id="manager-career-goalsFor">0</dd>
+            </div>
+            <div>
+              <dt id="manager-career-goalsAgainst-label">Gol subiti</dt>
+              <dd id="manager-career-goalsAgainst">0</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="manager-history" aria-labelledby="manager-history-title">
+          <h3 id="manager-history-title">Risultati recenti</h3>
+          <ol id="manager-history" class="manager-history-list"></ol>
+        </section>
+
+        <div class="manager-actions">
+          <button id="manager-edit" type="button">
+            ✎ Modifica formazione
+          </button>
+          <button id="manager-close" type="button">
+            Termina carriera Manager
+          </button>
+        </div>
+      </div>
+      </div>
+    </section>
+
     <section class="panel" aria-label="Tabellone">
       <div class="scoreboard">
         <div class="team" id="panel-0">
           <span id="name-0">Squadra 1</span>
           <strong id="goals-0">0</strong>
-          <small id="hands-0">0 / 10 mani</small>
+          <small id="hands-0">0 / 10 lanci</small>
         </div>
         <div class="separator">:</div>
         <div class="team" id="panel-1">
           <span id="name-1">Squadra 2</span>
           <strong id="goals-1">0</strong>
-          <small id="hands-1">0 / 10 mani</small>
+          <small id="hands-1">0 / 10 lanci</small>
         </div>
       </div>
       <section class="match-events" aria-labelledby="match-events-heading">
@@ -359,7 +387,7 @@
             </label>
 
             <label>
-              Intervallo AUTO tra le mani (secondi)
+              Intervallo AUTO tra i lanci (secondi)
               <input id="auto-hand-delay" type="number"
                      min="0" max="10" step="0.1" value="0.4">
             </label>
@@ -400,7 +428,7 @@
       <p>Il dado rosa determina lo sviluppo dell'azione. Mezza rovesciata, rovesciata e colpo di testa portano al dado finale rosso/blu.</p>
       <p>Il dado finale può segnare GOAL oppure terminare l'azione senza goal. RIGORE fa rilanciare lo stesso dado.</p>
       <p>Passaggio permette di rilanciare il dado squadra. Ogni fine mano passa il gioco all'avversario, anche dopo un goal.</p>
-      <p>Vince chi segna più goal dopo il numero concordato di mani per squadra. Il pareggio è ammesso.</p>
+      <p>Vince chi segna più goal dopo il numero concordato di lanci per squadra. Il pareggio è ammesso.</p>
     </details>
 
     <footer>

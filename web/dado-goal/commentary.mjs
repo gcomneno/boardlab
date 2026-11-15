@@ -38,6 +38,14 @@ const linesIt = {
     "Calcio di rigore! Momento delicatissimo!",
     "L'arbitro indica il dischetto! Sale la tensione!",
   ],
+  "PARATO/RESPINTO": [
+    "PARATO! Il portiere respinge il calcio di rigore!",
+    "RESPINTO! Il portiere neutralizza il rigore!",
+  ],
+  "FUORI": [
+    "FUORI! Il calcio di rigore termina a lato!",
+    "Rigore sbagliato! Il pallone finisce fuori!",
+  ],
   "FUORI!": [
     "Fuori! Il pallone termina lontano dalla porta!",
   ],
@@ -97,6 +105,14 @@ const linesEn = {
   "RIGORE": [
     "Penalty kick! What a tense moment!",
     "The referee points to the spot! The tension rises!",
+  ],
+  "PARATO/RESPINTO": [
+    "SAVED! The goalkeeper keeps the penalty out!",
+    "DENIED! The goalkeeper stops the penalty!",
+  ],
+  "FUORI": [
+    "WIDE! The penalty misses the target!",
+    "Penalty missed! The ball goes wide!",
   ],
   "FUORI!": [
     "Wide! The ball misses the target!",

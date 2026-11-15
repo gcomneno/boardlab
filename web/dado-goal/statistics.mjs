@@ -70,6 +70,9 @@ export function matchStatistics(events) {
 
     if (category === "saves") {
       teams[1 - event.seat][category] += 1;
+    } else if (category === "penaltyGoals") {
+      teams[event.seat].penaltyGoals += 1;
+      teams[event.seat].goals += 1;
     } else if (category === "penaltySaved") {
       teams[1 - event.seat][category] += 1;
     } else {

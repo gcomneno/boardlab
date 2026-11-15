@@ -8,6 +8,7 @@ import {
 
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
+import { simulateMatch } from "./match-simulator.mjs";
 import { matchClock } from "./match-clock.mjs";
 import { createRoster, pickScorer } from "./match-roster.mjs";
 import { importCatalogueJson } from "./catalogue-json.mjs";
@@ -18,7 +19,6 @@ import {
   updateManagerSelection,
   updateManagerPlayers,
 } from "./manager-profile.mjs";
-import { createNextMatch } from "./manager-next-match.mjs";
 import {
   createManagerDocument,
   exportManagerJson,
@@ -33,8 +33,11 @@ import {
   completeFixture,
 } from "./tournament.mjs";
 import {
+  clearTournament,
   clearTournamentRecovery,
   createTournamentDocument,
+  exportTournamentJson,
+  importTournamentJson,
   loadTournament,
   loadTournamentRecovery,
   saveTournament,
@@ -74,7 +77,14 @@ import {
   describeFinalWhistle
 } from "./commentary.mjs";
 import { DICE_ART, PENALTY_DICE_ART } from "./dice-art.mjs";
-import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
+import {
+  applyLocale,
+  formatMessage,
+  getLocale,
+  initializeLocale,
+  setLocale,
+  translate,
+} from "./i18n.mjs";
 import { socialColors } from "./team-colors.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -91,7 +101,7 @@ const DADO_GOAL_LOCAL_STORAGE_KEYS = Object.freeze([
 function resetLocalData() {
   const confirmed = window.confirm(
     "Azzera tutti i dati locali di Dado Goal? " +
-    "Campionato, manager, gestione squadra e recovery saranno eliminati."
+    "Torneo, manager, gestione squadra e recovery saranno eliminati."
   );
 
   if (!confirmed) return;
@@ -289,9 +299,6 @@ function sleep(ms) {
 
 function render() {
   byId("message").textContent = formatMessage(messageKey, messageValues);
-
-  byId("manager-enabled").disabled =
-    matchStarted && state.phase !== "finished";
 
   // Keep events recorded, but hide their narrative when commentary is OFF.
   byId("match-events-list").closest(".match-events").hidden = !commentaryEnabled;
@@ -499,6 +506,21 @@ function render() {
 
   const finished = state.phase === "finished";
   const playing = matchStarted && !finished;
+  const friendlyPlaying = playing && activeTournamentFixtureId === null;
+
+  if (friendlyPlaying) {
+    byId("tournament-body").hidden = true;
+  }
+
+  byId("tournament-body").inert = byId("tournament-body").hidden;
+  byId("tournament-toggle").disabled = friendlyPlaying;
+  byId("tournament-toggle").setAttribute(
+    "aria-expanded",
+    String(!byId("tournament-body").hidden)
+  );
+  byId("tournament-toggle").textContent = byId("tournament-body").hidden
+    ? "Mostra"
+    : "Nascondi";
 
   // Match configuration is immutable from kick-off to the final whistle.
   byId("competition").disabled = playing;
@@ -525,9 +547,9 @@ function render() {
     selectedTeamIds[0] === selectedTeamIds[1];
 
   byId("new").disabled = isRolling || (!playing && sameSelectedTeam);
-  byId("new").textContent = translate(
-    playing ? "cancelMatch" : "newGame"
-  );
+  byId("new").textContent = playing
+    ? translate("cancelMatch")
+    : "Gioca amichevole";
 
   const multiplayer = document.querySelector(".multiplayer-button");
   multiplayer.classList.toggle("is-disabled", playing);
@@ -552,6 +574,7 @@ let managementState = createManagementDocument();
 let managerState = null;
 let tournamentState = null;
 let activeTournamentFixtureId = null;
+let tournamentViewedMatchday = null;
 let matchRecorded = false;
 
 try {
@@ -612,6 +635,20 @@ try {
 function recordCompletedMatch() {
   if (matchRecorded || state.phase !== "finished") return;
 
+  const completedTournamentFixture =
+    tournamentState && activeTournamentFixtureId
+      ? tournamentState.fixtures.find(
+          fixture => fixture.fixtureId === activeTournamentFixtureId
+        ) ?? null
+      : null;
+  const managedTournamentId = managerTournamentTeamId();
+  const completedManagerMatchday =
+    completedTournamentFixture &&
+    managedTournamentId !== null &&
+    fixtureIncludesTeam(completedTournamentFixture, managedTournamentId)
+      ? completedTournamentFixture.matchday
+      : null;
+
   // Management history is opt-in: at least one imported real team
   // must have been selected for this match.
   if (!selectedMatchTeams.some(Boolean)) return;
@@ -664,6 +701,7 @@ function recordCompletedMatch() {
     saveManagement(window.localStorage, nextState);
     managementState = nextState;
     canonicalMatchPersisted = true;
+    markGlobalSaveDirty();
   } catch {
     // Local persistence failure must never affect gameplay.
   }
@@ -697,10 +735,26 @@ function recordCompletedMatch() {
     }
   }
 
-  renderTournament();
+  if (
+    canonicalMatchPersisted &&
+    completedManagerMatchday !== null &&
+    tournamentState
+  ) {
+    const remainingMatchdayFixtures = tournamentState.fixtures.filter(
+      fixture =>
+        fixture.matchId === null &&
+        fixture.matchday === completedManagerMatchday &&
+        !fixtureIncludesTeam(fixture, managedTournamentId)
+    );
+
+    for (const fixture of remainingMatchdayFixtures) {
+      if (!simulateTournamentFixture(fixture)) break;
+    }
+
+    tournamentViewedMatchday = completedManagerMatchday;
+  }
 
   if (managerState &&
-      byId("manager-enabled").checked &&
       selectedMatchTeams.some(team =>
         team &&
         String(team.providerTeamId) ===
@@ -721,6 +775,7 @@ function recordCompletedMatch() {
     }
   }
 
+  renderTournament();
   renderManagerDashboard();
 }
 
@@ -757,47 +812,19 @@ function managerClubMatches() {
 }
 
 function renderManagerDashboard() {
-  const enabled = byId("manager-enabled").checked;
+  byId("manager-toggle").disabled = !managerState;
   const club = managerState?.club ?? null;
 
   syncNewManagerControls();
 
-  byId("manager-empty").hidden = enabled && Boolean(club);
-  byId("manager-dashboard").hidden = !enabled || !club;
+  byId("manager-dashboard").hidden = !club;
 
-  if (!enabled || !club) return;
+  if (!club) return;
 
   byId("manager-club-name").textContent = club.name;
 
   const matches = managerClubMatches();
   byId("manager-match-count").textContent = String(matches.length);
-
-  const opponentSelect = byId("manager-opponent");
-  const preparedOpponentId =
-    managerState.nextMatch?.opponentProviderTeamId ?? "";
-
-  opponentSelect.replaceChildren(
-    new Option("Scegli un avversario", "")
-  );
-
-  for (const team of [...(footballCatalogue?.teams ?? [])]
-      .sort((left, right) => left.name.localeCompare(right.name, "it"))) {
-    if (String(team.providerTeamId) === String(club.providerTeamId)) {
-      continue;
-    }
-
-    opponentSelect.append(
-      new Option(team.name, String(team.providerTeamId))
-    );
-  }
-
-  opponentSelect.value = preparedOpponentId;
-  const hasPreparedOpponent = opponentSelect.value !== "";
-
-  byId("manager-play-next").disabled = !hasPreparedOpponent;
-  byId("manager-next-action").textContent = hasPreparedOpponent
-    ? "Gioca la prossima partita"
-    : "Scegli il prossimo avversario";
 
   const players = new Map(
     club.players.map(player => [String(player.providerPlayerId), player])
@@ -922,6 +949,7 @@ function renderManagerDashboard() {
 function persistManagerState() {
   if (!managerState) return;
   saveManager(window.localStorage, managerState);
+  markGlobalSaveDirty();
   renderManagerDashboard();
 }
 
@@ -1137,19 +1165,26 @@ function editManagerSelection() {
   dialog.showModal();
 }
 
-function syncNewManagerControls() {
-  const managerEnabled = byId("manager-enabled").checked;
-  const managerTeamAvailable = catalogueTeam("team-0") !== null;
+function setManagerPanelExpanded(expanded) {
+  const body = byId("manager-body");
+  const toggle = byId("manager-toggle");
 
-  byId("manager-enabled").disabled =
-    (matchStarted && state.phase !== "finished") ||
-    (!managerEnabled && !managerState && !managerTeamAvailable);
+  body.hidden = !expanded;
+  body.inert = !expanded;
+  toggle.setAttribute("aria-expanded", String(expanded));
+  toggle.textContent = expanded
+    ? "Nascondi"
+    : "Mostra";
+}
+
+function syncNewManagerControls() {
+  const managerActive = Boolean(managerState);
 
   for (const seat of [0, 1]) {
     const button = byId(`manager-new-${seat}`);
-    button.hidden = managerEnabled;
+    button.hidden = managerActive;
     button.disabled =
-      managerEnabled || catalogueTeam(`team-${seat}`) === null;
+      managerActive || catalogueTeam(`team-${seat}`) === null;
   }
 }
 
@@ -1165,197 +1200,462 @@ function newManagerCareer(seat) {
   });
 
   persistManagerState();
-  byId("manager-enabled").checked = true;
+  setManagerPanelExpanded(true);
   renderManagerDashboard();
 }
 
-function exportManagerSave() {
+function closeManagerCareer() {
   if (!managerState) return;
 
-  const source = exportManagerJson(managerState);
+  if (!window.confirm(
+    "Terminare la carriera Manager? Il torneo corrente e lo storico generale resteranno invariati."
+  )) {
+    return;
+  }
+
+  clearManager(window.localStorage);
+  managerState = null;
+  setManagerPanelExpanded(false);
+  renderManagerDashboard();
+  renderTournament();
+}
+
+const GLOBAL_SAVE_SCHEMA_VERSION = 1;
+
+let globalSaveDirty = false;
+
+function syncGlobalSaveDirtyUi() {
+  byId("game-export").disabled = !globalSaveDirty;
+}
+
+function markGlobalSaveDirty() {
+  globalSaveDirty = true;
+  syncGlobalSaveDirtyUi();
+}
+
+function markGlobalSaveClean() {
+  globalSaveDirty = false;
+  syncGlobalSaveDirtyUi();
+}
+
+function serializedRefereeStates() {
+  return refereeStates.map(refereeState => ({
+    ...structuredClone(refereeState),
+    yellowed: [...(refereeState.yellowed ?? [])],
+  }));
+}
+
+function serializedExtraordinaryState() {
+  return {
+    occurredFamilies: [...(extraordinaryState?.occurredFamilies ?? [])],
+    occurredTypes: [...(extraordinaryState?.occurredTypes ?? [])],
+  };
+}
+
+function globalSaveDocument() {
+  return {
+    schemaVersion: GLOBAL_SAVE_SCHEMA_VERSION,
+    savedAt: new Date().toISOString(),
+    locale: getLocale(),
+
+    configuration: {
+      competition: byId("competition").value,
+      hands: byId("hands").value,
+      teams: [0, 1].map(seat => byId(`team-${seat}`).value),
+      colors: [0, 1].map(seat => ({
+        primary: byId(`color-${seat}`).value,
+        secondaryEnabled: byId(`color-${seat}-enabled`).checked,
+        secondary: byId(`color-${seat}-secondary`).value,
+      })),
+      commentaryEnabled,
+      auto: {
+        mode: byId("auto-mode").value,
+        handLimit: byId("auto-hand-limit").value,
+        rollDelay: byId("auto-roll-delay").value,
+        handDelay: byId("auto-hand-delay").value,
+      },
+    },
+
+    persistent: {
+      management: JSON.parse(exportManagementJson(managementState)),
+      manager: managerState
+        ? JSON.parse(exportManagerJson(managerState))
+        : null,
+      tournament: tournamentState
+        ? JSON.parse(exportTournamentJson(tournamentState))
+        : null,
+    },
+
+    runtime: {
+      state: state == null ? null : structuredClone(state),
+      names: structuredClone(names),
+      colors: structuredClone(colors),
+      teamPalettes: structuredClone(teamPalettes),
+      rollEvents: structuredClone(rollEvents),
+      matchEvents: structuredClone(matchEvents),
+      rosters: structuredClone(rosters),
+      refereeStates: serializedRefereeStates(),
+      extraordinaryState: serializedExtraordinaryState(),
+      lastCommentary: structuredClone(lastCommentary),
+      lastRefereeEvent: structuredClone(lastRefereeEvent),
+      lastExtraordinaryEvent: structuredClone(lastExtraordinaryEvent),
+      lastGoalScorer,
+      messageKey,
+      messageValues: structuredClone(messageValues),
+      matchStarted,
+      selectedMatchTeams: structuredClone(selectedMatchTeams),
+      activeTournamentFixtureId,
+      tournamentViewedMatchday,
+      matchRecorded,
+    },
+  };
+}
+
+function validateGlobalSave(source) {
+  if (typeof source !== "string") {
+    throw new TypeError("Il salvataggio deve essere un file JSON.");
+  }
+
+  let document;
+  try {
+    document = JSON.parse(source);
+  } catch {
+    throw new TypeError("JSON del salvataggio non valido.");
+  }
+
+  if (
+    !document ||
+    typeof document !== "object" ||
+    Array.isArray(document) ||
+    document.schemaVersion !== GLOBAL_SAVE_SCHEMA_VERSION ||
+    !document.configuration ||
+    !document.persistent ||
+    !document.runtime
+  ) {
+    throw new TypeError("Formato salvataggio Dado Goal non valido.");
+  }
+
+  const management = importManagementJson(
+    JSON.stringify(document.persistent.management)
+  );
+
+  const manager = document.persistent.manager === null
+    ? null
+    : importManagerJson(JSON.stringify(document.persistent.manager));
+
+  const tournament = document.persistent.tournament === null
+    ? null
+    : importTournamentJson(JSON.stringify(document.persistent.tournament));
+
+  const runtime = document.runtime;
+
+  if (
+    !Array.isArray(runtime.names) ||
+    !Array.isArray(runtime.colors) ||
+    !Array.isArray(runtime.teamPalettes) ||
+    !Array.isArray(runtime.rollEvents) ||
+    !Array.isArray(runtime.matchEvents) ||
+    !Array.isArray(runtime.rosters) ||
+    !Array.isArray(runtime.refereeStates) ||
+    !Array.isArray(runtime.selectedMatchTeams) ||
+    !runtime.extraordinaryState ||
+    !Array.isArray(runtime.extraordinaryState.occurredFamilies) ||
+    !Array.isArray(runtime.extraordinaryState.occurredTypes)
+  ) {
+    throw new TypeError("Stato partita nel salvataggio non valido.");
+  }
+
+  for (const refereeState of runtime.refereeStates) {
+    if (!refereeState || !Array.isArray(refereeState.yellowed)) {
+      throw new TypeError("Stato arbitrale nel salvataggio non valido.");
+    }
+  }
+
+  const configuration = document.configuration;
+
+  if (
+    !Array.isArray(configuration.teams) ||
+    configuration.teams.length !== 2 ||
+    !Array.isArray(configuration.colors) ||
+    configuration.colors.length !== 2 ||
+    typeof configuration.hands !== "string"
+  ) {
+    throw new TypeError("Configurazione nel salvataggio non valida.");
+  }
+
+  return {
+    document,
+    management,
+    manager,
+    tournament,
+  };
+}
+
+function exportGlobalSave() {
+  if (isRolling) {
+    byId("game-save-status").textContent =
+      "Attendi la conclusione del lancio prima di salvare.";
+    return;
+  }
+
+  const source = JSON.stringify(globalSaveDocument(), null, 2);
   const blob = new Blob([source], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
 
-  const clubSlug = managerState.club.name
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "squadra";
-
   link.href = url;
-  link.download = `dado-goal-manager-${clubSlug}.json`;
+  link.download = "dado-goal-save-v1.json";
   link.click();
 
   URL.revokeObjectURL(url);
+  markGlobalSaveClean();
+  byId("game-save-status").textContent = "Salvataggio creato.";
 }
 
-async function importManagerSave(file) {
-  if (!file) return;
+function restoreControlValue(id, value) {
+  const element = byId(id);
+  if (!element || value == null) return;
+  element.value = String(value);
+}
 
-  const imported = importManagerJson(await file.text());
-  const managedId = String(imported.club.providerTeamId);
-  const managedTeam = allCatalogueTeams().find(
-    team => String(team.providerTeamId) === managedId
-  );
+function restoreGlobalRuntime(validated) {
+  const { document, management, manager, tournament } = validated;
+  const { configuration, runtime } = document;
 
-  if (!managedTeam) {
-    throw new Error(
-      "La squadra del salvataggio Manager non è disponibile nei cataloghi."
-    );
+  managementState = management;
+  managerState = manager;
+  tournamentState = tournament;
+
+  saveManagement(window.localStorage, managementState);
+
+  if (managerState) {
+    saveManager(window.localStorage, managerState);
+  } else {
+    clearManager(window.localStorage);
   }
 
-  managerState = imported;
-  saveManager(window.localStorage, managerState);
-
-  byId("manager-enabled").checked = true;
-
-  const competitionValue =
-    `${managedTeam.competitionId}:${managedTeam.season}`;
-
-  if (competitions.some(({ value }) => value === competitionValue)) {
-    byId("competition").value = competitionValue;
+  if (tournamentState) {
+    saveTournament(window.localStorage, tournamentState);
+  } else {
+    clearTournament(window.localStorage);
   }
 
+  // A recovery journal is an internal crash-consistency artifact.
+  // A portable save contains the canonical tournament + runtime directly.
+  clearTournamentRecovery(window.localStorage);
+
+  if (typeof document.locale === "string") {
+    setLocale(document.locale);
+    restoreControlValue("language", getLocale());
+    applyLocale();
+  }
+
+  restoreControlValue("competition", configuration.competition);
   renderCatalogueTeams();
 
-  const managedSelect = byId("team-0");
-  if (![...managedSelect.options].some(option => option.value === managedId)) {
-    managedSelect.append(new Option(managedTeam.name, managedId));
-  }
-  managedSelect.value = managedId;
+  restoreControlValue("hands", configuration.hands);
 
-  applySelectedTeamColor(0);
-  syncNewManagerControls();
+  for (const seat of [0, 1]) {
+    const teamId = configuration.teams[seat];
 
-  // A Manager save stores the career, not an in-progress match.
-  // Reset the match presentation so no pre-import state remains visible.
-  start(false);
-
-  render();
-  renderManagerDashboard();
-}
-
-function prepareManagerOpponent() {
-  if (!managerState) return;
-
-  const opponentProviderTeamId = byId("manager-opponent").value;
-
-  managerState = createManagerDocument({
-    club: managerState.club,
-    management: managerState.management,
-    nextMatch: opponentProviderTeamId === ""
-      ? null
-      : createNextMatch({
-          managedProviderTeamId: managerState.club.providerTeamId,
-          opponentProviderTeamId,
-        }),
-  });
-
-  persistManagerState();
-}
-
-function playManagerNextMatch() {
-  if (!managerState?.nextMatch) return;
-
-  const managedId = String(managerState.club.providerTeamId);
-  const opponentId = String(
-    managerState.nextMatch.opponentProviderTeamId
-  );
-
-  const managedTeam = footballCatalogue?.teams.find(
-    team => String(team.providerTeamId) === managedId
-  );
-  const opponentTeam = footballCatalogue?.teams.find(
-    team => String(team.providerTeamId) === opponentId
-  );
-
-  if (!managedTeam || !opponentTeam) {
-    window.alert(
-      "Squadra Manager o avversario non disponibili nel catalogo."
-    );
-    return;
-  }
-
-  for (const [seat, team] of [
-    [0, managedTeam],
-    [1, opponentTeam],
-  ]) {
-    const select = byId(`team-${seat}`);
-    const teamId = String(team.providerTeamId);
-
-    if (![...select.options].some(option => option.value === teamId)) {
-      select.append(new Option(team.name, teamId));
-    }
-
-    select.value = teamId;
-  }
-
-  applySelectedTeamColor(0);
-  applySelectedTeamColor(1);
-
-  start(true);
-}
-
-function initializeManagerUi() {
-  const toggle = byId("manager-enabled");
-
-  toggle.addEventListener("change", () => {
-    if (toggle.checked && !managerState) {
-      const team = catalogueTeam("team-0");
+    if (
+      teamId &&
+      ![...byId(`team-${seat}`).options].some(
+        option => option.value === String(teamId)
+      )
+    ) {
+      const team = allCatalogueTeams().find(
+        candidate =>
+          String(candidate.providerTeamId) === String(teamId)
+      );
 
       if (team) {
-        managerState = createManagerDocument({
-          club: createManagerClub(team),
-          management: createManagementDocument(),
-        });
-
-        try {
-          persistManagerState();
-        } catch {
-          // Manager persistence failure must never block quick match.
-        }
+        byId(`team-${seat}`).append(
+          new Option(team.name, String(team.providerTeamId))
+        );
       }
     }
 
-    renderManagerDashboard();
+    restoreControlValue(`team-${seat}`, teamId);
+
+    const color = configuration.colors[seat];
+    restoreControlValue(`color-${seat}`, color?.primary);
+    byId(`color-${seat}-enabled`).checked =
+      Boolean(color?.secondaryEnabled);
+    restoreControlValue(`color-${seat}-secondary`, color?.secondary);
+    syncSecondaryColorControl(seat);
+    renderSelectedTeamLogo(seat);
+  }
+
+  restoreControlValue("auto-mode", configuration.auto?.mode);
+  restoreControlValue("auto-hand-limit", configuration.auto?.handLimit);
+  restoreControlValue("auto-roll-delay", configuration.auto?.rollDelay);
+  restoreControlValue("auto-hand-delay", configuration.auto?.handDelay);
+
+  state = runtime.state === null
+    ? newMatch(Number(configuration.hands))
+    : structuredClone(runtime.state);
+
+  names = structuredClone(runtime.names);
+  colors = structuredClone(runtime.colors);
+
+  const restoredTeamPalettes = structuredClone(runtime.teamPalettes);
+  teamPalettes.splice(
+    0,
+    teamPalettes.length,
+    ...restoredTeamPalettes,
+  );
+
+  rollEvents = structuredClone(runtime.rollEvents);
+  matchEvents = structuredClone(runtime.matchEvents);
+  rosters = structuredClone(runtime.rosters);
+
+  refereeStates = runtime.refereeStates.map(refereeState => ({
+    ...structuredClone(refereeState),
+    yellowed: new Set(refereeState.yellowed),
+  }));
+
+  extraordinaryState = {
+    occurredFamilies: new Set(
+      runtime.extraordinaryState.occurredFamilies
+    ),
+    occurredTypes: new Set(
+      runtime.extraordinaryState.occurredTypes
+    ),
+  };
+
+  lastCommentary = structuredClone(runtime.lastCommentary);
+  lastRefereeEvent = structuredClone(runtime.lastRefereeEvent);
+  lastExtraordinaryEvent =
+    structuredClone(runtime.lastExtraordinaryEvent);
+  lastGoalScorer = runtime.lastGoalScorer ?? null;
+  messageKey = typeof runtime.messageKey === "string"
+    ? runtime.messageKey
+    : "setupPrompt";
+  messageValues = runtime.messageValues &&
+      typeof runtime.messageValues === "object"
+    ? structuredClone(runtime.messageValues)
+    : {};
+
+  matchStarted = Boolean(runtime.matchStarted);
+  selectedMatchTeams = structuredClone(runtime.selectedMatchTeams);
+  activeTournamentFixtureId =
+    runtime.activeTournamentFixtureId ?? null;
+  tournamentViewedMatchday =
+    runtime.tournamentViewedMatchday ?? null;
+  matchRecorded = Boolean(runtime.matchRecorded);
+
+  commentaryEnabled =
+    configuration.commentaryEnabled !== false;
+
+  // Never resume asynchronous activity automatically after a load.
+  isRolling = false;
+  autoRunning = false;
+  autoConfig = null;
+  autoDelay.cancel();
+
+  if (matchStarted) {
+    capturePitchTeamLogos();
+  }
+
+  const lastRoll = rollEvents.at(-1);
+  const die = byId("die");
+
+  if (lastRoll && diceFaces[lastRoll.die]) {
+    const faceIndex = diceFaces[lastRoll.die].indexOf(lastRoll.face);
+    if (faceIndex >= 0) {
+      displayFace(lastRoll.die, lastRoll.seat, faceIndex);
+      byId("result").textContent = displayDieFace(lastRoll.face);
+    }
+  } else {
+    die.classList.remove("rolling");
+    die.classList.add("kickoff-ball");
+    die.textContent = "⚽";
+    die.setAttribute("aria-label", "In attesa del primo lancio");
+  }
+
+  render();
+  renderTournament();
+  renderManagerDashboard();
+  syncNewManagerControls();
+}
+
+async function importGlobalSave(file) {
+  if (!file) return;
+
+  if (isRolling) {
+    throw new Error(
+      "Attendi la conclusione del lancio prima di caricare."
+    );
+  }
+
+  const validated = validateGlobalSave(await file.text());
+
+  // Validate first, mutate only after the whole document is accepted.
+  const keys = [
+    "dado-goal.tournament.v1",
+    "dado-goal.tournament-recovery.v1",
+    "dado-goal.manager.v1",
+    "dado-goal.team-management.v1",
+  ];
+
+  const previous = new Map(
+    keys.map(key => [key, window.localStorage.getItem(key)])
+  );
+
+  try {
+    restoreGlobalRuntime(validated);
+  } catch (error) {
+    for (const [key, value] of previous) {
+      if (value === null) {
+        window.localStorage.removeItem(key);
+      } else {
+        window.localStorage.setItem(key, value);
+      }
+    }
+    throw error;
+  }
+
+  markGlobalSaveClean();
+  byId("game-save-status").textContent =
+    "Salvataggio caricato.";
+}
+
+function initializeGlobalSaveUi() {
+  markGlobalSaveClean();
+  byId("game-export").addEventListener("click", exportGlobalSave);
+
+  byId("game-import").addEventListener("click", () => {
+    byId("game-import-file").click();
   });
 
-  byId("manager-edit").addEventListener("click", editManagerSelection);
-  byId("manager-opponent").addEventListener(
+  byId("game-import-file").addEventListener(
     "change",
-    prepareManagerOpponent
-  );
-  byId("manager-play-next").addEventListener(
-    "click",
-    playManagerNextMatch
-  );
-  for (const seat of [0, 1]) {
-  byId(`manager-new-${seat}`).addEventListener(
-    "click",
-    () => newManagerCareer(seat)
+    async event => {
+      try {
+        await importGlobalSave(event.target.files?.[0]);
+      } catch (caught) {
+        window.alert(
+          caught instanceof Error
+            ? caught.message
+            : "Salvataggio Dado Goal non valido."
+        );
+      } finally {
+        event.target.value = "";
+      }
+    }
   );
 }
-  byId("manager-export").addEventListener("click", exportManagerSave);
 
-  byId("manager-import").addEventListener("click", () => {
-    byId("manager-import-file").click();
-  });
+function initializeManagerUi() {
+  byId("manager-edit").addEventListener("click", editManagerSelection);
 
-  byId("manager-import-file").addEventListener("change", async event => {
-    try {
-      await importManagerSave(event.target.files?.[0]);
-    } catch (caught) {
-      window.alert(
-        caught instanceof Error
-          ? caught.message
-          : "Salvataggio Manager non valido."
-      );
-    } finally {
-      event.target.value = "";
-    }
-  });
+  for (const seat of [0, 1]) {
+    byId(`manager-new-${seat}`).addEventListener(
+      "click",
+      () => newManagerCareer(seat)
+    );
+  }
 
   renderManagerDashboard();
 }
@@ -1406,12 +1706,7 @@ function syncCompetitionSelector() {
   const selector = byId("competition");
   const previous = selector.value;
 
-  const friendly = document.createElement("option");
-  friendly.value = "";
-  friendly.textContent = "Amichevole";
-
   selector.replaceChildren(
-    friendly,
     ...competitions.map(({ value, label }) => {
       const option = document.createElement("option");
       option.value = value;
@@ -1422,11 +1717,11 @@ function syncCompetitionSelector() {
 
   if (competitions.some(({ value }) => value === previous)) {
     selector.value = previous;
-  } else {
-    selector.value = "";
+  } else if (competitions.length > 0) {
+    selector.value = competitions[0].value;
   }
 
-  if (selector.options.length !== competitions.length + 1) {
+  if (selector.options.length !== competitions.length) {
     throw new Error("Competition selector synchronization failed");
   }
 }
@@ -1438,10 +1733,6 @@ function allCatalogueTeams() {
 function selectedCompetitionTeams() {
   const selected = byId("competition").value;
 
-  if (selected === "") {
-    return allCatalogueTeams();
-  }
-
   const [competitionId, season] = selected.split(":");
 
   return allCatalogueTeams().filter(team =>
@@ -1451,7 +1742,7 @@ function selectedCompetitionTeams() {
 }
 
 function renderCatalogueTeams() {
-  const filteredTeams = selectedCompetitionTeams().sort(
+  const friendlyTeams = allCatalogueTeams().sort(
     (left, right) => left.name.localeCompare(
       right.name, undefined, { sensitivity: "base" }
     )
@@ -1460,7 +1751,7 @@ function renderCatalogueTeams() {
     const select = byId(`team-${seat}`);
     const current = select.value;
 
-    const visibleTeams = [...filteredTeams];
+    const visibleTeams = [...friendlyTeams];
 
     select.replaceChildren(new Option(`Squadra ${seat + 1}`, ""));
 
@@ -1543,8 +1834,52 @@ function tournamentTeamName(teamId) {
   )?.name ?? String(teamId);
 }
 
+function managerTournamentTeamId() {
+  if (!managerState || !tournamentState) return null;
+
+  const managedId = String(managerState.club.providerTeamId);
+  return tournamentState.participants.some(
+    team => String(team.providerTeamId) === managedId
+  )
+    ? managedId
+    : null;
+}
+
+function fixtureIncludesTeam(fixture, teamId) {
+  if (!fixture || teamId === null) return false;
+
+  return String(fixture.homeProviderTeamId) === String(teamId) ||
+    String(fixture.awayProviderTeamId) === String(teamId);
+}
+
 function nextTournamentFixture() {
   return tournamentState?.fixtures.find(fixture => fixture.matchId === null) ?? null;
+}
+
+function nextPlayableTournamentFixture() {
+  const managedId = managerTournamentTeamId();
+
+  if (managedId === null) {
+    return nextTournamentFixture();
+  }
+
+  return tournamentState.fixtures.find(
+    fixture =>
+      fixture.matchId === null &&
+      fixtureIncludesTeam(fixture, managedId)
+  ) ?? null;
+}
+
+function nextSimulatedTournamentFixture() {
+  const managedId = managerTournamentTeamId();
+
+  if (managedId === null) return null;
+
+  return tournamentState.fixtures.find(
+    fixture =>
+      fixture.matchId === null &&
+      !fixtureIncludesTeam(fixture, managedId)
+  ) ?? null;
 }
 
 function selectTournamentCompetitionParticipants() {
@@ -1553,15 +1888,6 @@ function selectTournamentCompetitionParticipants() {
   const list = byId("tournament-participants");
   const createButton = byId("tournament-create");
   const competition = byId("competition").value;
-
-  if (competition === "") {
-    for (const option of list.options) {
-      option.selected = false;
-    }
-    list.disabled = true;
-    createButton.disabled = true;
-    return;
-  }
 
   list.disabled = false;
   createButton.disabled = false;
@@ -1586,6 +1912,8 @@ function renderTournament() {
   dashboard.hidden = !tournamentState;
 
   if (!tournamentState) {
+    tournamentViewedMatchday = null;
+
     const teams = [...allCatalogueTeams()].sort(
       (left, right) => left.name.localeCompare(
         right.name, undefined, { sensitivity: "base" }
@@ -1610,11 +1938,40 @@ function renderTournament() {
     managementState.matches,
   );
   const body = byId("tournament-standings");
+  const managedTeamId = managerState
+    ? String(managerState.club.providerTeamId)
+    : null;
+
   body.replaceChildren(...standings.map(row => {
     const tr = document.createElement("tr");
+
+    if (
+      managedTeamId !== null &&
+      String(row.team.providerTeamId) === managedTeamId
+    ) {
+      tr.classList.add("tournament-manager-row");
+    }
+
+    const position = document.createElement("td");
+    position.textContent = String(row.position);
+    tr.append(position);
+
+    const teamCell = document.createElement("td");
+    teamCell.className = "tournament-team-cell";
+
+    const logo = document.createElement("img");
+    logo.className = "tournament-team-logo";
+    logo.src = row.team.logo;
+    logo.alt = "";
+    logo.setAttribute("aria-hidden", "true");
+
+    const name = document.createElement("span");
+    name.textContent = row.team.name;
+
+    teamCell.append(logo, name);
+    tr.append(teamCell);
+
     for (const value of [
-      row.position,
-      row.team.name,
       row.played,
       row.won,
       row.drawn,
@@ -1628,6 +1985,7 @@ function renderTournament() {
       td.textContent = String(value);
       tr.append(td);
     }
+
     return tr;
   }));
 
@@ -1641,9 +1999,26 @@ function renderTournament() {
     ...tournamentState.fixtures.map(fixture => fixture.matchday)
   );
   const currentMatchday = next?.matchday ?? finalMatchday;
+
+  if (
+    tournamentViewedMatchday === null ||
+    tournamentViewedMatchday < 1 ||
+    tournamentViewedMatchday > finalMatchday
+  ) {
+    tournamentViewedMatchday = currentMatchday;
+  }
+
+  const viewedMatchday = tournamentViewedMatchday;
   const matchdayFixtures = tournamentState.fixtures.filter(
-    fixture => fixture.matchday === currentMatchday
+    fixture => fixture.matchday === viewedMatchday
   );
+
+  byId("tournament-matchday-label").textContent =
+    `Giornata ${viewedMatchday} di ${finalMatchday}`;
+  byId("tournament-matchday-prev").disabled = viewedMatchday <= 1;
+  byId("tournament-matchday-next").disabled =
+    viewedMatchday >= finalMatchday;
+
   const recordsById = new Map(
     managementState.matches.map(record => [record.matchId, record])
   );
@@ -1691,6 +2066,24 @@ function renderTournament() {
     !next || activeTournamentFixtureId !== null;
 }
 
+function closeTournament() {
+  if (!tournamentState) return;
+
+  if (!window.confirm(
+    "Abbandonare il torneo corrente? La carriera Manager resterà attiva."
+  )) {
+    return;
+  }
+
+  clearTournament(window.localStorage);
+  clearTournamentRecovery(window.localStorage);
+  tournamentState = null;
+  activeTournamentFixtureId = null;
+  tournamentViewedMatchday = null;
+  renderTournament();
+  renderManagerDashboard();
+}
+
 function createTournamentFromSelection() {
   const participants = [...byId("tournament-participants").selectedOptions]
     .map(option => allCatalogueTeams().find(team =>
@@ -1706,6 +2099,7 @@ function createTournamentFromSelection() {
     saveTournament(window.localStorage, document);
     tournamentState = document;
     activeTournamentFixtureId = null;
+    tournamentViewedMatchday = null;
     byId("tournament-error").textContent = "";
     renderTournament();
   } catch (error) {
@@ -1713,8 +2107,69 @@ function createTournamentFromSelection() {
   }
 }
 
-function playNextTournamentFixture() {
-  const fixture = nextTournamentFixture();
+function simulateTournamentFixture(fixture) {
+  if (!fixture || fixture.matchId !== null) return false;
+
+  const home = allCatalogueTeams().find(
+    team => String(team.providerTeamId) ===
+      String(fixture.homeProviderTeamId)
+  );
+  const away = allCatalogueTeams().find(
+    team => String(team.providerTeamId) ===
+      String(fixture.awayProviderTeamId)
+  );
+
+  if (!home || !away) return false;
+
+  const rawHands = byId("hands").value;
+  const handsPerTeam = Number(rawHands);
+
+  if (
+    !/^\d+$/.test(rawHands.trim()) ||
+    !Number.isSafeInteger(handsPerTeam) ||
+    handsPerTeam < 1 ||
+    handsPerTeam > 1000
+  ) {
+    showMessage("invalidHands");
+    return false;
+  }
+
+  const simulated = simulateMatch({ handsPerTeam });
+  const record = createMatchRecord({
+    matchId: crypto.randomUUID(),
+    playedAt: new Date().toISOString(),
+    home,
+    away,
+    homeGoals: simulated.homeGoals,
+    awayGoals: simulated.awayGoals,
+    events: [],
+    statistics: matchStatistics(simulated.rolls),
+    ratings: [],
+  });
+
+  const nextManagement = createManagementDocument({
+    ratings: managementState.ratings,
+    matches: [...managementState.matches, record],
+  });
+  const nextTournament = completeFixture(
+    tournamentState,
+    fixture.fixtureId,
+    record.matchId,
+  );
+
+  try {
+    saveManagement(window.localStorage, nextManagement);
+    saveTournament(window.localStorage, nextTournament);
+  } catch {
+    return false;
+  }
+
+  managementState = nextManagement;
+  tournamentState = nextTournament;
+  return true;
+}
+
+function playTournamentFixture(fixture) {
   if (!fixture) return;
 
   const home = allCatalogueTeams().find(team =>
@@ -1724,11 +2179,6 @@ function playNextTournamentFixture() {
     String(team.providerTeamId) === fixture.awayProviderTeamId
   );
   if (!home || !away) return;
-
-  const competitionValue =
-    `${home.competitionId}:${home.season}`;
-  byId("competition").value = competitionValue;
-  renderCatalogueTeams();
 
   for (const [seat, team] of [[0, home], [1, away]]) {
     const select = byId(`team-${seat}`);
@@ -1745,13 +2195,96 @@ function playNextTournamentFixture() {
   activeTournamentFixtureId = fixture.fixtureId;
   start(true);
   renderTournament();
+  renderManagerDashboard();
 }
+
+function playNextTournamentFixture() {
+  const managedId = managerTournamentTeamId();
+
+  if (managedId === null) {
+    playTournamentFixture(nextTournamentFixture());
+    return;
+  }
+
+  const next = nextTournamentFixture();
+
+  if (!next) {
+    renderTournament();
+    return;
+  }
+
+  const currentMatchday = next.matchday;
+  const managedFixture = tournamentState.fixtures.find(
+    fixture =>
+      fixture.matchId === null &&
+      fixture.matchday === currentMatchday &&
+      fixtureIncludesTeam(fixture, managedId)
+  ) ?? null;
+
+  if (managedFixture) {
+    playTournamentFixture(managedFixture);
+    return;
+  }
+
+  // Recovery path: if the Manager fixture is already complete but some
+  // matches from the same day remain pending, close that day before moving on.
+  for (const fixture of tournamentState.fixtures.filter(
+    fixture =>
+      fixture.matchId === null &&
+      fixture.matchday === currentMatchday
+  )) {
+    if (!simulateTournamentFixture(fixture)) break;
+  }
+
+  renderTournament();
+}
+
+byId("tournament-matchday-prev").addEventListener("click", () => {
+  if (!tournamentState || tournamentViewedMatchday === null) return;
+
+  if (tournamentViewedMatchday > 1) {
+    tournamentViewedMatchday -= 1;
+    renderTournament();
+  }
+});
+
+byId("tournament-matchday-next").addEventListener("click", () => {
+  if (!tournamentState || tournamentViewedMatchday === null) return;
+
+  const finalMatchday = Math.max(
+    ...tournamentState.fixtures.map(fixture => fixture.matchday)
+  );
+
+  if (tournamentViewedMatchday < finalMatchday) {
+    tournamentViewedMatchday += 1;
+    renderTournament();
+  }
+});
+
+byId("tournament-toggle").addEventListener("click", () => {
+  const body = byId("tournament-body");
+
+  if (byId("tournament-toggle").disabled) return;
+
+  body.hidden = !body.hidden;
+  body.inert = body.hidden;
+  byId("tournament-toggle").setAttribute(
+    "aria-expanded",
+    String(!body.hidden)
+  );
+  byId("tournament-toggle").textContent = body.hidden
+    ? "Mostra"
+    : "Nascondi";
+});
 
 byId("tournament-create").addEventListener(
   "click", createTournamentFromSelection
 );
 byId("tournament-play-next").addEventListener(
   "click", playNextTournamentFixture
+);
+byId("tournament-close").addEventListener(
+  "click", closeTournament
 );
 
 function manualTeamPalette(seat) {
@@ -1922,19 +2455,7 @@ function start(activate = true) {
       : manualTeamPalette(seat)
   );
 
-  const realTeamKitConflict =
-    selectedTeams.every(Boolean) &&
-    palettesConflict(candidatePalettes[0], candidatePalettes[1]);
-
-  if (activate && realTeamKitConflict) {
-    showMessage("kitColorConflict");
-    render();
-    return;
-  }
-
-  if (activate &&
-      managerState &&
-      byId("manager-enabled").checked) {
+  if (activate && managerState) {
     const selectedManagedTeam = selectedTeams.find(team =>
       team &&
       String(team.providerTeamId) ===
@@ -1953,8 +2474,7 @@ function start(activate = true) {
   selectedMatchTeams = selectedTeams.map(team => {
     if (!team || !managerState) return team;
 
-    return byId("manager-enabled").checked &&
-      String(team.providerTeamId) ===
+    return String(team.providerTeamId) ===
         String(managerState.club.providerTeamId)
       ? managerClubMatchTeam(managerState.club)
       : team;
@@ -2288,6 +2808,14 @@ byId("auto").addEventListener("click", () => {
   autoDialog.showModal();
 });
 
+byId("manager-toggle").addEventListener("click", () => {
+  setManagerPanelExpanded(byId("manager-body").hidden);
+});
+
+byId("manager-close").addEventListener(
+  "click", closeManagerCareer
+);
+
 byId("reset-local-data").addEventListener("click", resetLocalData);
 
 byId("new").addEventListener("click", () => {
@@ -2314,6 +2842,7 @@ byId("roll").addEventListener("click", () => {
   void roll();
 });
 initializeManagerUi();
+initializeGlobalSaveUi();
 start(false);
 initializeLocale(() => {
   syncCompetitionSelector();

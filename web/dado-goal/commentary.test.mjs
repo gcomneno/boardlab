@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { newMatch, applyRoll } from "./engine.mjs";
 import {
+  describeFace,
   describeFinalWhistle,
   describeRoll,
 } from "./commentary.mjs";
@@ -128,4 +129,12 @@ test("penalty is always explicitly announced by radio commentary", () => {
   assert.match(english, /PENALTY|spot/i);
   assert.equal(afterPenalty.phase, "penalty");
   assert.equal(afterPenalty.player, attack.player);
+});
+
+
+test("all canonical penalty-die outcomes have bilingual commentary", () => {
+  for (const face of ["GOAL!", "PARATO/RESPINTO", "FUORI"]) {
+    assert.doesNotThrow(() => describeFace(face, 0, "it"));
+    assert.doesNotThrow(() => describeFace(face, 0, "en"));
+  }
 });

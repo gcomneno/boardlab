@@ -503,7 +503,11 @@ function render() {
   }
   byId("roll").disabled =
     !playing || isRolling || state.player !== multiplayerClient.seat;
-  byId("auto").disabled = !playing;
+
+  const autoButton = byId("auto");
+  if (autoButton) {
+    autoButton.disabled = !playing;
+  }
   const selectedTeamIds = [0, 1].map(
     seat => byId(`team-${seat}`).value
   );
@@ -1059,21 +1063,25 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
 
 let multiplayerSyncTimer = null;
 
+async function refreshMultiplayerSnapshot() {
+  if (!snapshot || multiplayerBusy || isRolling) return;
+
+  try {
+    const refreshed = await multiplayerClient.snapshot();
+    if (refreshed.revision !== snapshot.revision ||
+        refreshed.status !== snapshot.status) {
+      adoptAuthoritativeSnapshot(refreshed);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function startMultiplayerSync() {
   if (multiplayerSyncTimer !== null) return;
 
-  multiplayerSyncTimer = window.setInterval(async () => {
-    if (!snapshot || multiplayerBusy || isRolling) return;
-
-    try {
-      const refreshed = await multiplayerClient.snapshot();
-      if (refreshed.revision !== snapshot.revision ||
-          refreshed.status !== snapshot.status) {
-        adoptAuthoritativeSnapshot(refreshed);
-      }
-    } catch (error) {
-      console.error(error);
-    }
+  multiplayerSyncTimer = window.setInterval(() => {
+    void refreshMultiplayerSnapshot();
   }, 1000);
 }
 
@@ -1090,7 +1098,7 @@ async function multiplayerCreate() {
   try {
     const hands = Number(byId("hands").value);
     if (!Number.isInteger(hands) || hands < 1) {
-      throw new RangeError("Numero di mani non valido");
+      throw new RangeError("Numero di lanci non valido");
     }
 
     const teamSelections = selectedMultiplayerTeams();
@@ -1224,6 +1232,16 @@ byId("logout").addEventListener("click", () => {
 
 byId("roll").addEventListener("click", () => {
   void roll().catch(showMultiplayerError);
+});
+
+window.addEventListener("focus", () => {
+  void refreshMultiplayerSnapshot();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    void refreshMultiplayerSnapshot();
+  }
 });
 
 initializeLocale(() => {

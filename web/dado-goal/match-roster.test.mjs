@@ -158,6 +158,30 @@ test("a goalkeeper can only be replaced by another goalkeeper", () => {
   assert.ok(roster.bench.includes(12));
 });
 
+test("an outfield player is never replaced by a goalkeeper", () => {
+  const roster = {
+    active: [1, 10],
+    bench: [12, 13],
+    departed: [],
+    sentOff: [],
+    substitutesIn: [],
+    substitutions: 0,
+    identities: {
+      1: { position: "Goalkeeper" },
+      10: { position: "Midfielder" },
+      12: { position: "Goalkeeper" },
+      13: { position: "Attacker" },
+    },
+  };
+
+  const change = substitute(roster, () => 0.99);
+
+  assert.deepEqual(change, { out: 10, in: 13 });
+  assert.ok(roster.active.includes(13));
+  assert.ok(!roster.active.includes(10));
+  assert.ok(roster.bench.includes(12));
+});
+
 test("a goalkeeper is not automatically replaced by an outfield player", () => {
   const roster = {
     active: [1, 2],

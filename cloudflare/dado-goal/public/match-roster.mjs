@@ -60,7 +60,11 @@ export function substitute(
     ? roster.bench.filter(
         number => roster.identities?.[number]?.position === "Goalkeeper"
       )
-    : roster.bench;
+    : outgoingPosition
+      ? roster.bench.filter(
+          number => roster.identities?.[number]?.position !== "Goalkeeper"
+        )
+      : roster.bench;
 
   if (eligibleIncoming.length === 0) return null;
 

@@ -13,7 +13,7 @@ test("all physical face positions have a statistics mapping", () => {
     .filter(([key]) => !["possession", "possessionRolls"].includes(key))
     .reduce((sum, [, value]) => sum + value, 0);
 
-  assert.equal(mappedTotal, 24);
+  assert.equal(mappedTotal, 27);
   assert.equal(teams[0].possession, 100);
   assert.equal(teams[1].possession, 0);
 });
@@ -73,4 +73,16 @@ test("possession is derived from valid roll counts and sums to 100", () => {
   assert.equal(home.possession, 75);
   assert.equal(away.possession, 25);
   assert.equal(home.possession + away.possession, 100);
+});
+
+test("a scored penalty counts as both penalty goal and match goal", () => {
+  const [home, away] = matchStatistics([
+    { seat: 0, die: "result", face: "RIGORE" },
+    { seat: 0, die: "penalty", face: "GOAL!" },
+  ]);
+
+  assert.equal(home.penalties, 1);
+  assert.equal(home.penaltyGoals, 1);
+  assert.equal(home.goals, 1);
+  assert.equal(away.goals, 0);
 });
