@@ -11,6 +11,8 @@
 _Static_assert(RMC_RULES_VERSION == 1 && RMC_GENERATOR_VERSION == 1 &&
     RMC_EVENT_SCHEMA_VERSION == 2 && RMC_MATCH_FLOW_VERSION == 1 &&
     RMC_MATCH_SELECTOR_VERSION == 1, "frozen versions");
+_Static_assert(RMC_MATCH_SELECTOR_V1_VERSION == 1 && RMC_MATCH_SELECTOR_V2_VERSION == 2,
+    "explicit selector versions");
 
 #ifdef RMC_WRAP_MALLOC
 static bool fail_allocation;
@@ -55,7 +57,7 @@ static void setup(uint64_t seed)
     assert(rmc_roster_lineup(roster(fixture->away_team), RMC_FORMATION_433, &away));
 }
 
-static void init_run(FlowRun *run, bool home_opens, uint64_t guard)
+static void init_run_version(FlowRun *run, bool home_opens, uint64_t guard, uint32_t version)
 {
     assert(RMC_FLOW_DEFAULT_EVENT_CAPACITY <= SIZE_MAX / sizeof(*run->events));
     assert(RMC_FLOW_DEFAULT_COMMAND_CAPACITY <= SIZE_MAX / sizeof(*run->commands));
@@ -64,7 +66,7 @@ static void init_run(FlowRun *run, bool home_opens, uint64_t guard)
     assert(run->events != NULL && run->commands != NULL);
     memset(run->events, 0xa5, RMC_FLOW_DEFAULT_EVENT_CAPACITY * sizeof(*run->events));
     memset(run->commands, 0x5a, RMC_FLOW_DEFAULT_COMMAND_CAPACITY * sizeof(*run->commands));
-    const RmcMatchFlowConfig config = {1, 1, home_opens ? fixture->home_team : fixture->away_team, guard};
+    const RmcMatchFlowConfig config = {1, version, home_opens ? fixture->home_team : fixture->away_team, guard};
     assert(rmc_match_flow_init(&career.foundation.world, fixture, &home, &away, &config,
         run->events, RMC_FLOW_DEFAULT_EVENT_CAPACITY,
         run->commands, RMC_FLOW_DEFAULT_COMMAND_CAPACITY, &run->flow) == RMC_FLOW_OK);
@@ -72,6 +74,11 @@ static void init_run(FlowRun *run, bool home_opens, uint64_t guard)
     RmcPcg32 canonical;
     assert(rmc_stream_init(&canonical, &career.foundation.world.identity, RMC_STREAM_MATCH, fixture->id.value));
     assert(run->flow.match_rng.state == canonical.state && run->flow.match_rng.increment == canonical.increment);
+}
+
+static void init_run(FlowRun *run, bool home_opens, uint64_t guard)
+{
+    init_run_version(run, home_opens, guard, RMC_MATCH_SELECTOR_V1_VERSION);
 }
 
 static void destroy(FlowRun *run)
@@ -192,6 +199,37 @@ static RmcPlayerId outfield(RmcTeamId team, RmcPlayerId exclude)
     return best;
 }
 
+/* Independent oracle: forward history traversal and a sorted candidate list,
+ * rather than the production backward search/minimum scan. */
+static RmcPlayerId rotated_recipient(const RmcMatchFlow *f)
+{
+    const RmcTeamId team = f->state.possession.team_id;
+    const RmcLineup *l = team.value == fixture->home_team.value ? &f->state.home_lineup : &f->state.away_lineup;
+    const RmcRoster *r = roster(team);
+    RmcPlayerId ids[RMC_LINEUP_PLAYERS];
+    size_t count = 0;
+    uint64_t anchor = 0;
+    for (size_t i = 0; i < f->journal.count; ++i) {
+        const RmcMatchFlowCommand *c = &f->journal.commands[i];
+        if (c->kind == RMC_FLOW_PASS && c->data.pass.team_id.value == team.value) { anchor = c->data.pass.recipient.value; }
+    }
+    for (size_t i = 0; i < RMC_LINEUP_PLAYERS; ++i) {
+        if (l->slots[i] == RMC_SLOT_POR || l->players[i].value == f->state.possession.controller.value) { continue; }
+        for (size_t j = 0; j < RMC_TEAM_PLAYERS; ++j) {
+            const RmcPlayer *p = &r->players[j];
+            if (p->id.value != 0 && p->team_id.value == team.value &&
+                p->id.value == l->players[i].value && p->department != RMC_DEPARTMENT_GOALKEEPER) {
+                size_t at = count++;
+                while (at > 0 && ids[at - 1].value > p->id.value) { ids[at] = ids[at - 1]; --at; }
+                ids[at] = p->id;
+            }
+        }
+    }
+    assert(count > 0);
+    for (size_t i = 0; i < count; ++i) { if (ids[i].value > anchor) { return ids[i]; } }
+    return ids[0];
+}
+
 static RmcMatchFlowCommand choose(RmcMatchFlow *f, unsigned home_bits, unsigned away_bits, unsigned policy)
 {
     RmcMatchFlowNext n, twice;
@@ -228,7 +266,9 @@ static RmcMatchFlowCommand choose(RmcMatchFlow *f, unsigned home_bits, unsigned 
         case RMC_FLOW_PASS:
             duration = c.data.pass.duration_seconds; nominal = 8; context = c.data.pass.context;
             assert(c.data.pass.passer.value == p->controller.value && c.data.pass.team_id.value == p->team_id.value);
-            assert(c.data.pass.recipient.value == outfield(p->team_id, p->controller).value);
+            if (f->config.selector_version == RMC_MATCH_SELECTOR_V1_VERSION) {
+                assert(c.data.pass.recipient.value == outfield(p->team_id, p->controller).value);
+            } else { assert(c.data.pass.recipient.value == rotated_recipient(f).value); }
             assert(c.data.pass.opponent.value == outfield(other, (RmcPlayerId){0}).value); break;
         case RMC_FLOW_TACKLE:
             duration = c.data.tackle.duration_seconds; nominal = 5; context = c.data.tackle.context;
@@ -411,10 +451,10 @@ static void reject(FlowRun *run, const RmcMatchFlowCommand *c, RmcFlowError expe
     free(events); free(commands);
 }
 
-static void test_atomicity(void)
+static void test_atomicity(uint32_t version)
 {
     FlowRun run;
-    init_run(&run, true, 0);
+    init_run_version(&run, true, 0, version);
     RmcMatchFlowCommand c = choose(&run.flow, 8, 8, 0);
     RmcMatchFlowCommand bad = c;
     bad.data.instruction.keep = false;
@@ -485,7 +525,7 @@ static void test_atomicity(void)
     assert(memcmp(&selection, &cs, sizeof(selection)) == 0);
     destroy(&run);
 
-    init_run(&run, false, 3);
+    init_run_version(&run, false, 3, version);
     open_first(&run, 8, 8);
     c = choose(&run.flow, 8, 8, 0);
     reject(&run, &c, RMC_FLOW_RESOURCE_EXHAUSTED);
@@ -500,7 +540,7 @@ static void test_init_rejections(void)
     RmcMatchFlowConfig config = {1, 1, fixture->home_team, 0};
     for (unsigned i = 0; i < 6; ++i) {
         config.flow_version = i == 0 ? 2 : 1;
-        config.selector_version = i == 1 ? 2 : 1;
+        config.selector_version = i == 1 ? 3 : 1;
         config.first_opening_team.value = i == 2 ? 0 : fixture->home_team.value;
         const size_t ec = i == 3 ? SIZE_MAX / sizeof(*run.events) + 1 : RMC_FLOW_DEFAULT_EVENT_CAPACITY;
         const size_t cc = i == 4 ? SIZE_MAX / sizeof(*run.commands) + 1 : RMC_FLOW_DEFAULT_COMMAND_CAPACITY;
@@ -511,10 +551,10 @@ static void test_init_rejections(void)
     destroy(&run);
 }
 
-static void test_resource_branches(void)
+static void test_resource_branches(uint32_t version)
 {
     for (unsigned policy = 0; policy < 4; ++policy) {
-        FlowRun run; init_run(&run, true, 0);
+        FlowRun run; init_run_version(&run, true, 0, version);
         unsigned reservations[6] = {0};
         bool reset_tested = false;
         bool allocated[12] = {false};
@@ -607,12 +647,267 @@ static void test_resource_branches(void)
     }
 }
 
+/* Full-array snapshots are used only for purity/atomicity, never semantic replay. */
+static void pure_selection(FlowRun *run)
+{
+    const RmcMatchFlow before = run->flow;
+    const size_t eb = RMC_FLOW_DEFAULT_EVENT_CAPACITY * sizeof(*run->events);
+    const size_t cb = RMC_FLOW_DEFAULT_COMMAND_CAPACITY * sizeof(*run->commands);
+    void *events = malloc(eb), *commands = malloc(cb);
+    assert(events != NULL && commands != NULL);
+    memcpy(events, run->events, eb); memcpy(commands, run->commands, cb);
+    RmcMatchFlowNext n;
+    RmcMatchFlowStatus status;
+    RmcMatchFlowCommand c, again;
+#ifdef RMC_WRAP_MALLOC
+    fail_allocation = true; /* Any attempted selector allocation fails this check. */
+#endif
+    assert(rmc_match_flow_next(&run->flow, &n) == RMC_FLOW_OK);
+    assert(rmc_match_flow_status(&run->flow, &status) == RMC_FLOW_OK);
+    assert(rmc_match_flow_select(&run->flow, &n, &c) == RMC_FLOW_OK);
+    assert(rmc_match_flow_select(&run->flow, &n, &again) == RMC_FLOW_OK);
+#ifdef RMC_WRAP_MALLOC
+    assert(fail_allocation); fail_allocation = false;
+#endif
+    same_command(&c, &again);
+    assert(memcmp(&before, &run->flow, sizeof(before)) == 0);
+    assert(memcmp(events, run->events, eb) == 0 && memcmp(commands, run->commands, cb) == 0);
+    free(events); free(commands);
+}
+
+static void test_versions(void)
+{
+    FlowRun run; init_run(&run, true, 0);
+    const RmcMatchFlow before = run.flow;
+    const uint32_t flows[] = {0, 1, 2, UINT32_MAX};
+    const uint32_t selectors[] = {0, 1, 2, 3, UINT32_MAX};
+    for (size_t i = 0; i < sizeof(flows) / sizeof(flows[0]); ++i) {
+        for (size_t j = 0; j < sizeof(selectors) / sizeof(selectors[0]); ++j) {
+            RmcMatchFlowConfig config = {flows[i], selectors[j], fixture->home_team, 0};
+            const bool supported = flows[i] == 1 && (selectors[j] == 1 || selectors[j] == 2);
+            assert(rmc_match_flow_init(&career.foundation.world, fixture, &home, &away, &config,
+                run.events, RMC_FLOW_DEFAULT_EVENT_CAPACITY, run.commands,
+                RMC_FLOW_DEFAULT_COMMAND_CAPACITY, &run.flow) ==
+                (supported ? RMC_FLOW_OK : RMC_FLOW_UNSUPPORTED_VERSION));
+            if (!supported) { assert(memcmp(&before, &run.flow, sizeof(before)) == 0); }
+            run.flow = before; /* Unstarted rejection harness only. */
+        }
+    }
+    RmcMatchFlowCommand c = choose(&run.flow, 8, 8, 0);
+    /* Invalid metadata must be rejected by every entry point, preserving outputs. */
+    run.flow.config.selector_version = 3;
+    reject(&run, &c, RMC_FLOW_UNSUPPORTED_VERSION);
+    RmcMatchFlowNext n = {0}, saved_n = n;
+    RmcMatchFlowStatus status = {0}, saved_status = status;
+    RmcMatchFlowCommand selected = {0}, saved = selected;
+    assert(rmc_match_flow_next(&run.flow, &n) == RMC_FLOW_UNSUPPORTED_VERSION);
+    assert(rmc_match_flow_status(&run.flow, &status) == RMC_FLOW_UNSUPPORTED_VERSION);
+    assert(rmc_match_flow_select(&run.flow, &n, &selected) == RMC_FLOW_UNSUPPORTED_VERSION);
+    assert(rmc_match_flow_replay(&run.flow, NULL, 0) == RMC_FLOW_UNSUPPORTED_VERSION);
+    assert(memcmp(&n, &saved_n, sizeof(n)) == 0 && memcmp(&status, &saved_status, sizeof(status)) == 0);
+    assert(memcmp(&selected, &saved, sizeof(selected)) == 0);
+    destroy(&run);
+}
+
+static const RmcPlayer *owned_player(RmcTeamId team, RmcPlayerId id)
+{
+    const RmcRoster *r = roster(team);
+    for (size_t i = 0; i < RMC_TEAM_PLAYERS; ++i) {
+        if (r->players[i].id.value == id.value && r->players[i].team_id.value == team.value) { return &r->players[i]; }
+    }
+    assert(false); return NULL;
+}
+
+/* Noncanonical legal commands exercise recorded anchors; these are expressly
+ * separate from the canonical participation campaign. No outcome is forced. */
+static void test_v2_anchors(void)
+{
+    FlowRun run; init_run_version(&run, true, 0, RMC_MATCH_SELECTOR_V2_VERSION);
+    open_first(&run, 0, 0);
+    RmcMatchFlowCommand first = choose(&run.flow, 0, 0, 0);
+    assert(first.kind == RMC_FLOW_PASS);
+    assert(first.data.pass.recipient.value == outfield(fixture->home_team, first.data.pass.passer).value);
+    /* A plausible uncommitted PASS at either end of unused storage is ignored. */
+    run.commands[run.flow.journal.count] = first;
+    run.commands[run.flow.journal.capacity - 1] = first;
+    run.commands[run.flow.journal.count].data.pass.recipient.value = UINT64_MAX;
+    run.commands[run.flow.journal.capacity - 1].data.pass.recipient.value = UINT64_MAX;
+    pure_selection(&run);
+    RmcMatchFlowCommand selected = choose(&run.flow, 0, 0, 0);
+    same_command(&first, &selected);
+    RmcMatchFlowCommand bad = selected;
+    bad.data.pass.recipient = bad.data.pass.passer;
+    reject(&run, &bad, RMC_FLOW_OPERATION_REJECTED);
+    selected = choose(&run.flow, 0, 0, 0); same_command(&first, &selected);
+    unsigned passes[2] = {0}, keeper_control = 0, keeper_anchor = 0, wraps = 0, successors = 0;
+    unsigned controller_anchor = 0, opponent_interleaved = 0, failed = 0;
+    uint64_t previous[2] = {0};
+    for (uint64_t guard = 0; guard < RMC_FLOW_DEFAULT_OPERATION_LIMIT; ++guard) {
+        RmcMatchFlowNext n;
+        assert(rmc_match_flow_next(&run.flow, &n) == RMC_FLOW_OK);
+        if (n.kind == RMC_FLOW_COMPLETE) { break; }
+        RmcMatchFlowCommand c = choose(&run.flow, 0, 0, 0);
+        if (c.kind == RMC_FLOW_PASS) {
+            const size_t side = c.data.pass.team_id.value == fixture->home_team.value ? 0 : 1;
+            const RmcLineup *l = side == 0 ? &home : &away;
+            if (previous[side]) {
+                if (c.data.pass.recipient.value > previous[side]) { ++successors; } else { ++wraps; }
+                if (previous[side] == c.data.pass.passer.value) { ++controller_anchor; }
+                if (previous[side] == l->players[0].value) { ++keeper_anchor; }
+                for (size_t i = run.flow.journal.count; i > 0; --i) {
+                    if (run.commands[i - 1].kind == RMC_FLOW_PASS) {
+                        if (run.commands[i - 1].data.pass.team_id.value != c.data.pass.team_id.value) { ++opponent_interleaved; }
+                        break;
+                    }
+                }
+            }
+            if (c.data.pass.passer.value == l->players[0].value) { ++keeper_control; pure_selection(&run); }
+            /* First anchor is an interior outfielder; second is the goalkeeper;
+             * third is the largest eligible outfielder, so the next PASS wraps. */
+            if (passes[side] == 0 || passes[side] == 2) {
+                RmcPlayerId target = {0};
+                for (size_t i = 0; i < RMC_LINEUP_PLAYERS; ++i) {
+                    const RmcPlayer *p = owned_player(c.data.pass.team_id, l->players[i]);
+                    if (l->slots[i] != RMC_SLOT_POR && p->department != RMC_DEPARTMENT_GOALKEEPER &&
+                        p->id.value != c.data.pass.passer.value &&
+                        (passes[side] == 2 || p->department == RMC_DEPARTMENT_MIDFIELDER) &&
+                        p->id.value > target.value) { target = p->id; }
+                }
+                assert(target.value != 0); c.data.pass.recipient = target;
+            } else if (passes[side] == 1) {
+                assert(c.data.pass.passer.value != l->players[0].value);
+                c.data.pass.recipient = l->players[0];
+            }
+            previous[side] = c.data.pass.recipient.value;
+            ++passes[side];
+        }
+        const RmcMatchFlowStepResult step = apply(&run, &c);
+        if (c.kind == RMC_FLOW_PASS && run.events[step.first_event_index].outcome_code == RMC_PASS_OUTCOME_LOOSE_BALL) { ++failed; }
+    }
+    evidence(&run);
+    assert(passes[0] > 3 && passes[1] > 3 && keeper_control && keeper_anchor && wraps && successors);
+    assert(controller_anchor && opponent_interleaved && failed);
+    /* A malformed lineup cannot supply recipients. Error preserves output. This
+     * cannot occur in a valid fixed eleven; it is not generated-match evidence. */
+    destroy(&run);
+    init_run_version(&run, true, 0, RMC_MATCH_SELECTOR_V2_VERSION); open_first(&run, 0, 0);
+    RmcMatchFlowNext n; assert(rmc_match_flow_next(&run.flow, &n) == RMC_FLOW_OK);
+    for (size_t i = 0; i < RMC_LINEUP_PLAYERS; ++i) { run.flow.state.home_lineup.players[i] = home.players[0]; }
+    RmcMatchFlowCommand output; memset(&output, 0x26, sizeof(output));
+    unsigned char bytes[sizeof(output)]; memcpy(bytes, &output, sizeof(output));
+    assert(rmc_match_flow_select(&run.flow, &n, &output) == RMC_FLOW_INVALID_STATE);
+    assert(memcmp(bytes, &output, sizeof(output)) == 0);
+    destroy(&run);
+    printf("v2 legal anchor cases: successor=%u wrap=%u P=C=%u keeper-anchor=%u keeper-control=%u opponent-interleaved=%u failed=%u\n",
+        successors, wraps, controller_anchor, keeper_anchor, keeper_control, opponent_interleaved, failed);
+}
+
+/* Declared bounded campaign: at most 16 seeds x 8 instruction pairs. First
+ * calendar fixture; 442/433; home=h, away=3*h modulo 8 in both windows;
+ * home opens iff (seed offset+h) is even. Stop after a complete seed block
+ * once all 12 coverage cells have genuine evidence. No RNG preview/retries. */
+static void test_v2_participation(void)
+{
+    unsigned coverage[2][2][3] = {{{0}}}; /* side, MID/ATT, receipt/control/shot */
+    unsigned completed = 0;
+    bool qualified = false;
+    puts("v2 campaign declared maximum=128 seeds=20261114..20261129 fixture-index=0 formations=442/433 h=0..7 a=3*h%8 both windows opener=(seed-offset+h)%2");
+    for (unsigned seed_index = 0; seed_index < 16 && !qualified; ++seed_index) {
+        const uint64_t seed = UINT64_C(20261114) + seed_index;
+        setup(seed);
+        for (unsigned h = 0; h < 8; ++h) {
+            const unsigned a = (3 * h) % 8;
+            FlowRun run; init_run_version(&run, (seed_index + h) % 2 == 0, 0, RMC_MATCH_SELECTOR_V2_VERSION);
+            bool received[2][RMC_TEAM_PLAYERS] = {{false}};
+            uint64_t receipt_command[2][RMC_TEAM_PLAYERS] = {{0}};
+            size_t receipt_event[2][RMC_TEAM_PLAYERS] = {{0}};
+            for (uint64_t guard = 0; guard < RMC_FLOW_DEFAULT_OPERATION_LIMIT; ++guard) {
+                RmcMatchFlowNext n; assert(rmc_match_flow_next(&run.flow, &n) == RMC_FLOW_OK);
+                if (n.kind == RMC_FLOW_COMPLETE) { break; }
+                RmcMatchFlowCommand c = choose(&run.flow, h, a, 0);
+                const RmcTeamId own = run.flow.state.possession.team_id;
+                const RmcPlayerId controller = run.flow.state.possession.controller;
+                const RmcMatchFlowStepResult step = apply(&run, &c);
+                if (c.kind == RMC_FLOW_PASS) {
+                    const RmcMatchEvent *e = &run.events[step.first_event_index];
+                    assert(e->primary_actor.value == c.data.pass.passer.value && e->secondary_actor.value == c.data.pass.recipient.value);
+                    if (e->outcome_code == RMC_PASS_OUTCOME_COMPLETED) {
+                        assert(run.flow.state.possession.controller.value == c.data.pass.recipient.value);
+                        const size_t side = c.data.pass.team_id.value == fixture->home_team.value ? 0 : 1;
+                        const RmcPlayer *p = owned_player(c.data.pass.team_id, c.data.pass.recipient);
+                        const size_t index = (size_t)(p - roster(c.data.pass.team_id)->players);
+                        received[side][index] = true;
+                        receipt_command[side][index] = c.command_id; receipt_event[side][index] = e->id;
+                        if (p->department == RMC_DEPARTMENT_MIDFIELDER || p->department == RMC_DEPARTMENT_ATTACKER) {
+                            unsigned *cell = &coverage[side][p->department - RMC_DEPARTMENT_MIDFIELDER][0];
+                            if ((*cell)++ == 0) {
+                                printf("v2 witness receipt seed=%llu fixture=%llu h=%u a=%u opener=%s team=%llu side=%zu department=%u player=%llu command=%llu event=%llu outcome=COMPLETED controller=%llu\n",
+                                    (unsigned long long)seed, (unsigned long long)fixture->id.value, h, a,
+                                    run.flow.config.first_opening_team.value == fixture->home_team.value ? "home" : "away",
+                                    (unsigned long long)c.data.pass.team_id.value, side, (unsigned)p->department,
+                                    (unsigned long long)p->id.value, (unsigned long long)c.command_id,
+                                    (unsigned long long)e->id, (unsigned long long)run.flow.state.possession.controller.value);
+                            }
+                        }
+                    }
+                }
+                RmcPlayerId actor = {0};
+                if (c.kind == RMC_FLOW_PASS) { actor = c.data.pass.passer; }
+                if (c.kind == RMC_FLOW_CARRY) { actor = c.data.carry.carrier; }
+                if (c.kind == RMC_FLOW_DRIBBLE) { actor = c.data.dribble.dribbler; }
+                if (c.kind == RMC_FLOW_SHOT) { actor = c.data.shot.shooter; }
+                if (actor.value) {
+                    assert(actor.value == controller.value);
+                    const size_t side = own.value == fixture->home_team.value ? 0 : 1;
+                    const RmcPlayer *p = owned_player(own, actor);
+                    const size_t index = (size_t)(p - roster(own)->players);
+                    if (p->department == RMC_DEPARTMENT_MIDFIELDER || p->department == RMC_DEPARTMENT_ATTACKER) {
+                        const unsigned d = p->department - RMC_DEPARTMENT_MIDFIELDER;
+                        for (unsigned metric = 1; metric <= 2; ++metric) {
+                            if ((metric == 1 && !received[side][index]) || (metric == 2 && c.kind != RMC_FLOW_SHOT)) { continue; }
+                            if (metric == 2) {
+                                const RmcMatchEvent *shot = &run.events[step.first_event_index + 1];
+                                assert(shot->type == RMC_EVENT_SHOT && shot->primary_actor.value == actor.value);
+                            }
+                            if (coverage[side][d][metric]++ == 0) {
+                                printf("v2 witness %s seed=%llu fixture=%llu h=%u a=%u opener=%s team=%llu side=%zu department=%u player=%llu command=%llu event=%zu kind=%u prior-receipt-command=%llu event=%zu\n",
+                                    metric == 1 ? "control" : "shot", (unsigned long long)seed,
+                                    (unsigned long long)fixture->id.value, h, a,
+                                    run.flow.config.first_opening_team.value == fixture->home_team.value ? "home" : "away",
+                                    (unsigned long long)own.value, side, (unsigned)p->department,
+                                    (unsigned long long)actor.value, (unsigned long long)c.command_id,
+                                    step.first_event_index + (metric == 2 ? 2 : 1), (unsigned)c.kind,
+                                    (unsigned long long)receipt_command[side][index], receipt_event[side][index]);
+                            }
+                        }
+                    }
+                }
+            }
+            evidence(&run); ++completed; destroy(&run);
+        }
+        qualified = true;
+        for (unsigned side = 0; side < 2; ++side) {
+            for (unsigned d = 0; d < 2; ++d) {
+                for (unsigned m = 0; m < 3; ++m) { if (!coverage[side][d][m]) { qualified = false; } }
+            }
+        }
+    }
+    for (unsigned side = 0; side < 2; ++side) {
+        for (unsigned d = 0; d < 2; ++d) {
+            printf("v2 coverage side=%u department=%u receipts=%u subsequent-control=%u shots=%u\n",
+                side, d + RMC_DEPARTMENT_MIDFIELDER, coverage[side][d][0], coverage[side][d][1], coverage[side][d][2]);
+        }
+    }
+    printf("v2 campaign attempted=%u completed=%u maximum=128 qualified=%s\n", completed, completed, qualified ? "yes" : "no");
+    assert(qualified);
+}
+
 int rmc_flow_acceptance(void)
 {
     setup(UINT64_C(20261114));
     test_init_rejections();
-    test_atomicity();
-    test_resource_branches();
+    test_atomicity(RMC_MATCH_SELECTOR_V1_VERSION);
+    test_resource_branches(RMC_MATCH_SELECTOR_V1_VERSION);
     Evidence total = {0};
     /* All 8x8 pairs of validated instruction triples, both windows; opener
      * alternates fixture side. KEEP is independently covered above. */
@@ -637,6 +932,11 @@ int rmc_flow_acceptance(void)
     assert(total.pass_loose > 0 && total.tackle_loose > 0 && total.shot_loose > 0);
     printf("canonical 64 instruction pairs: GOAL->KICKOFF->play=%u WIDE->GOAL_KICK->play=%u recoveries pass/tackle/shot=%u/%u/%u\n",
         total.goal_followed_play, total.wide_followed_play, total.pass_loose, total.tackle_loose, total.shot_loose);
+    test_versions();
+    test_atomicity(RMC_MATCH_SELECTOR_V2_VERSION);
+    test_resource_branches(RMC_MATCH_SELECTOR_V2_VERSION);
+    test_v2_anchors();
+    test_v2_participation();
     return 0;
 }
 

@@ -12,6 +12,8 @@
 
 #define RMC_MATCH_FLOW_VERSION UINT32_C(1)
 #define RMC_MATCH_SELECTOR_VERSION UINT32_C(1)
+#define RMC_MATCH_SELECTOR_V1_VERSION UINT32_C(1)
+#define RMC_MATCH_SELECTOR_V2_VERSION UINT32_C(2)
 #define RMC_FLOW_DEFAULT_COMMAND_CAPACITY 21616u
 #define RMC_FLOW_DEFAULT_EVENT_CAPACITY 36008u
 #define RMC_FLOW_DEFAULT_OPERATION_LIMIT UINT64_C(21616)
@@ -68,7 +70,7 @@ typedef struct {
 
 typedef struct {
     uint32_t flow_version;
-    uint32_t selector_version;
+    uint32_t selector_version; /* Explicit v1/v2; immutable after init. */
     RmcTeamId first_opening_team;
     uint64_t operation_limit; /* 0 = default; otherwise 1..default. */
 } RmcMatchFlowConfig;

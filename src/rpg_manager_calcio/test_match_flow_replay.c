@@ -65,12 +65,12 @@ static void same_flow(const FlowRun *a, const FlowRun *b)
     assert(x.complete == y.complete && x.needs_instruction == y.needs_instruction);
 }
 
-static void replay_match(unsigned policy, bool home_opens)
+static void replay_match_version(unsigned policy, bool home_opens, uint32_t version)
 {
     FlowRun live, incremental, batch;
-    init_run(&live, home_opens, 0);
-    init_run(&incremental, home_opens, 0);
-    init_run(&batch, home_opens, 0);
+    init_run_version(&live, home_opens, 0, version);
+    init_run_version(&incremental, home_opens, 0, version);
+    init_run_version(&batch, home_opens, 0, version);
     bool half_seen = false;
     size_t half_count = 0;
     for (uint64_t guard = 0; guard < RMC_FLOW_DEFAULT_OPERATION_LIMIT; ++guard) {
@@ -85,6 +85,12 @@ static void replay_match(unsigned policy, bool home_opens)
         /* Source record is from a different executor's actual accepted journal. */
         assert(rmc_match_flow_replay(&incremental.flow, &live.commands[live.flow.journal.count - 1], 1) == RMC_FLOW_OK);
         same_flow(&live, &incremental);
+        if (step.status.complete == false) {
+            const bool after_half = live.flow.state.period >= RMC_MATCH_HALF_TIME;
+            RmcMatchFlowCommand x = choose(&live.flow, after_half ? 7 : 0, after_half ? 8 : 4, policy);
+            RmcMatchFlowCommand y = choose(&incremental.flow, after_half ? 7 : 0, after_half ? 8 : 4, policy);
+            same_command(&x, &y); /* Destination journal reconstructs history. */
+        }
         if (step.entered_half_time) {
             assert(!half_seen);
             half_seen = true;
@@ -101,17 +107,69 @@ static void replay_match(unsigned policy, bool home_opens)
     same_flow(&live, &batch);
     Evidence x = evidence(&live);
     assert(live.flow.home_instructions.approach == RMC_FLOW_DIRECT && live.flow.away_instructions.pressure == RMC_FLOW_PRESS_HIGH);
-    printf("semantic replay policy=%u opener=%s commands=%zu events=%zu score=%u:%u goals=%u wides=%u RNG=%016llx/%016llx\n",
-        policy, home_opens ? "home" : "away", live.flow.journal.count, live.flow.log.count,
+    printf("semantic replay selector=%u policy=%u opener=%s commands=%zu events=%zu score=%u:%u goals=%u wides=%u RNG=%016llx/%016llx\n",
+        version, policy, home_opens ? "home" : "away", live.flow.journal.count, live.flow.log.count,
         live.flow.state.home_goals, live.flow.state.away_goals, x.goals, x.wides,
         (unsigned long long)live.flow.match_rng.state, (unsigned long long)live.flow.match_rng.increment);
     destroy(&live); destroy(&incremental); destroy(&batch);
 }
 
-static void test_replay_prefix_failure(void)
+static void replay_match(unsigned policy, bool home_opens)
+{
+    replay_match_version(policy, home_opens, RMC_MATCH_SELECTOR_V1_VERSION);
+}
+
+static void test_v2_prefix_continuation(bool goalkeeper_history)
+{
+    FlowRun live, continued;
+    init_run_version(&live, true, 0, RMC_MATCH_SELECTOR_V2_VERSION);
+    init_run_version(&continued, true, 0, RMC_MATCH_SELECTOR_V2_VERSION);
+    bool pass_seen[2] = {false}, failed_seen = false, prefix_found = false;
+    size_t prefix = 0;
+    for (uint64_t guard = 0; guard < RMC_FLOW_DEFAULT_OPERATION_LIMIT; ++guard) {
+        RmcMatchFlowNext n; assert(rmc_match_flow_next(&live.flow, &n) == RMC_FLOW_OK);
+        if (n.kind == RMC_FLOW_COMPLETE) { break; }
+        RmcMatchFlowCommand c = choose(&live.flow, 0, 0, 0);
+        if (goalkeeper_history && c.kind == RMC_FLOW_PASS) {
+            const RmcLineup *l = c.data.pass.team_id.value == fixture->home_team.value ? &home : &away;
+            if (c.data.pass.passer.value != l->players[0].value) { c.data.pass.recipient = l->players[0]; }
+        }
+        const RmcMatchFlowStepResult step = apply(&live, &c);
+        if (c.kind == RMC_FLOW_PASS) {
+            const size_t side = c.data.pass.team_id.value == fixture->home_team.value ? 0 : 1;
+            pass_seen[side] = true;
+            const bool failed = live.events[step.first_event_index].outcome_code == RMC_PASS_OUTCOME_LOOSE_BALL;
+            failed_seen |= failed;
+            const RmcLineup *l = side == 0 ? &home : &away;
+            const bool keeper_control = !failed && c.data.pass.recipient.value == l->players[0].value;
+            if (pass_seen[0] && pass_seen[1] && failed_seen && (goalkeeper_history ? keeper_control : failed)) {
+                prefix_found = true; prefix = live.flow.journal.count; break;
+            }
+        }
+    }
+    assert(prefix_found);
+    assert(rmc_match_flow_replay(&continued.flow, live.commands, prefix) == RMC_FLOW_OK);
+    same_flow(&live, &continued);
+    for (uint64_t guard = 0; guard < RMC_FLOW_DEFAULT_OPERATION_LIMIT; ++guard) {
+        RmcMatchFlowNext n; assert(rmc_match_flow_next(&live.flow, &n) == RMC_FLOW_OK);
+        if (n.kind == RMC_FLOW_COMPLETE) { break; }
+        RmcMatchFlowCommand a = choose(&live.flow, 0, 0, 0);
+        RmcMatchFlowCommand b = choose(&continued.flow, 0, 0, 0);
+        same_command(&a, &b);
+        apply(&live, &a); apply(&continued, &b);
+        same_flow(&live, &continued);
+    }
+    evidence(&live); evidence(&continued);
+    printf("v2 prefix continuation goalkeeper-history=%u prefix=%zu final-commands=%zu RNG=%016llx/%016llx\n",
+        goalkeeper_history, prefix, live.flow.journal.count,
+        (unsigned long long)live.flow.match_rng.state, (unsigned long long)live.flow.match_rng.increment);
+    destroy(&live); destroy(&continued);
+}
+
+static void test_replay_prefix_failure(uint32_t version)
 {
     FlowRun source, destination;
-    init_run(&source, true, 0); init_run(&destination, true, 0);
+    init_run_version(&source, true, 0, version); init_run_version(&destination, true, 0, version);
     open_first(&source, 8, 8);
     RmcMatchFlowCommand records[3];
     for (size_t i = 0; i < 3; ++i) { records[i] = source.commands[i]; }
@@ -127,12 +185,19 @@ static void test_replay_prefix_failure(void)
 int main(void)
 {
     setup(UINT64_C(20261114));
-    test_replay_prefix_failure();
+    test_replay_prefix_failure(RMC_MATCH_SELECTOR_V1_VERSION);
+    test_replay_prefix_failure(RMC_MATCH_SELECTOR_V2_VERSION);
     replay_match(0, true);
     replay_match(0, false);
     replay_match(1, true);
     replay_match(2, false);
     replay_match(3, true);
+    replay_match_version(0, true, RMC_MATCH_SELECTOR_V2_VERSION);
+    replay_match_version(0, false, RMC_MATCH_SELECTOR_V2_VERSION);
+    replay_match_version(1, true, RMC_MATCH_SELECTOR_V2_VERSION);
+    replay_match_version(3, true, RMC_MATCH_SELECTOR_V2_VERSION);
+    test_v2_prefix_continuation(false);
+    test_v2_prefix_continuation(true);
     puts("Full-match semantic replay covers every event/command, half-time/final state and RNG; no portable encoding/hash claim.");
     return 0;
 }

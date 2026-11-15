@@ -10,7 +10,7 @@
 
 enum { ROUTINE_LIMIT = 40 };
 enum { OPT_HELP, OPT_AUTO, OPT_VERIFY, OPT_SEED, OPT_TEAM, OPT_FIXTURE,
-    OPT_HOME, OPT_AWAY, OPT_OPENER, OPT_PRE, OPT_HALF, OPT_COUNT };
+    OPT_HOME, OPT_AWAY, OPT_OPENER, OPT_PRE, OPT_HALF, OPT_SELECTOR, OPT_COUNT };
 
 typedef struct {
     FILE *in, *out, *err;
@@ -20,6 +20,7 @@ typedef struct {
 typedef struct {
     unsigned seen;
     uint64_t seed, team, fixture;
+    uint32_t selector_version;
     RmcFormation home, away;
     bool away_opens, half_keep;
     RmcFlowInstructions pre, half;
@@ -125,9 +126,10 @@ static bool parse(int argc, const char *const argv[], Options *o)
 {
     static const char *const flags[OPT_COUNT] = {"--help", "--auto", "--verify-replay",
         "--seed", "--team", "--fixture", "--home-formation", "--away-formation",
-        "--opener", "--pre", "--half"};
+        "--opener", "--pre", "--half", "--selector-version"};
     *o = (Options){.seed = UINT64_C(20261114), .home = RMC_FORMATION_442,
         .away = RMC_FORMATION_433, .half_keep = true,
+        .selector_version = RMC_MATCH_SELECTOR_V2_VERSION,
         .pre = {RMC_FLOW_PATIENT, RMC_FLOW_CARRY_FIRST, RMC_FLOW_PRESS_NORMAL}};
     for (int i = 1; i < argc; ++i) {
         unsigned f;
@@ -140,6 +142,11 @@ static bool parse(int argc, const char *const argv[], Options *o)
         if (++i >= argc) { return false; }
         const char *v = argv[i];
         switch (f) {
+        case OPT_SELECTOR:
+            if (strcmp(v, "1") == 0) { o->selector_version = RMC_MATCH_SELECTOR_V1_VERSION; }
+            else if (strcmp(v, "2") == 0) { o->selector_version = RMC_MATCH_SELECTOR_V2_VERSION; }
+            else { return false; }
+            break;
         case OPT_SEED: if (!number(v, &o->seed)) { return false; } break;
         case OPT_TEAM: if (!number(v, &o->team) || o->team == 0) { return false; } break;
         case OPT_FIXTURE: if (!number(v, &o->fixture) || o->fixture == 0) { return false; } break;
@@ -168,6 +175,7 @@ static void help(Console *c)
     write_to(c, c->out,
         "Uso: rmc-match [--auto] [--verify-replay] [opzioni]\n"
         "     rmc-match --help\n"
+        "  --selector-version 1|2    default 2; 1 minimo destinatario, 2 rotazione PASS accettati\n"
         "  --seed UINT64             decimale 0..18446744073709551615; default 20261114\n"
         "  --team TEAM_ID            ID esistente; default minimo TeamId\n"
         "  --fixture MATCH_ID        calendario generato; default primo incontro della squadra\n"
@@ -292,8 +300,12 @@ static int menu(Console *c, const char *label, const char *choices,
 static int tactics_prompt(Console *c, Options *o, bool half)
 {
     RmcFlowInstructions t = o->pre;
-    write_to(c, c->out, "Selector v1: q = numero operazioni sportive modulo 5; "
-        "portiere distribuisce prima, poi contrasti, tiri, passaggi q=0 e progressione.\n");
+    write_to(c, c->out, "Selector v%" PRIu32 ": q = numero operazioni sportive modulo 5; "
+        "portiere distribuisce prima, poi contrasti, tiri, passaggi q=0 e progressione.\n",
+        o->selector_version);
+    write_to(c, c->out, "%s\n", o->selector_version == RMC_MATCH_SELECTOR_V1_VERSION ?
+        "PASS: minimo PlayerId fra i giocatori di movimento eleggibili, escluso il controllore." :
+        "PASS: successore PlayerId dell'ultimo destinatario PASS accettato della squadra, fra i giocatori di movimento eleggibili; ritorno al minimo, escluso il controllore.");
     unsigned choice;
     int rc;
     if (half) {
@@ -381,7 +393,7 @@ static int setup(Console *c, Options *o, RmcCareerSetup *career, const RmcFixtur
     write_to(c, c->out, "Universo seed=%" PRIu64 " generator=%" PRIu32 " rules=%" PRIu32
         " flow=%" PRIu32 " selector=%" PRIu32 " schema=%" PRIu32 "\n",
         o->seed, RMC_GENERATOR_VERSION, RMC_RULES_VERSION, RMC_MATCH_FLOW_VERSION,
-        RMC_MATCH_SELECTOR_VERSION, RMC_EVENT_SCHEMA_VERSION);
+        o->selector_version, RMC_EVENT_SCHEMA_VERSION);
     uint64_t lowest = UINT64_MAX;
     for (size_t i = 0; i < RMC_WORLD_TEAMS; ++i) {
         const RmcTeam *t = &w->teams[i];
@@ -721,7 +733,7 @@ static int play(Console *c, Options *o, const RmcCareerSetup *career, const RmcF
     RmcLineup home, away;
     if (!rmc_roster_lineup(roster(w, selected->home_team), o->home, &home) ||
         !rmc_roster_lineup(roster(w, selected->away_team), o->away, &away)) { return 1; }
-    const RmcMatchFlowConfig config = {RMC_MATCH_FLOW_VERSION, RMC_MATCH_SELECTOR_VERSION,
+    const RmcMatchFlowConfig config = {RMC_MATCH_FLOW_VERSION, o->selector_version,
         o->away_opens ? selected->away_team : selected->home_team, 0};
     Run run = {0};
     int rc = 1;

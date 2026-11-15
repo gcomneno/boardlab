@@ -74,7 +74,7 @@ static const RmcTeam *owned_team(const RmcWorldCore *w, RmcTeamId id)
  * possession patches or forced outcomes. Prompt wording is checked elsewhere. */
 static void check_reference(const Capture *c, const RmcCareerSetup *career,
     const RmcFixture *fixture, RmcTeamId managed, bool changed_pre, bool changed_half,
-    RmcFormation hf, RmcFormation af, bool away_opens)
+    RmcFormation hf, RmcFormation af, bool away_opens, uint32_t version)
 {
     assert(c->code == 0 && c->err[0] == '\0');
     const RmcWorldCore *w = &career->foundation.world;
@@ -85,7 +85,7 @@ static void check_reference(const Capture *c, const RmcCareerSetup *career,
     assert(rmc_roster_lineup(owned_roster(w, fixture->home_team), hf, &home));
     assert(rmc_roster_lineup(owned_roster(w, fixture->away_team), af, &away));
     RmcMatchFlow f;
-    const RmcMatchFlowConfig config = {RMC_MATCH_FLOW_VERSION, RMC_MATCH_SELECTOR_VERSION,
+    const RmcMatchFlowConfig config = {RMC_MATCH_FLOW_VERSION, version,
         away_opens ? fixture->away_team : fixture->home_team, 0};
     assert(rmc_match_flow_init(w, fixture, &home, &away, &config, events,
         RMC_FLOW_DEFAULT_EVENT_CAPACITY, commands, RMC_FLOW_DEFAULT_COMMAND_CAPACITY, &f) == RMC_FLOW_OK);
@@ -230,6 +230,11 @@ static void check_reference(const Capture *c, const RmcCareerSetup *career,
 static void invalid_options(void)
 {
     static const char *const cases[][7] = {
+        {"--selector-version"}, {"--selector-version", "0"}, {"--selector-version", "3"},
+        {"--selector-version", "-1"}, {"--selector-version", "+1"}, {"--selector-version", "01"},
+        {"--selector-version", "1x"}, {"--selector-version", "1.0"}, {"--selector-version", ""},
+        {"--selector-version", "18446744073709551616"},
+        {"--selector-version", "1", "--selector-version", "2"},
         {"--wat"}, {"--auto", "junk"}, {"--help", "--auto"}, {"--help", "--help"},
         {"--auto", "--auto"}, {"--verify-replay", "--verify-replay"},
         {"--seed"}, {"--seed", "18446744073709551616"}, {"--seed", "-1"}, {"--seed", "+1"},
@@ -322,7 +327,7 @@ int main(void)
     assert(first != NULL);
     const char *auto_args[] = {"rmc-match", "--auto"};
     Capture automatic = INVOKE(auto_args, "must remain unread\n");
-    check_reference(&automatic, career, first, lowest, false, false, RMC_FORMATION_442, RMC_FORMATION_433, false);
+    check_reference(&automatic, career, first, lowest, false, false, RMC_FORMATION_442, RMC_FORMATION_433, false, RMC_MATCH_SELECTOR_V2_VERSION);
     assert(occurrences(automatic.out, "[candidata carriera]") == 3);
     assert(occurrences(automatic.out, "Squadra #") == 8);
     Capture repeat = INVOKE(auto_args, "");
@@ -330,6 +335,23 @@ int main(void)
     /* Deterministic semantic summary comparison is separate from prompts. */
     assert(strcmp(strstr(automatic.out, "Finale:"), strstr(repeat.out, "Finale:")) == 0);
     release(&repeat);
+    assert(strstr(automatic.out, "flow=1 selector=2 schema=2") != NULL);
+    const char *v2_args[] = {"rmc-match", "--auto", "--selector-version", "2"};
+    Capture v2 = INVOKE(v2_args, "unread\n");
+    assert(v2.code == 0 && strcmp(automatic.out, v2.out) == 0);
+    release(&v2);
+    const char *v1_args[] = {"rmc-match", "--auto", "--selector-version", "1", "--verify-replay"};
+    Capture v1 = INVOKE(v1_args, "unread\n");
+    assert(strstr(v1.out, "flow=1 selector=1 schema=2") != NULL);
+    assert(strstr(v1.out, "Replay semantico: PASS") != NULL);
+    check_reference(&v1, career, first, lowest, false, false,
+        RMC_FORMATION_442, RMC_FORMATION_433, false, RMC_MATCH_SELECTOR_V1_VERSION);
+    const char *v1_menu[] = {"rmc-match", "--selector-version", "1", "--verify-replay"};
+    Capture v1_interactive = INVOKE(v1_menu, "\n\n\n\n\n1\n1\n1\n1\n");
+    assert(v1_interactive.code == 0 && strstr(v1_interactive.out, "Selector v1:") != NULL);
+    assert(strstr(v1_interactive.out, "minimo PlayerId fra i giocatori di movimento eleggibili") != NULL);
+    assert(strcmp(strstr(v1.out, "Finale:"), strstr(v1_interactive.out, "Finale:")) == 0);
+    release(&v1); release(&v1_interactive);
     const char *verify_args[] = {"rmc-match", "--verify-replay", "--auto"};
     Capture replay = INVOKE(verify_args, "");
     assert(replay.code == 0 && strstr(replay.out, "Replay semantico: PASS") != NULL);
@@ -338,6 +360,7 @@ int main(void)
     const char *interactive[] = {"rmc-match"};
     Capture blanks = INVOKE(interactive, "\n\n\n\n\n\n\n\n\n");
     assert(blanks.code == 0 && strstr(blanks.out, "[1 = KEEP]") != NULL);
+    assert(strstr(blanks.out, "Selector v2:") != NULL && strstr(blanks.out, "ultimo destinatario PASS accettato") != NULL);
     assert(strcmp(strstr(automatic.out, "Finale:"), strstr(blanks.out, "Finale:")) == 0);
     release(&blanks);
     Capture eof = INVOKE(interactive, "");
@@ -368,13 +391,13 @@ int main(void)
     const char *home_args[] = {"rmc-match", "--team", home_id, "--fixture", match_id, "--verify-replay"};
     Capture home_play = INVOKE(home_args, "\n\n\n2\n2\n2\n1\n");
     assert(strstr(home_play.out, "Replay semantico: PASS") != NULL);
-    check_reference(&home_play, career, f, f->home_team, true, false, RMC_FORMATION_442, RMC_FORMATION_433, false);
+    check_reference(&home_play, career, f, f->home_team, true, false, RMC_FORMATION_442, RMC_FORMATION_433, false, RMC_MATCH_SELECTOR_V2_VERSION);
     release(&home_play);
     const char *away_args[] = {"rmc-match", "--seed", "20261114", "--team", away_id,
         "--fixture", match_id, "--verify-replay"};
     Capture away_play = INVOKE(away_args, "352\n442\naway\n2\n2\n2\n2\n\n\n\n");
     assert(strstr(away_play.out, "Replay semantico: PASS") != NULL);
-    check_reference(&away_play, career, f, f->away_team, true, true, RMC_FORMATION_352, RMC_FORMATION_442, true);
+    check_reference(&away_play, career, f, f->away_team, true, true, RMC_FORMATION_352, RMC_FORMATION_442, true, RMC_MATCH_SELECTOR_V2_VERSION);
     assert(strstr(away_play.out, "Istruzioni attuali: DIRECT DRIBBLE_FIRST PRESS_HIGH") != NULL);
     assert(strstr(away_play.out, "Approach [2 = DIRECT]") != NULL);
     assert(strstr(away_play.out, "Progression [2 = DRIBBLE_FIRST]") != NULL);
@@ -385,13 +408,13 @@ int main(void)
         "--home-formation", "433", "--away-formation", "352", "--opener", "away",
         "--pre", "DIRECT", "DRIBBLE_FIRST", "PRESS_HIGH", "--verify-replay"};
     Capture explicit_play = INVOKE(explicit_args, "unread\n");
-    check_reference(&explicit_play, career, f, f->home_team, true, true, RMC_FORMATION_433, RMC_FORMATION_352, true);
+    check_reference(&explicit_play, career, f, f->home_team, true, true, RMC_FORMATION_433, RMC_FORMATION_352, true, RMC_MATCH_SELECTOR_V2_VERSION);
     release(&explicit_play);
     /* Omitted pre is default; the complete triple changes only at actual half-time. */
     const char *half_args[] = {"rmc-match", "--auto", "--team", away_id, "--fixture", match_id,
         "--half", "DIRECT", "DRIBBLE_FIRST", "PRESS_HIGH", "--verify-replay"};
     Capture half_play = INVOKE(half_args, "");
-    check_reference(&half_play, career, f, f->away_team, false, true, RMC_FORMATION_442, RMC_FORMATION_433, false);
+    check_reference(&half_play, career, f, f->away_team, false, true, RMC_FORMATION_442, RMC_FORMATION_433, false, RMC_MATCH_SELECTOR_V2_VERSION);
     release(&half_play);
     /* All explicit setup choices bypass setup input; EOF occurs only at half. */
     const char *half_only[] = {"rmc-match", "--team", home_id, "--fixture", match_id,
@@ -414,39 +437,42 @@ int main(void)
      * lines: accepted sporting summaries equal the unchanged flag workflow.
      * Replay additionally compares every active command/event field, causal ID,
      * participant assignment, clock and exact RNG pair at half-time and final. */
-    for (unsigned bits = 0; bits < 8; ++bits) {
-        const char *a = bits & 1 ? "DIRECT" : "PATIENT";
-        const char *p = bits & 2 ? "DRIBBLE_FIRST" : "CARRY_FIRST";
-        const char *r = bits & 4 ? "PRESS_HIGH" : "PRESS_NORMAL";
-        const char *manager = bits & 1 ? away_id : home_id;
-        const char *flags[] = {"rmc-match", "--auto", "--team", manager, "--fixture", match_id,
-            "--pre", a, p, r, "--half", a, p, r, "--verify-replay"};
-        const char *menus[] = {"rmc-match", "--team", manager, "--fixture", match_id,
-            "--home-formation", "442", "--away-formation", "433", "--opener", "home", "--verify-replay"};
-        char input[1024];
-        memset(input, 'x', 300);
-        (void)snprintf(input + 300, sizeof(input) - 300,
-            "\n?\n9\n%u\n--help\n0\n%u\n?\n3\n%u\n--help\n9\n2\n?\n%u\n--help\n%u\n?\n%u\n",
-            1 + (bits & 1), 1 + ((bits >> 1) & 1), 1 + ((bits >> 2) & 1),
-            1 + (bits & 1), 1 + ((bits >> 1) & 1), 1 + ((bits >> 2) & 1));
-        Capture flagged = INVOKE(flags, "unread\n");
-        Capture numbered = INVOKE(menus, input);
-        assert(flagged.code == 0 && numbered.code == 0);
-        assert(strstr(numbered.err, "Input troppo lungo") != NULL);
-        assert(occurrences(numbered.out, "Aiuto:") == 7);
-        assert(strstr(numbered.out, "Replay semantico: PASS") != NULL);
-        assert(strcmp(strstr(flagged.out, "Finale:"), strstr(numbered.out, "Finale:")) == 0);
-        /* Compare all event commentary, independent of setup/half-time prompts. */
-        const char *x = flagged.out, *y = numbered.out;
-        while ((x = strstr(x, "LIVE ")) != NULL) {
-            y = strstr(y, "LIVE ");
-            assert(y != NULL);
-            size_t length = (size_t)(strchr(x, '\n') - x);
-            assert(strncmp(x, y, length) == 0 && y[length] == '\n');
-            x += length; y += length;
+    for (unsigned version = 1; version <= 2; ++version) {
+        const char *version_text = version == 1 ? "1" : "2";
+        for (unsigned bits = 0; bits < 8; ++bits) {
+            const char *a = bits & 1 ? "DIRECT" : "PATIENT";
+            const char *p = bits & 2 ? "DRIBBLE_FIRST" : "CARRY_FIRST";
+            const char *r = bits & 4 ? "PRESS_HIGH" : "PRESS_NORMAL";
+            const char *manager = bits & 1 ? away_id : home_id;
+            const char *flags[] = {"rmc-match", "--auto", "--team", manager, "--fixture", match_id,
+                "--pre", a, p, r, "--half", a, p, r, "--verify-replay", "--selector-version", version_text};
+            const char *menus[] = {"rmc-match", "--team", manager, "--fixture", match_id,
+                "--home-formation", "442", "--away-formation", "433", "--opener", "home", "--verify-replay", "--selector-version", version_text};
+            char input[1024];
+            memset(input, 'x', 300);
+            (void)snprintf(input + 300, sizeof(input) - 300,
+                "\n?\n9\n%u\n--help\n0\n%u\n?\n3\n%u\n--help\n9\n2\n?\n%u\n--help\n%u\n?\n%u\n",
+                1 + (bits & 1), 1 + ((bits >> 1) & 1), 1 + ((bits >> 2) & 1),
+                1 + (bits & 1), 1 + ((bits >> 1) & 1), 1 + ((bits >> 2) & 1));
+            Capture flagged = INVOKE(flags, "unread\n");
+            Capture numbered = INVOKE(menus, input);
+            assert(flagged.code == 0 && numbered.code == 0);
+            assert(strstr(numbered.err, "Input troppo lungo") != NULL);
+            assert(occurrences(numbered.out, "Aiuto:") == 7);
+            assert(strstr(numbered.out, "Replay semantico: PASS") != NULL);
+            assert(strcmp(strstr(flagged.out, "Finale:"), strstr(numbered.out, "Finale:")) == 0);
+            /* Compare all event commentary, independent of setup/half-time prompts. */
+            const char *x = flagged.out, *y = numbered.out;
+            while ((x = strstr(x, "LIVE ")) != NULL) {
+                y = strstr(y, "LIVE ");
+                assert(y != NULL);
+                size_t length = (size_t)(strchr(x, '\n') - x);
+                assert(strncmp(x, y, length) == 0 && y[length] == '\n');
+                x += length; y += length;
+            }
+            assert(strstr(y, "LIVE ") == NULL);
+            release(&flagged); release(&numbered);
         }
-        assert(strstr(y, "LIVE ") == NULL);
-        release(&flagged); release(&numbered);
     }
     const RmcFixture *unrelated = NULL;
     for (size_t i = 0; i < RMC_CALENDAR_FIXTURES; ++i) {

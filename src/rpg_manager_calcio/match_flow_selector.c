@@ -2,8 +2,9 @@
 
 /* State validation already establishes complete authoritative world/lineups.
  * Still resolve both roster ownership and slot AND department for each role. */
-static RmcPlayerId participant(
-    const RmcMatchFlow *f, RmcTeamId team, bool goalkeeper, RmcPlayerId exclude)
+static RmcPlayerId participant_after(
+    const RmcMatchFlow *f, RmcTeamId team, bool goalkeeper, RmcPlayerId exclude,
+    uint64_t after)
 {
     RmcPlayerId best = {0};
     const RmcLineup *l = team.value == f->state.fixture.home_team.value ? &f->state.home_lineup :
@@ -16,7 +17,7 @@ static RmcPlayerId participant(
             if ((l->slots[i] == RMC_SLOT_POR) != goalkeeper) { continue; }
             for (size_t j = 0; j < RMC_TEAM_PLAYERS; ++j) {
                 const RmcPlayer *p = &f->world->rosters[t].players[j];
-                if (p->id.value != 0 && p->id.value == l->players[i].value &&
+                if (p->id.value != 0 && p->id.value > after && p->id.value == l->players[i].value &&
                     p->id.value != exclude.value && p->team_id.value == team.value &&
                     (p->department == RMC_DEPARTMENT_GOALKEEPER) == goalkeeper &&
                     (best.value == 0 || p->id.value < best.value)) { best = p->id; }
@@ -24,6 +25,29 @@ static RmcPlayerId participant(
         }
     }
     return best;
+}
+
+static RmcPlayerId participant(
+    const RmcMatchFlow *f, RmcTeamId team, bool goalkeeper, RmcPlayerId exclude)
+{
+    return participant_after(f, team, goalkeeper, exclude, 0);
+}
+
+static RmcPlayerId pass_recipient(const RmcMatchFlow *f, RmcTeamId team, RmcPlayerId controller)
+{
+    if (f->config.selector_version == RMC_MATCH_SELECTOR_V2_VERSION) {
+        /* Only the accepted prefix is history. Sporting success and current
+         * eligibility of the recorded numeric anchor are intentionally irrelevant. */
+        for (size_t i = f->journal.count; i > 0; --i) {
+            const RmcMatchFlowCommand *c = &f->journal.commands[i - 1];
+            if (c->kind != RMC_FLOW_PASS || c->data.pass.team_id.value != team.value) { continue; }
+            const RmcPlayerId successor = participant_after(f, team, false, controller,
+                c->data.pass.recipient.value);
+            if (successor.value != 0) { return successor; }
+            break;
+        }
+    }
+    return participant(f, team, false, controller);
 }
 
 static uint32_t clipped(uint32_t nominal, uint32_t remaining)
@@ -127,7 +151,7 @@ RmcFlowError rmc_match_flow_select(
                 }
             } else { c.kind = RMC_FLOW_PASS; }
             if (c.kind == RMC_FLOW_PASS) {
-                const RmcPlayerId recipient = participant(f, own, false, p->controller);
+                const RmcPlayerId recipient = pass_recipient(f, own, p->controller);
                 if (recipient.value == 0) { return RMC_FLOW_INVALID_STATE; }
                 c.data.pass = (RmcPassAction){own, p->controller, recipient, defender, 0, clipped(8, n.remaining_seconds)};
             }

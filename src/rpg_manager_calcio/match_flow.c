@@ -41,7 +41,8 @@ static RmcFlowError metadata(const RmcMatchFlow *f)
         return RMC_FLOW_INVALID_ARGUMENT;
     }
     if (f->config.flow_version != RMC_MATCH_FLOW_VERSION ||
-        f->config.selector_version != RMC_MATCH_SELECTOR_VERSION) {
+        (f->config.selector_version != RMC_MATCH_SELECTOR_V1_VERSION &&
+         f->config.selector_version != RMC_MATCH_SELECTOR_V2_VERSION)) {
         return RMC_FLOW_UNSUPPORTED_VERSION;
     }
     if (!rmc_match_state_valid(f->world, &f->state) ||
@@ -86,7 +87,8 @@ RmcFlowError rmc_match_flow_init(
         return RMC_FLOW_INVALID_ARGUMENT;
     }
     if (config->flow_version != RMC_MATCH_FLOW_VERSION ||
-        config->selector_version != RMC_MATCH_SELECTOR_VERSION) {
+        (config->selector_version != RMC_MATCH_SELECTOR_V1_VERSION &&
+         config->selector_version != RMC_MATCH_SELECTOR_V2_VERSION)) {
         return RMC_FLOW_UNSUPPORTED_VERSION;
     }
     RmcMatchFlow f = {0};
