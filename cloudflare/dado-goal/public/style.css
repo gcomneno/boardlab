@@ -20,6 +20,50 @@ h1 { font-size: clamp(2.3rem, 8vw, 4rem); margin: 8px 0; }
 }
 .settings { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; }
 .settings label { display: grid; gap: 7px; flex: 1 1 130px; }
+
+.match-setup-row {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.roll-settings {
+  display: grid;
+  grid-template-columns: 80px auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.match-setup-row > label[for="language"] > select,
+.roll-settings > label[for="hands"] > input {
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+}
+
+.settings .random-hands-setting {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 44px;
+  align-self: end;
+  padding-bottom: 0;
+  white-space: nowrap;
+}
+
+.settings .random-hands-setting input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  align-self: flex-end;
+  accent-color: #f3c94c;
+}
 input,
 .settings select {
   width: 100%;
@@ -2038,6 +2082,10 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
   align-items: end;
 }
 
+.friendly-panel > .match-setup-row {
+  grid-column: 1 / -1;
+}
+
 .friendly-panel > .locale-setting {
   min-width: 0;
 }
@@ -2056,6 +2104,7 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
     grid-template-columns: 1fr;
   }
 
+  .friendly-panel > .match-setup-row,
   .friendly-panel > .locale-setting,
   .friendly-panel > .team-config,
   .friendly-panel > .match-actions {

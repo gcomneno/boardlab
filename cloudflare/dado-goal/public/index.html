@@ -46,22 +46,28 @@
 
     <section class="panel settings friendly-panel"
              aria-label="Amichevole">
-      <label for="language" class="locale-setting">
-        <span data-i18n="language">Lingua</span>
-        <select id="language" name="language">
-          <option value="it">Italiano</option>
-          <option value="en">English</option>
-        </select>
-      </label>
-      <label for="hands" class="locale-setting">
-        <span data-i18n="handsPerTeam">Num. di lanci</span>
-        <input id="hands" type="number" min="1" max="1000"
-               step="1" value="6">
-      </label>
-      <label for="random-hands" class="locale-setting">
-        <span data-i18n="randomHands">Lanci casuali</span>
-        <input id="random-hands" type="checkbox">
-      </label>
+      <div class="match-setup-row">
+        <label for="language" class="locale-setting">
+          <span data-i18n="language">Lingua</span>
+          <select id="language" name="language">
+            <option value="it">Italiano</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+
+        <div class="roll-settings">
+          <label for="hands" class="locale-setting">
+            <span data-i18n="handsPerTeam">Lanci</span>
+            <input id="hands" type="number" min="1" max="1000"
+                   step="1" value="6">
+          </label>
+
+          <label for="random-hands" class="random-hands-setting">
+            <span data-i18n="randomHands">Casuali</span>
+            <input id="random-hands" type="checkbox">
+          </label>
+        </div>
+      </div>
 
       <div class="team-config">
         <label><span data-i18n-team="1">Squadra 1</span>
