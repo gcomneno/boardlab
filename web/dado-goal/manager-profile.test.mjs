@@ -14,13 +14,26 @@ function team() {
     provider: "fixture",
     providerTeamId: "club-7",
     name: "Manager FC",
-    players: Array.from({ length: 22 }, (_, index) => ({
-      provider: "fixture",
-      providerPlayerId: `p${index + 1}`,
-      name: `Player ${index + 1}`,
-      position: index === 0 ? "Goalkeeper" : "Midfielder",
-      shirtNumber: index + 1,
-    })),
+    players: Array.from({ length: 22 }, (_, index) => {
+      const number = index + 1;
+      const position = number === 1
+        ? "Goalkeeper"
+        : number <= 5
+          ? "Defender"
+          : number <= 9
+            ? "Midfielder"
+            : number <= 11
+              ? "Attacker"
+              : "Midfielder";
+
+      return {
+        provider: "fixture",
+        providerPlayerId: `p${number}`,
+        name: `Player ${number}`,
+        position,
+        shirtNumber: number,
+      };
+    }),
   };
 }
 

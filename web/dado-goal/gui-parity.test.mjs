@@ -28,7 +28,6 @@ const commonIds = [
   "phase",
   "result",
   "roll",
-  "auto",
   "commentary-toggle",
   "commentary-text",
   "match-stats",
@@ -126,15 +125,23 @@ test("deployed multiplayer localization matches canonical localization", async (
   assert.deepEqual(deployed, canonical);
 });
 
-test("single AUTO configuration remains mode-specific", async () => {
+test("single AUTO controls remain mode-specific", async () => {
   const [single, multiplayer] = await Promise.all([
     html(singleUrl),
     html(multiplayerUrl),
   ]);
 
   assert.ok(
+    hasId(single, "auto"),
+    "single-player must expose #auto",
+  );
+  assert.ok(
     hasId(single, "auto-config"),
     "single-player must expose #auto-config",
+  );
+  assert.ok(
+    !hasId(multiplayer, "auto"),
+    "multiplayer must not inherit the single-player AUTO control",
   );
   assert.ok(
     !hasId(multiplayer, "auto-config"),

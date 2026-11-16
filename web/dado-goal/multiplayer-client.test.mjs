@@ -74,7 +74,7 @@ assert.ok(calls.every(
 ));
 
 assert.ok(calls.every(
-  call => call.options.credentials === "omit"
+  call => call.options.credentials === "same-origin"
 ));
 
 assert.ok(calls.every(
