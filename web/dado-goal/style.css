@@ -2457,3 +2457,58 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Per-player statistics derived from canonical match events. */
+.player-stats {
+  margin-top: 18px;
+}
+
+.player-stats h3,
+.player-stat-team h4 {
+  margin: 0 0 10px;
+}
+
+#player-stats {
+  display: grid;
+  gap: 14px;
+}
+
+.player-stat-team {
+  min-width: 0;
+}
+
+.player-stat-table {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.player-stat-row {
+  display: grid;
+  grid-template-columns: minmax(170px, 2fr) repeat(6, minmax(58px, 0.7fr));
+  gap: 8px;
+  align-items: center;
+  min-width: 610px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+.player-stat-row:last-child {
+  border-bottom: 0;
+}
+
+.player-stat-header {
+  font-size: 0.82rem;
+}
+
+.player-stat-name {
+  text-align: left;
+  font-weight: 650;
+}
+
+.player-stat-empty {
+  margin: 0;
+  opacity: 0.72;
+}

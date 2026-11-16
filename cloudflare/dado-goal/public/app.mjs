@@ -8,6 +8,7 @@ import {
 
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
+import { playerStatistics } from "./player-statistics.mjs";
 import { simulateMatch } from "./match-simulator.mjs";
 import { matchClock } from "./match-clock.mjs";
 import { createRoster, pickScorer } from "./match-roster.mjs";
@@ -448,7 +449,6 @@ function render() {
     ["corners", "corners"],
     ["freeKicks", "freeKicks"],
     ["penalties", "penalties"],
-    ["passes", "passes"],
   ];
   byId("match-stats").replaceChildren(
     ...metrics.map(([label, key]) => {
@@ -501,6 +501,82 @@ function render() {
       return row;
     }),
   );
+
+  const playerTeams = playerStatistics(matchEvents);
+  byId("player-stats-heading").textContent = translate("playerStatistics");
+
+  const playerStatsRoot = byId("player-stats");
+  playerStatsRoot.replaceChildren();
+
+  playerTeams.forEach((players, team) => {
+    const group = document.createElement("section");
+    group.className = "player-stat-team";
+
+    const heading = document.createElement("h4");
+    heading.textContent = names[team];
+    group.append(heading);
+
+    if (players.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "player-stat-empty";
+      empty.textContent = translate("playerStatisticsEmpty");
+      group.append(empty);
+      playerStatsRoot.append(group);
+      return;
+    }
+
+    const table = document.createElement("div");
+    table.className = "player-stat-table";
+
+    const header = document.createElement("div");
+    header.className = "player-stat-row player-stat-header";
+    [
+      translate("player"),
+      translate("goals"),
+      translate("penalties"),
+      translate("yellowCards"),
+      translate("redCards"),
+      translate("subbedOn"),
+      translate("subbedOff"),
+    ].forEach(label => {
+      const cell = document.createElement("strong");
+      cell.textContent = label;
+      header.append(cell);
+    });
+    table.append(header);
+
+    players.forEach(player => {
+      const row = document.createElement("div");
+      row.className = "player-stat-row";
+
+      const identity = document.createElement("span");
+      identity.className = "player-stat-name";
+      identity.textContent = player.name
+        ? `${player.name} (#${player.number})`
+        : `#${player.number}`;
+
+      const values = [
+        player.goals,
+        player.penalties,
+        player.yellowCards,
+        player.redCards,
+        player.subbedOn,
+        player.subbedOff,
+      ];
+
+      row.append(identity);
+      values.forEach(value => {
+        const cell = document.createElement("span");
+        cell.textContent = String(value);
+        row.append(cell);
+      });
+      table.append(row);
+    });
+
+    group.append(table);
+    playerStatsRoot.append(group);
+  });
+
   byId("stats-team-0").textContent = names[0];
   byId("stats-team-1").textContent = names[1];
 

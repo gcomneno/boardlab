@@ -30,6 +30,7 @@ const STATIC = new Set([
   "/multiplayer-play.mjs",
   "/engine.mjs",
   "/statistics.mjs",
+  "/player-statistics.mjs",
   "/match-roster.mjs",
   "/catalogue-json.mjs",
   "/catalogue-roster.mjs",
