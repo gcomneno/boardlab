@@ -1,4 +1,5 @@
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
+import { createRollEvent } from "./roll-event.mjs";
 
 export function simulateMatch({
   handsPerTeam = 6,
@@ -12,7 +13,7 @@ export function simulateMatch({
     const die = state.phase;
     const face = rollFace(die, random);
 
-    rolls.push({ seat, die, face });
+    rolls.push(createRollEvent({ seat, die, face }));
     state = applyRoll(state, face);
   }
 

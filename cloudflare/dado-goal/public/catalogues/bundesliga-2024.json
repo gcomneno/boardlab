@@ -256,7 +256,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "160",
-      "name": "SC Freiburg",
+      "name": "Freiburg",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -483,7 +483,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "161",
-      "name": "VfL Wolfsburg",
+      "name": "Wolfsburg",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -1199,7 +1199,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "164",
-      "name": "FSV Mainz 05",
+      "name": "Mainz",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -1646,7 +1646,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "167",
-      "name": "1899 Hoffenheim",
+      "name": "Hoffenheim",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -2376,7 +2376,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "170",
-      "name": "FC Augsburg",
+      "name": "Augsburg",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -2589,7 +2589,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "172",
-      "name": "VfB Stuttgart",
+      "name": "Stuttgart",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -2830,7 +2830,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "173",
-      "name": "RB Leipzig",
+      "name": "Leipzig",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -3057,7 +3057,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "176",
-      "name": "VfL Bochum",
+      "name": "Bochum",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -3284,7 +3284,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "180",
-      "name": "1. FC Heidenheim",
+      "name": "Heidenheim",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -3738,7 +3738,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "186",
-      "name": "FC St. Pauli",
+      "name": "St. Pauli",
       "competitionId": "78",
       "season": "2024",
       "colors": [
@@ -4206,7 +4206,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "1660",
-      "name": "SV Elversberg",
+      "name": "Elversberg",
       "competitionId": "78",
       "season": "2024",
       "colors": [

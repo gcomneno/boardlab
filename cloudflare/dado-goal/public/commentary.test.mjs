@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { newMatch, applyRoll } from "./engine.mjs";
-import { describeRoll } from "./commentary.mjs";
+import {
+  describeFace,
+  describeFinalWhistle,
+  describeRoll,
+} from "./commentary.mjs";
 
 test("recorded game produces deterministic commentary without altering state", () => {
   let state = newMatch(1);
@@ -24,7 +28,15 @@ test("recorded game produces deterministic commentary without altering state", (
   }
 
   assert.match(transcript[2], /Segna Gialli/);
-  assert.match(transcript[3], /Triplice fischio/);
+  assert.doesNotMatch(transcript[3], /Triplice fischio/);
+  assert.match(
+    describeFinalWhistle(state, ["Gialli", "Blu"], "it"),
+    /Triplice fischio/
+  );
+  assert.match(
+    describeFinalWhistle(state, ["Gialli", "Blu"], "en"),
+    /Final whistle/
+  );
   assert.deepEqual(state.goals, [1, 0]);
 });
 
@@ -115,6 +127,14 @@ test("penalty is always explicitly announced by radio commentary", () => {
 
   assert.match(italian, /RIGORE|dischetto/i);
   assert.match(english, /PENALTY|spot/i);
-  assert.equal(afterPenalty.phase, "result");
+  assert.equal(afterPenalty.phase, "penalty");
   assert.equal(afterPenalty.player, attack.player);
+});
+
+
+test("all canonical penalty-die outcomes have bilingual commentary", () => {
+  for (const face of ["GOAL!", "PARATO/RESPINTO", "FUORI"]) {
+    assert.doesNotThrow(() => describeFace(face, 0, "it"));
+    assert.doesNotThrow(() => describeFace(face, 0, "en"));
+  }
 });

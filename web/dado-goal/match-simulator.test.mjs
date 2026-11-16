@@ -22,10 +22,30 @@ test("simulated match runs the canonical dice engine to completion", () => {
   assert.equal(result.homeGoals, 1);
   assert.equal(result.awayGoals, 0);
   assert.deepEqual(result.rolls, [
-    { seat: 0, die: "team", face: "Tiro in porta!" },
-    { seat: 0, die: "pink", face: "Colpo di testa" },
-    { seat: 0, die: "result", face: "GOAL!" },
-    { seat: 1, die: "team", face: "Passaggio intercettato!" },
+    {
+      seat: 0,
+      die: "team",
+      kind: "shot",
+      face: "Tiro in porta!",
+    },
+    {
+      seat: 0,
+      die: "pink",
+      kind: "header",
+      face: "Colpo di testa",
+    },
+    {
+      seat: 0,
+      die: "result",
+      kind: "goal",
+      face: "GOAL!",
+    },
+    {
+      seat: 1,
+      die: "team",
+      kind: "intercepted-pass",
+      face: "Passaggio intercettato!",
+    },
   ]);
 });
 

@@ -276,6 +276,37 @@
           </section>
         </div>
 
+        <section class="manager-player-statistics"
+                 aria-labelledby="manager-player-statistics-title">
+          <h3 id="manager-player-statistics-title">
+            Statistiche giocatori
+          </h3>
+          <div class="manager-player-statistics-wrap">
+            <table class="manager-player-statistics-table">
+              <thead>
+                <tr>
+                  <th id="manager-player-stat-player">Giocatore</th>
+                  <th id="manager-player-stat-apps">P</th>
+                  <th id="manager-player-stat-minutes">Min</th>
+                  <th id="manager-player-stat-starts">Tit</th>
+                  <th id="manager-player-stat-bench">Panch</th>
+                  <th id="manager-player-stat-not-selected">NC</th>
+                  <th id="manager-player-stat-goals">Gol</th>
+                  <th id="manager-player-stat-penalties">Rigori</th>
+                  <th id="manager-player-stat-yellow">Gialli</th>
+                  <th id="manager-player-stat-red">Rossi</th>
+                  <th id="manager-player-stat-on">Entrato</th>
+                  <th id="manager-player-stat-off">Uscito</th>
+                  <th id="manager-player-stat-injury">
+                    Uscita infortunio
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="manager-player-statistics"></tbody>
+            </table>
+          </div>
+        </section>
+
         <section class="manager-career-summary"
                  aria-label="Riepilogo carriera">
           <dl>
@@ -427,9 +458,20 @@
           </div>
           <div id="match-stats"></div>
         </section>
-        <section class="player-stats" aria-label="Statistiche giocatori">
-          <h3 id="player-stats-heading">Statistiche giocatori</h3>
-          <div id="player-stats"></div>
+        <section class="player-stats player-stats-panel"
+                 aria-label="Statistiche LIVE">
+          <div class="player-stats-header">
+            <h3 id="player-stats-heading">Statistiche LIVE</h3>
+            <button id="player-stats-toggle"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="player-stats-body">
+              Mostra
+            </button>
+          </div>
+          <div id="player-stats-body" hidden>
+            <div id="player-stats"></div>
+          </div>
         </section>
 
       </div>

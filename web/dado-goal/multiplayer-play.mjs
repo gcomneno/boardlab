@@ -5,6 +5,7 @@ import {
   MultiplayerAPIError,
 } from "./multiplayer-client.mjs";
 import { matchStatistics } from "./statistics.mjs";
+import { normalizeRollEvents } from "./roll-event.mjs";
 import { playerStatistics } from "./player-statistics.mjs";
 import { matchClock } from "./match-clock.mjs";
 import { createRoster, pickScorer } from "./match-roster.mjs";
@@ -639,6 +640,7 @@ function recordCompletedMatch() {
     homeGoals: state.goals[0],
     awayGoals: state.goals[1],
     events: matchEvents,
+    rollEvents,
     statistics: matchStatistics(rollEvents),
     ratings: [],
   });
@@ -1125,7 +1127,7 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
   }
 
   rollEvents = Array.isArray(snapshot.rollEvents)
-    ? snapshot.rollEvents
+    ? normalizeRollEvents(snapshot.rollEvents)
     : [];
 
   matchEvents = multiplayerMatchEvents(rollEvents);

@@ -12,6 +12,8 @@ export function createMatchRecord({
   homeGoals,
   awayGoals,
   events = [],
+  rollEvents = [],
+  participation = [],
   statistics = {},
   ratings = [],
 }) {
@@ -35,8 +37,13 @@ export function createMatchRecord({
     }
   }
 
-  if (!Array.isArray(events) || !Array.isArray(ratings)) {
-    throw new TypeError("events and ratings must be arrays");
+  if (!Array.isArray(events) ||
+      !Array.isArray(rollEvents) ||
+      !Array.isArray(participation) ||
+      !Array.isArray(ratings)) {
+    throw new TypeError(
+      "events, rollEvents, participation and ratings must be arrays"
+    );
   }
 
   return Object.freeze({
@@ -50,6 +57,8 @@ export function createMatchRecord({
       away: awayGoals,
     }),
     events: Object.freeze(snapshot(events)),
+    rollEvents: Object.freeze(snapshot(rollEvents)),
+    participation: Object.freeze(snapshot(participation)),
     statistics: Object.freeze(snapshot(statistics)),
     ratings: Object.freeze(snapshot(ratings)),
   });
@@ -126,6 +135,8 @@ export function importHistoryJson(source) {
     homeGoals: match.score?.home,
     awayGoals: match.score?.away,
     events: match.events,
+    rollEvents: match.rollEvents ?? [],
+    participation: match.participation ?? [],
     statistics: match.statistics,
     ratings: match.ratings,
   }));

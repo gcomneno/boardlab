@@ -74,7 +74,7 @@ test("authenticated D1 snapshot aggregates rolls, excludes joins and preserves l
   assert.equal(result.statistics[0].passes, 1);
   assert.equal(result.statistics[0].saves, 0);
   assert.equal(result.statistics[1].saves, 1);
-  assert.equal(result.statistics[1].crosses, 1);
+  assert.equal(result.statistics[1].corners, 1);
   assert.equal(result.statistics[1].goals, 1);
   assert.deepEqual(result.lastRoll, {
     revision: 5,

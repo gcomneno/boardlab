@@ -1,46 +1,46 @@
 /**
  * Pure Dado Goal match statistics.
  *
- * Input events use the server's authoritative shape:
- * { seat: 0|1, die: "team"|"pink"|"result"|"penalty", face: string }
+ * Current canonical input:
+ * { seat: 0|1, die: "team"|"pink"|"result"|"penalty",
+ *   kind: string, face: string }
  *
- * No game transitions, persistence or network access.
+ * Legacy persisted events without `kind` are normalized once at the
+ * compatibility boundary. Statistical derivation itself uses only `kind`.
+ *
+ * No commentary, localization, game transitions, persistence or network
+ * access participates in statistical derivation.
  */
-import { FACES } from "./engine.mjs";
+import { normalizeRollEvents } from "./roll-event.mjs";
 
-const CATEGORIES = Object.freeze({
-  team: Object.freeze({
-    "Tiro in porta!": "shots",
-    "Cross!": "corners",
-    "Passaggio": "passes",
-    "Passaggio intercettato!": "interceptions",
-  }),
-  pink: Object.freeze({
-    "Palla sul fondo": "ballOut",
-    "Mezza rovesciata": "freeKicks",
-    "Palla alta sulla traversa": "overBar",
-    "Palla intercettata": "ballIntercepted",
-    "Rovesciata": "bicycleKicks",
-    "Colpo di testa": "headers",
-  }),
-  result: Object.freeze({
-    "Respinto!": "blocked",
-    "GOAL!": "goals",
-    "FUORI!": "wide",
-    "PALO/TRAVERSA": "woodwork",
-    "RIGORE": "penalties",
-    "Parato!": "saves",
-  }),
-  penalty: Object.freeze({
-    "GOAL!": "penaltyGoals",
-    "PALO/TRAVERSA": "penaltyWoodwork",
-    "PARATO/RESPINTO": "penaltySaved",
-    "FUORI": "penaltyWide",
-  }),
+const CATEGORY_BY_KIND = Object.freeze({
+  shot: "shots",
+  corner: "corners",
+  pass: "passes",
+  "intercepted-pass": "interceptions",
+
+  "ball-out": "ballOut",
+  "free-kick": "freeKicks",
+  "over-bar": "overBar",
+  "ball-intercepted": "ballIntercepted",
+  "bicycle-kick": "bicycleKicks",
+  header: "headers",
+
+  blocked: "blocked",
+  goal: "goals",
+  wide: "wide",
+  woodwork: "woodwork",
+  "penalty-awarded": "penalties",
+  save: "saves",
+
+  "penalty-goal": "penaltyGoals",
+  "penalty-woodwork": "penaltyWoodwork",
+  "penalty-saved": "penaltySaved",
+  "penalty-wide": "penaltyWide",
 });
 
 const KEYS = Object.freeze([
-  ...new Set(Object.values(CATEGORIES).flatMap(group => Object.values(group))),
+  ...new Set(Object.values(CATEGORY_BY_KIND)),
 ]);
 
 function emptyTeam() {
@@ -48,23 +48,13 @@ function emptyTeam() {
 }
 
 export function matchStatistics(events) {
-  if (!Array.isArray(events)) {
-    throw new TypeError("Events must be an array");
-  }
-
+  const canonicalEvents = normalizeRollEvents(events);
   const teams = [emptyTeam(), emptyTeam()];
   const possessionRolls = [0, 0];
 
-  for (const event of events) {
-    if (!event || !Number.isInteger(event.seat) ||
-        ![0, 1].includes(event.seat) ||
-        !Object.hasOwn(FACES, event.die) ||
-        !FACES[event.die].includes(event.face)) {
-      throw new RangeError("Invalid roll event");
-    }
-
-    const category = CATEGORIES[event.die][event.face];
-    if (!category) throw new RangeError("Unmapped roll event");
+  for (const event of canonicalEvents) {
+    const category = CATEGORY_BY_KIND[event.kind];
+    if (!category) throw new RangeError("Unmapped roll event kind");
 
     possessionRolls[event.seat] += 1;
 

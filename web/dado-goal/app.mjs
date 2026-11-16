@@ -8,7 +8,11 @@ import {
 
 import { applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
-import { playerStatistics } from "./player-statistics.mjs";
+import { createRollEvent, normalizeRollEvents } from "./roll-event.mjs";
+import {
+  managerPlayerStatistics,
+  playerStatistics,
+} from "./player-statistics.mjs";
 import { simulateMatch } from "./match-simulator.mjs";
 import { matchClock } from "./match-clock.mjs";
 import { createRoster, pickScorer } from "./match-roster.mjs";
@@ -29,6 +33,7 @@ import {
   clearManager,
 } from "./manager-store.mjs";
 import { createMatchRecord, teamStatistics } from "./team-history.mjs";
+import { managerMatchParticipation } from "./player-participation.mjs";
 import {
   championshipStandings,
   completeFixture,
@@ -503,7 +508,25 @@ function render() {
   );
 
   const playerTeams = playerStatistics(matchEvents);
+  const playerStatsPanel = byId("player-stats").closest(".player-stats-panel");
+  const playerStatsBody = byId("player-stats-body");
+  const playerStatsToggle = byId("player-stats-toggle");
+  const playerStatsVisible = !playerStatsBody.hidden;
+
   byId("player-stats-heading").textContent = translate("playerStatistics");
+  playerStatsPanel.setAttribute(
+    "aria-label",
+    translate("playerStatistics"),
+  );
+  playerStatsToggle.textContent = translate(
+    playerStatsVisible
+      ? "playerStatisticsHide"
+      : "playerStatisticsShow",
+  );
+  playerStatsToggle.setAttribute(
+    "aria-expanded",
+    String(playerStatsVisible),
+  );
 
   const playerStatsRoot = byId("player-stats");
   playerStatsRoot.replaceChildren();
@@ -737,6 +760,25 @@ function recordCompletedMatch() {
     players: [],
   };
 
+  const managedParticipation =
+    managerState
+      ? (() => {
+          const managedId = String(managerState.club.providerTeamId);
+          const managedSeat = selectedMatchTeams.findIndex(team =>
+            team &&
+            String(team.providerTeamId) === managedId
+          );
+
+          return managedSeat < 0
+            ? []
+            : managerMatchParticipation(
+                managerState.club,
+                managedSeat,
+                matchEvents,
+              );
+        })()
+      : [];
+
   const record = createMatchRecord({
     matchId: crypto.randomUUID(),
     playedAt: new Date().toISOString(),
@@ -745,6 +787,8 @@ function recordCompletedMatch() {
     homeGoals: state.goals[0],
     awayGoals: state.goals[1],
     events: matchEvents,
+    rollEvents,
+    participation: managedParticipation,
     statistics: matchStatistics(rollEvents),
     ratings: [],
   });
@@ -957,6 +1001,81 @@ function renderManagerDashboard() {
 
   renderPlayers("manager-lineup", club.lineup);
   renderPlayers("manager-bench", club.bench);
+
+  const cumulativePlayers = managerPlayerStatistics(
+    matches,
+    club.providerTeamId,
+    club.players,
+  );
+
+  byId("manager-player-statistics-title").textContent =
+    translate("managerPlayerStatistics");
+
+  const managerPlayerHeaders = {
+    "manager-player-stat-player": "managerStatPlayer",
+    "manager-player-stat-apps": "managerStatAppearances",
+    "manager-player-stat-minutes": "managerStatMinutes",
+    "manager-player-stat-starts": "managerStatStarts",
+    "manager-player-stat-bench": "managerStatBenchUnused",
+    "manager-player-stat-not-selected": "managerStatNotSelected",
+    "manager-player-stat-goals": "managerStatGoals",
+    "manager-player-stat-penalties": "managerStatPenalties",
+    "manager-player-stat-yellow": "managerStatYellow",
+    "manager-player-stat-red": "managerStatRed",
+    "manager-player-stat-on": "managerStatSubbedOn",
+    "manager-player-stat-off": "managerStatSubbedOff",
+    "manager-player-stat-injury": "managerStatInjuryOff",
+  };
+
+  for (const [elementId, key] of Object.entries(managerPlayerHeaders)) {
+    const header = byId(elementId);
+    header.textContent = translate(key);
+    if (
+      key === "managerStatSubbedOn" ||
+      key === "managerStatSubbedOff" ||
+      key === "managerStatInjuryOff"
+    ) {
+      header.title = translate(`${key}Tooltip`);
+    }
+  }
+
+  const managerPlayerStatsBody = byId("manager-player-statistics");
+  managerPlayerStatsBody.replaceChildren();
+
+  for (const player of cumulativePlayers) {
+    const row = document.createElement("tr");
+
+    const identity = document.createElement("td");
+    const number = player.number == null ? "—" : `#${player.number}`;
+    identity.textContent = player.name
+      ? `${number} ${player.name}`
+      : number;
+
+    const values = [
+      player.appearances,
+      player.minutesPlayed,
+      player.starts,
+      player.benchUnused,
+      player.notSelected,
+      player.goals,
+      player.penalties,
+      player.yellowCards,
+      player.redCards,
+      player.subbedOn,
+      player.subbedOff,
+      player.injurySubbedOff,
+    ];
+
+    row.append(identity);
+
+    for (const value of values) {
+      const cell = document.createElement("td");
+      cell.textContent = String(value);
+      row.append(cell);
+    }
+
+    managerPlayerStatsBody.append(row);
+  }
 
   const career = teamStatistics(
     matches,
@@ -1585,7 +1704,7 @@ function restoreGlobalRuntime(validated) {
     ...restoredTeamPalettes,
   );
 
-  rollEvents = structuredClone(runtime.rollEvents);
+  rollEvents = normalizeRollEvents(runtime.rollEvents);
   matchEvents = structuredClone(runtime.matchEvents);
   rosters = structuredClone(runtime.rosters);
 
@@ -2243,6 +2362,7 @@ function simulateTournamentFixture(fixture) {
     homeGoals: simulated.homeGoals,
     awayGoals: simulated.awayGoals,
     events: [],
+    rollEvents: simulated.rolls,
     statistics: matchStatistics(simulated.rolls),
     ratings: [],
   });
@@ -2686,7 +2806,7 @@ async function roll() {
   const before = state;
   const penaltyResolved = phase === "penalty";
   state = applyRoll(state, face);
-  rollEvents.push({ seat: player, die: phase, face });
+  rollEvents.push(createRollEvent({ seat: player, die: phase, face }));
   lastRefereeEvent = null;
   lastExtraordinaryEvent = null;
   lastGoalScorer = null;
@@ -2867,6 +2987,12 @@ async function runAuto() {
 
   render();
 }
+
+byId("player-stats-toggle").addEventListener("click", () => {
+  const body = byId("player-stats-body");
+  body.hidden = !body.hidden;
+  render();
+});
 
 byId("commentary-toggle").addEventListener("click", () => {
   commentaryEnabled = !commentaryEnabled;
