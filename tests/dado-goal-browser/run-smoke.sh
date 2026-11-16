@@ -8,7 +8,65 @@ ROOT="$(CDPATH= cd -- "$HERE/../.." && pwd)"
 CF="$ROOT/cloudflare/dado-goal"
 WORKER_LOG="${TMPDIR:-/tmp}/dado-goal-browser-smoke-worker.log"
 
-NODE_RUNTIME="${DADO_GOAL_NODE_RUNTIME:-node}"
+# Wrangler 4.160.1 requires Node >= 22.12.0.
+# Honour an explicit runtime first; otherwise select a compatible local Node.
+NODE_RUNTIME="${DADO_GOAL_NODE_RUNTIME:-}"
+
+node_runtime_supported() {
+    local runtime="$1"
+    local version major minor
+
+    [ -x "$runtime" ] || command -v "$runtime" >/dev/null 2>&1 || return 1
+
+    version="$("$runtime" -p 'process.versions.node' 2>/dev/null)" || return 1
+    major="${version%%.*}"
+    version="${version#*.}"
+    minor="${version%%.*}"
+
+    [ "$major" -gt 22 ] || {
+        [ "$major" -eq 22 ] && [ "$minor" -ge 12 ]
+    }
+}
+
+if [ -n "$NODE_RUNTIME" ]; then
+    if ! node_runtime_supported "$NODE_RUNTIME"; then
+        printf 'Unsupported DADO_GOAL_NODE_RUNTIME: %s (Node >= 22.12.0 required)\n' \
+            "$NODE_RUNTIME" >&2
+        STATUS=1
+        FAILED_STEP="node_runtime"
+    fi
+else
+    CURRENT_NODE="$(command -v node 2>/dev/null || true)"
+
+    if [ -n "$CURRENT_NODE" ] && node_runtime_supported "$CURRENT_NODE"; then
+        NODE_RUNTIME="$CURRENT_NODE"
+    else
+        while IFS= read -r CANDIDATE; do
+            if node_runtime_supported "$CANDIDATE"; then
+                NODE_RUNTIME="$CANDIDATE"
+                break
+            fi
+        done < <(
+            find "$HOME/.nvm/versions/node" \
+                -mindepth 3 -maxdepth 3 \
+                -type f -name node -path '*/bin/node' \
+                2>/dev/null |
+            sort -V -r
+        )
+    fi
+
+    if [ -z "$NODE_RUNTIME" ]; then
+        printf 'No compatible Node runtime found (Node >= 22.12.0 required)\n' >&2
+        STATUS=1
+        FAILED_STEP="node_runtime"
+    fi
+fi
+
+if [ "$STATUS" -eq 0 ]; then
+    NODE_BIN_DIR="$(dirname "$NODE_RUNTIME")"
+    PATH="$NODE_BIN_DIR:$PATH"
+    export PATH
+fi
 WRANGLER_CLI="${DADO_GOAL_WRANGLER_CLI:-}"
 
 cd "$HERE"
@@ -58,7 +116,10 @@ if [ "$STATUS" -eq 0 ]; then
         "$CF/public/catalogues/serie-a-2024.json" \
         "$CF/public/catalogues/serie-b-2024.json" \
         "$CF/public/catalogues/premier-league-2024.json" \
-        "$CF/public/catalogues/championship-2024.json"
+        "$CF/public/catalogues/championship-2024.json" \
+        "$CF/public/catalogues/ligue-1-2024.json" \
+        "$CF/public/catalogues/bundesliga-2024.json" \
+        "$CF/public/catalogues/la-liga-2024.json"
     do
         "$NODE_RUNTIME" "$CF/persist-football-cli.mjs" "$CATALOGUE" \
             >>"$CATALOGUE_SQL"

@@ -43,6 +43,70 @@ const TEAM_COLORS = Object.freeze({
   "1693": ["#D71920", "#F4F4F4"], // Mantova
   "10137": ["#174A8B", "#D71920"], // Cosenza
 
+  // Ligue 1 2024
+  "77": ["#111111", "#F4F4F4"], // Angers
+  "79": ["#D71920", "#173F7A"], // Lille
+  "80": ["#F4F4F4", "#174A8B"], // Lyon
+  "81": ["#2FAEEA", "#F4F4F4"], // Marseille
+  "82": ["#F58220", "#173F7A"], // Montpellier
+  "83": ["#F4D000", "#177245"], // Nantes
+  "84": ["#111111", "#D71920"], // Nice
+  "85": ["#173F7A", "#D71920"], // Paris Saint Germain
+  "91": ["#D71920", "#F4F4F4"], // Monaco
+  "93": ["#D71920", "#F4F4F4"], // Reims
+  "94": ["#D71920", "#111111"], // Rennes
+  "95": ["#174A8B", "#F4F4F4"], // Strasbourg
+  "96": ["#5B2C83", "#F4F4F4"], // Toulouse
+  "106": ["#D71920", "#F4F4F4"], // Stade Brestois 29
+  "108": ["#174A8B", "#F4F4F4"], // Auxerre
+  "111": ["#78B9E6", "#173F7A"], // Le Havre
+  "112": ["#7A263A", "#F4F4F4"], // Metz
+  "116": ["#F4D000", "#D71920"], // Lens
+  "1063": ["#177245", "#F4F4F4"], // Saint Etienne
+
+  // Bundesliga 2024
+  "157": ["#D71920", "#F4F4F4"], // Bayern München
+  "160": ["#D71920", "#111111"], // SC Freiburg
+  "161": ["#177245", "#F4F4F4"], // VfL Wolfsburg
+  "162": ["#177245", "#F4F4F4"], // Werder Bremen
+  "163": ["#111111", "#F4F4F4"], // Borussia Mönchengladbach
+  "164": ["#D71920", "#F4F4F4"], // FSV Mainz 05
+  "165": ["#F4D000", "#111111"], // Borussia Dortmund
+  "167": ["#174A8B", "#F4F4F4"], // 1899 Hoffenheim
+  "168": ["#D71920", "#111111"], // Bayer Leverkusen
+  "169": ["#D71920", "#111111"], // Eintracht Frankfurt
+  "170": ["#D71920", "#177245"], // FC Augsburg
+  "172": ["#F4F4F4", "#D71920"], // VfB Stuttgart
+  "173": ["#F4F4F4", "#D71920"], // RB Leipzig
+  "176": ["#174A8B", "#F4F4F4"], // VfL Bochum
+  "180": ["#D71920", "#174A8B"], // 1. FC Heidenheim
+  "182": ["#D71920", "#F4F4F4"], // Union Berlin
+  "186": ["#5B2C83", "#F4F4F4"], // FC St. Pauli
+  "191": ["#174A8B", "#D71920"], // Holstein Kiel
+  "1660": ["#174A8B", "#F4F4F4"], // SV Elversberg
+
+  // La Liga 2024
+  "529": ["#173F7A", "#A50044"], // Barcelona
+  "530": ["#D71920", "#F4F4F4"], // Atletico Madrid
+  "531": ["#D71920", "#F4F4F4"], // Athletic Club
+  "532": ["#F4F4F4", "#111111"], // Valencia
+  "533": ["#F4D000", "#174A8B"], // Villarreal
+  "534": ["#F4D000", "#174A8B"], // Las Palmas
+  "536": ["#F4F4F4", "#D71920"], // Sevilla
+  "537": ["#F4F4F4", "#174A8B"], // Leganes
+  "538": ["#78B9E6", "#D71920"], // Celta Vigo
+  "540": ["#174A8B", "#F4F4F4"], // Espanyol
+  "541": ["#F4F4F4", "#173F7A"], // Real Madrid
+  "542": ["#174A8B", "#F4F4F4"], // Alaves
+  "543": ["#177245", "#F4F4F4"], // Real Betis
+  "546": ["#174A8B", "#F4F4F4"], // Getafe
+  "547": ["#D71920", "#F4F4F4"], // Girona
+  "548": ["#174A8B", "#F4F4F4"], // Real Sociedad
+  "720": ["#5B2C83", "#F4F4F4"], // Valladolid
+  "727": ["#D71920", "#173F7A"], // Osasuna
+  "728": ["#F4F4F4", "#D71920"], // Rayo Vallecano
+  "798": ["#D71920", "#111111"], // Mallorca
+
   // Premier League 2024
   "33": ["#DA291C", "#FBE122"], // Manchester United
   "34": ["#111111", "#F4F4F4"], // Newcastle

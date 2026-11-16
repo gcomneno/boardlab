@@ -9,7 +9,7 @@ test("Championship creates, plays, records and reloads its next fixture", async 
   const participants = page.locator("#tournament-participants");
 
   await expect(participants).toBeVisible();
-  await expect(participants.locator("option")).toHaveCount(84);
+  await expect(participants.locator("option")).toHaveCount(142);
 
   const selected = await participants.locator("option").evaluateAll(options => {
     const competitionIds = new Set();

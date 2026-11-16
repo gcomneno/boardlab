@@ -711,10 +711,16 @@ const competitionsByLocale = Object.freeze({
   it: Object.freeze([
     Object.freeze({ value: "135:2024", label: "Serie A" }),
     Object.freeze({ value: "136:2024", label: "Serie B" }),
+    Object.freeze({ value: "61:2024", label: "Ligue 1" }),
+    Object.freeze({ value: "78:2024", label: "Bundesliga" }),
+    Object.freeze({ value: "140:2024", label: "La Liga" }),
   ]),
   en: Object.freeze([
     Object.freeze({ value: "39:2024", label: "Premier League" }),
     Object.freeze({ value: "40:2024", label: "Championship" }),
+    Object.freeze({ value: "61:2024", label: "Ligue 1" }),
+    Object.freeze({ value: "78:2024", label: "Bundesliga" }),
+    Object.freeze({ value: "140:2024", label: "La Liga" }),
   ]),
 });
 
@@ -762,6 +768,9 @@ async function loadLiveCatalogue() {
     "136:2024": "./catalogues/serie-b-2024.json",
     "39:2024": "./catalogues/premier-league-2024.json",
     "40:2024": "./catalogues/championship-2024.json",
+    "61:2024": "./catalogues/ligue-1-2024.json",
+    "78:2024": "./catalogues/bundesliga-2024.json",
+    "140:2024": "./catalogues/la-liga-2024.json",
   });
   const catalogueUrl = catalogueUrls[`${competitionId}:${season}`];
 

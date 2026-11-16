@@ -12,7 +12,10 @@ TARGETS=(
 )
 
 FILES=(
+    bundesliga-2024.json
     championship-2024.json
+    la-liga-2024.json
+    ligue-1-2024.json
     premier-league-2024.json
     serie-a-2024.json
     serie-b-2024.json

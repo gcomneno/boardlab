@@ -1777,6 +1777,21 @@ const competitions = Object.freeze([
     label: "Championship",
     url: "./catalogues/championship-2024.json",
   }),
+  Object.freeze({
+    value: "61:2024",
+    label: "Ligue 1",
+    url: "./catalogues/ligue-1-2024.json",
+  }),
+  Object.freeze({
+    value: "78:2024",
+    label: "Bundesliga",
+    url: "./catalogues/bundesliga-2024.json",
+  }),
+  Object.freeze({
+    value: "140:2024",
+    label: "La Liga",
+    url: "./catalogues/la-liga-2024.json",
+  }),
 ]);
 
 let footballCatalogues = [];

@@ -108,7 +108,7 @@
             {
               "team": {
                 "id": 489,
-                "name": "Milan",
+                "name": "AC Milan",
                 "logo": "https://media.api-sports.io/football/teams/489.png"
               },
               "start": "2017-11-01",
@@ -705,7 +705,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "489",
-      "name": "Milan",
+      "name": "AC Milan",
       "competitionId": "135",
       "season": "2024",
       "colors": [
@@ -742,7 +742,7 @@
             {
               "team": {
                 "id": 489,
-                "name": "Milan",
+                "name": "AC Milan",
                 "logo": "https://media.api-sports.io/football/teams/489.png"
               },
               "start": "2026-07-01",
@@ -1856,7 +1856,7 @@
             {
               "team": {
                 "id": 489,
-                "name": "Milan",
+                "name": "AC Milan",
                 "logo": "https://media.api-sports.io/football/teams/489.png"
               },
               "start": "2025-07-01",
@@ -1883,7 +1883,7 @@
             {
               "team": {
                 "id": 489,
-                "name": "Milan",
+                "name": "AC Milan",
                 "logo": "https://media.api-sports.io/football/teams/489.png"
               },
               "start": "2010-07-01",
@@ -4438,7 +4438,7 @@
     {
       "provider": "api-football",
       "providerTeamId": "497",
-      "name": "Roma",
+      "name": "AS Roma",
       "competitionId": "135",
       "season": "2024",
       "colors": [
@@ -4475,7 +4475,7 @@
             {
               "team": {
                 "id": 497,
-                "name": "Roma",
+                "name": "AS Roma",
                 "logo": "https://media.api-sports.io/football/teams/497.png"
               },
               "start": "2025-07-01",
