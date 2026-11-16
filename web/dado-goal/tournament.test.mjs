@@ -242,3 +242,70 @@ test("canonical structured events remain available through tournament results", 
   championshipStandings(championship, [match]);
   assert.deepEqual(match.events, events);
 });
+
+test("historical standings exclude later matchdays", () => {
+  const participants = [
+    { providerTeamId: "A", name: "A" },
+    { providerTeamId: "B", name: "B" },
+  ];
+  const championship = {
+    participants,
+    fixtures: [
+      {
+        fixtureId: "md1",
+        matchday: 1,
+        homeProviderTeamId: "A",
+        awayProviderTeamId: "B",
+        matchId: "m1",
+      },
+      {
+        fixtureId: "md2",
+        matchday: 2,
+        homeProviderTeamId: "B",
+        awayProviderTeamId: "A",
+        matchId: "m2",
+      },
+    ],
+  };
+  const records = [
+    {
+      matchId: "m1",
+      home: participants[0],
+      away: participants[1],
+      score: { home: 2, away: 0 },
+    },
+    {
+      matchId: "m2",
+      home: participants[1],
+      away: participants[0],
+      score: { home: 3, away: 0 },
+    },
+  ];
+
+  const standingsAt = matchday => championshipStandings(
+    {
+      ...championship,
+      fixtures: championship.fixtures.map(fixture => ({
+        ...fixture,
+        matchId: fixture.matchday <= matchday
+          ? fixture.matchId
+          : null,
+      })),
+    },
+    records,
+  );
+
+  const first = standingsAt(1);
+  const second = standingsAt(2);
+  const back = standingsAt(1);
+
+  assert.equal(first.find(row => row.team.providerTeamId === "A").points, 3);
+  assert.equal(first.find(row => row.team.providerTeamId === "B").points, 0);
+  assert.equal(second.find(row => row.team.providerTeamId === "B").points, 3);
+  assert.deepEqual(back, first);
+  assert.equal(
+    championship.fixtures[1].matchId,
+    "m2",
+    "historical calculation must not mutate canonical fixtures",
+  );
+});

@@ -2147,7 +2147,15 @@ function renderTournament() {
   }
 
   const standings = championshipStandings(
-    tournamentState,
+    {
+      ...tournamentState,
+      fixtures: tournamentState.fixtures.map(fixture => ({
+        ...fixture,
+        matchId: fixture.matchday <= tournamentViewedMatchday
+          ? fixture.matchId
+          : null,
+      })),
+    },
     managementState.matches,
   );
   const body = byId("tournament-standings");
