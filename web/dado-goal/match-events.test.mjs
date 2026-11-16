@@ -12,8 +12,14 @@ test("substitution frequency follows match-minute bands", () => {
   assert.equal(eventProbabilities(60).substitution, 0.04);
   assert.equal(eventProbabilities(61).substitution, 0.10);
   assert.equal(eventProbabilities(75).substitution, 0.10);
-  assert.equal(eventProbabilities(76).substitution, 0.20);
-  assert.equal(eventProbabilities(90).substitution, 0.20);
+  assert.equal(eventProbabilities(76).substitution, 0.35);
+  assert.equal(eventProbabilities(84).substitution, 0.35);
+  assert.equal(eventProbabilities(85).substitution, 0.50);
+  assert.equal(eventProbabilities(90).substitution, 0.50);
+  assert.equal(eventProbabilities(76, { substitutions: 0 }).substitution, 0.45);
+  assert.equal(eventProbabilities(84, { substitutions: 0 }).substitution, 0.45);
+  assert.equal(eventProbabilities(85, { substitutions: 0 }).substitution, 0.60);
+  assert.equal(eventProbabilities(90, { substitutions: 0 }).substitution, 0.60);
   assert.equal(eventProbabilities(90).yellow, 0.02);
   assert.equal(eventProbabilities(90).red, 0.002);
 });

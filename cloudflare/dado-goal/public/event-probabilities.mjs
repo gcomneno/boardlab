@@ -20,14 +20,15 @@ export function eventProbabilities(
     substitution = 0.04;
   } else if (minute <= 75) {
     substitution = 0.10;
+  } else if (minute <= 84) {
+    substitution = 0.35;
   } else {
-    substitution = 0.20;
+    substitution = 0.50;
   }
 
-  // A team still at zero changes late in the match gets a strong,
-  // but never mandatory, incentive to make its first substitution.
+  // Encourage unused substitutions late without making them mandatory.
   if (!halftime && minute >= 76 && substitutions === 0) {
-    substitution = 0.35;
+    substitution = minute <= 84 ? 0.45 : 0.60;
   }
 
   return {
