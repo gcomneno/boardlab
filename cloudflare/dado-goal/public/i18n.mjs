@@ -114,10 +114,32 @@ export const messages = Object.freeze({
     faceSaved: "Saved!",
     facePenaltySaved: "SAVED/BLOCKED",
     facePenaltyWide: "WIDE",
+    disclosureSaves: "Management",
+    disclosureConfiguration: "Configuration",
+    disclosureFriendly: "Match",
+    disclosureTournament: "Tournament",
+    disclosureManager: "Career",
+    disclosureEvents: "Match commentary log",
+    disclosureMatchStats: "Match statistics",
+    disclosureField: "Field",
+    disclosureRules: "Rules",
+    rulesPanelGuideHeading: "Game panels",
+    rulesPanelConfigurationTitle: "Configuration",
+    rulesPanelConfigurationDescription: "Set the interface language, number of rolls per team and random-event option before starting.",
+    rulesPanelMatchTitle: "Match",
+    rulesPanelMatchDescription: "Choose both teams, prepare a friendly match and start a new game using the selected settings.",
+    rulesPanelTournamentTitle: "Tournament",
+    rulesPanelTournamentDescription: "Organize a league, browse matchdays, play fixtures and follow results and standings.",
+    rulesPanelCareerTitle: "Career",
+    rulesPanelCareerDescription: "Take charge of a club, follow completed matches and review progress and cumulative player statistics.",
+    rulesPanelFieldTitle: "Field",
+    rulesPanelFieldDescription: "Roll the dice during attacks, track the score and match progress, and follow stadium commentary.",
+    rulesPanelManagementTitle: "Management",
+    rulesPanelManagementDescription: "Export a save, import a saved match or career, and manage locally stored game data.",
     rulesHeading: "How to play?",
     rules1: "Each player rolls their team die. A shot on goal or a cross leads to the pink die.",
-    rules2: "The pink die determines how the attack develops. A scissor kick, bicycle kick or header leads to the final red/blue die.",
-    rules3: "The final die can produce a GOAL or end the attack without a goal. A PENALTY means rolling the same die again.",
+    rules2: "The pink die determines how the attack develops. A scissor kick, bicycle kick or header leads to the final red die.",
+    rules3: "The final die can score a GOAL or end the attack without a goal. If PENALTY appears, roll the dedicated green penalty die to determine the outcome of the spot kick.",
     rules4: "A pass allows another roll of the team die. At the end of each hand, play passes to the opponent, even after a goal.",
     rules5: "The team with the most goals after the agreed number of rolls per team wins. A draw is possible.",
     footer: "Original Dado Goal · Digital adaptation · Two local players · No account · GiadaWare",
@@ -314,10 +336,32 @@ export const messages = Object.freeze({
     faceSaved: "Parato!",
     facePenaltySaved: "PARATO/RESPINTO",
     facePenaltyWide: "FUORI",
+    disclosureSaves: "Gestione",
+    disclosureConfiguration: "Configurazione",
+    disclosureFriendly: "Partita",
+    disclosureTournament: "Torneo",
+    disclosureManager: "Carriera",
+    disclosureEvents: "Cronaca della partita",
+    disclosureMatchStats: "Statistiche partita",
+    disclosureField: "Campo",
+    disclosureRules: "Regole",
+    rulesPanelGuideHeading: "I pannelli di gioco",
+    rulesPanelConfigurationTitle: "Configurazione",
+    rulesPanelConfigurationDescription: "Imposta la lingua dell'interfaccia, il numero di lanci per squadra e l'opzione per gli eventi casuali prima di iniziare.",
+    rulesPanelMatchTitle: "Partita",
+    rulesPanelMatchDescription: "Scegli le due squadre, prepara una partita amichevole e avvia una nuova sfida con le impostazioni selezionate.",
+    rulesPanelTournamentTitle: "Torneo",
+    rulesPanelTournamentDescription: "Organizza un campionato, consulta le giornate del calendario, disputa gli incontri e segui risultati e classifica.",
+    rulesPanelCareerTitle: "Carriera",
+    rulesPanelCareerDescription: "Assumi la guida di una squadra, segui le partite disputate e consulta i progressi e le statistiche cumulative dei giocatori.",
+    rulesPanelFieldTitle: "Campo",
+    rulesPanelFieldDescription: "Lancia i dadi durante le azioni, controlla punteggio e andamento della partita e segui il racconto della Radio Stadio.",
+    rulesPanelManagementTitle: "Gestione",
+    rulesPanelManagementDescription: "Esporta un salvataggio, importa una partita o una carriera salvata e gestisci i dati memorizzati localmente.",
     rulesHeading: "Come si gioca?",
     rules1: "Ogni giocatore lancia il proprio dado squadra. Un tiro in porta o un cross porta al dado rosa.",
-    rules2: "Il dado rosa determina lo sviluppo dell'azione. Mezza rovesciata, rovesciata e colpo di testa portano al dado finale rosso/blu.",
-    rules3: "Il dado finale può segnare GOAL oppure terminare l'azione senza goal. RIGORE fa rilanciare lo stesso dado.",
+    rules2: "Il dado rosa determina lo sviluppo dell'azione. Mezza rovesciata, rovesciata e colpo di testa portano al dado finale rosso.",
+    rules3: "Il dado finale può segnare GOAL oppure concludere l'azione senza goal. Se esce RIGORE, si lancia il dado verde dedicato, che determina l'esito del tiro dal dischetto.",
     rules4: "Passaggio permette di rilanciare il dado squadra. Ogni fine mano passa il gioco all'avversario, anche dopo un goal.",
     rules5: "Vince chi segna più goal dopo il numero concordato di lanci per squadra. Il pareggio è ammesso.",
     footer: "Dado Goal Originale · Adattamento digitale · Due giocatori locali · Nessun account · GiadaWare",
@@ -437,15 +481,27 @@ export function formatMessage(key, values = {}) {
 const bindings = Object.freeze([
   ['label[for="language"] > span', "language"],
   ["header > p:last-child", "subtitle"],
-  [".match-stats h3", "statistics"],
   [".stat-header > strong:nth-child(2)", "metric"],
   ['[data-i18n="color"]', "color"],
   ['[data-i18n="handsPerTeam"]', "handsPerTeam"],
   ["#guide-pink", "pinkGuide"],
   ["#guide-result", "finalGuide"],
-  ["details.panel > summary", "rulesHeading"],
+  ["#rules-heading", "rulesHeading"],
+  ["#rules-panel-guide-heading", "rulesPanelGuideHeading"],
+  ["#rules-panel-configuration-title", "rulesPanelConfigurationTitle"],
+  ["#rules-panel-configuration-description", "rulesPanelConfigurationDescription"],
+  ["#rules-panel-match-title", "rulesPanelMatchTitle"],
+  ["#rules-panel-match-description", "rulesPanelMatchDescription"],
+  ["#rules-panel-tournament-title", "rulesPanelTournamentTitle"],
+  ["#rules-panel-tournament-description", "rulesPanelTournamentDescription"],
+  ["#rules-panel-career-title", "rulesPanelCareerTitle"],
+  ["#rules-panel-career-description", "rulesPanelCareerDescription"],
+  ["#rules-panel-field-title", "rulesPanelFieldTitle"],
+  ["#rules-panel-field-description", "rulesPanelFieldDescription"],
+  ["#rules-panel-management-title", "rulesPanelManagementTitle"],
+  ["#rules-panel-management-description", "rulesPanelManagementDescription"],
   ...[1, 2, 3, 4, 5].map(index => [
-    `details.panel > p:nth-of-type(${index})`, `rules${index}`
+    `#rules-step-${index}`, `rules${index}`
   ]),
   ["main.shell > footer", "footer"]
 ]);
@@ -453,6 +509,13 @@ const bindings = Object.freeze([
 export function applyLocale() {
   document.documentElement.lang = locale;
   document.title = translate("title");
+
+  for (const element of document.querySelectorAll("[data-i18n-panel]")) {
+    const key = element.getAttribute("data-i18n-panel");
+    const translationKey =
+      `disclosure${key[0].toUpperCase()}${key.slice(1)}`;
+    element.textContent = translate(translationKey);
+  }
 
   const meta = document.querySelector('meta[name="description"]');
   if (meta) meta.setAttribute("content", translate("description"));

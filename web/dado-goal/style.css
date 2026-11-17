@@ -2460,19 +2460,12 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 
 
 /* Per-player statistics derived from canonical match events. */
-.player-stats {
-  margin-top: 18px;
-}
 
 .player-stats h3,
 .player-stat-team h4 {
   margin: 0 0 10px;
 }
 
-#player-stats {
-  display: grid;
-  gap: 14px;
-}
 
 .player-stat-team {
   min-width: 0;
@@ -2514,32 +2507,11 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 }
 
 /* Collapsible LIVE per-player statistics panel. */
-.player-stats-panel {
-  margin-top: 14px;
-}
 
-.player-stats-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
 
-.player-stats-header h3 {
-  margin: 0;
-}
 
-.player-stats-header button {
-  flex: 0 0 auto;
-}
 
-#player-stats-body[hidden] {
-  display: none;
-}
 
-#player-stats-body {
-  margin-top: 12px;
-}
 
 @media (max-width: 640px) {
   .player-stats-header {
@@ -2667,4 +2639,775 @@ footer { text-align: center; color: #b2cdb7; margin-top: 28px; font-size: .85rem
 .manager-player-statistics-table th:first-child,
 .manager-player-statistics-table td:first-child {
   min-width: 9rem;
+}
+
+/* Unified Dado Goal disclosure layout. */
+.collapsible-content {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.friendly-panel {
+  display: block;
+}
+
+.friendly-panel .friendly-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+.configuration-panel .configuration-content {
+  margin-top: 12px;
+}
+
+.configuration-panel .match-setup-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  max-width: 100%;
+  align-items: end;
+}
+
+.configuration-panel .roll-settings {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(100px, 1fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.configuration-panel .locale-setting {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.configuration-panel .locale-setting > select,
+.configuration-panel .locale-setting > input[type="number"] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 10px;
+  border: 1px solid #92ad99;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.configuration-panel .random-hands-setting {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.configuration-panel .random-hands-setting input[type="checkbox"] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #f3c94c;
+}
+
+@media (max-width: 640px) {
+  .configuration-panel .match-setup-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.management-reset-action {
+  margin-top: 14px;
+}
+
+.management-reset-action button {
+  width: 100%;
+}
+
+.friendly-content > .team-config {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #426650;
+  border-radius: 12px;
+  background: #173328;
+}
+
+.friendly-content > .team-config > label {
+  display: grid;
+  gap: 5px;
+}
+
+.friendly-content > .match-setup-row,
+.friendly-content > .match-actions {
+  grid-column: 1 / -1;
+}
+
+.friendly-content > .team-config {
+  min-width: 0;
+}
+
+.friendly-panel .locale-setting,
+.tournament-panel #tournament-body > .locale-setting {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.friendly-panel .locale-setting select,
+.friendly-panel .locale-setting input[type="number"],
+.tournament-panel #competition,
+.tournament-panel #tournament-participants {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.friendly-panel .team-colors {
+  display: grid;
+  grid-template-columns: 88px auto 88px auto;
+  gap: 7px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.friendly-panel .team-colors > .team-color-primary,
+.friendly-panel .team-colors > .secondary-color,
+.friendly-panel .team-colors input[type="color"] {
+  box-sizing: border-box;
+  width: 88px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.friendly-panel .team-colors > .second-color-toggle {
+  justify-self: center;
+  width: 22px;
+}
+
+.friendly-panel .team-colors > .manager-new-team {
+  grid-column: 4;
+  grid-row: 1;
+  justify-self: end;
+  width: auto;
+  min-width: 90px;
+  max-width: 100%;
+  margin: 0;
+}
+
+#tournament-disclosure,
+#manager-disclosure,
+
+#tournament-body,
+#manager-body,
+
+/* Explicit arrows avoid inconsistent browser-native markers. */
+details.collapsible-content > summary,
+#tournament-disclosure > summary,
+#manager-disclosure > summary,
+#player-stats-disclosure > summary,
+#match-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  list-style: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 9px 12px;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+details.collapsible-content > summary::-webkit-details-marker,
+#tournament-disclosure > summary::-webkit-details-marker,
+#manager-disclosure > summary::-webkit-details-marker,
+#player-stats-disclosure > summary::-webkit-details-marker,
+#match-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.collapsible-content > summary::before,
+#tournament-disclosure > summary::before,
+#manager-disclosure > summary::before,
+#player-stats-disclosure > summary::before,
+#match-disclosure > summary::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid currentColor;
+  opacity: .9;
+  transition: transform .15s ease;
+}
+
+details.collapsible-content[open] > summary::before,
+#tournament-disclosure[open] > summary::before,
+#manager-disclosure[open] > summary::before,
+#player-stats-disclosure[open] > summary::before,
+#match-disclosure[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+details.collapsible-content > summary strong,
+#tournament-disclosure > summary strong,
+#manager-disclosure > summary strong,
+#player-stats-disclosure > summary strong,
+#match-disclosure > summary strong {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.collapsible-title,
+#tournament-disclosure > summary > span,
+#manager-disclosure > summary > span {
+  display: inline;
+}
+
+#tournament-disclosure > summary[aria-disabled="true"],
+#manager-disclosure > summary[aria-disabled="true"] {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+details > summary:focus-visible {
+  outline: 2px solid #f3c94c;
+  outline-offset: 2px;
+  border-radius: 5px;
+}
+
+.match-disclosure {
+  display: block;
+  min-width: 0;
+  padding: 12px;
+  background: #193b2d;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 16px;
+}
+
+.match-disclosure > .match-disclosure-heading {
+  background: #1d4032;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.match-disclosure > .panel {
+  margin-top: 8px;
+}
+
+.match-commentary,
+.match-stats {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.match-stats {
+  max-width: none;
+}
+
+
+@media (max-width: 760px) {
+  .friendly-panel .team-colors {
+    grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr);
+  }
+
+  .friendly-panel .team-colors > .manager-new-team {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    justify-self: start;
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .friendly-panel .friendly-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Main game navigation: one closed-panel appearance. */
+:is(
+  .configuration-panel > details.collapsible-content,
+  .friendly-panel > details.collapsible-content,
+  #tournament-disclosure,
+  #manager-disclosure,
+  #match-disclosure,
+  details.collapsible-content:has(> summary #game-save-title),
+  details.panel:has(> summary[data-i18n-panel="rules"])
+) > summary {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 58px;
+  margin: 0;
+  padding: 14px 18px;
+  background: #1d4032;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  list-style: none;
+  cursor: pointer;
+}
+
+details.panel > summary[data-i18n-panel="rules"]::-webkit-details-marker {
+  display: none;
+}
+
+details.panel > summary[data-i18n-panel="rules"]::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid currentColor;
+  transition: transform .15s ease;
+}
+
+details.panel[open] > summary[data-i18n-panel="rules"]::before {
+  transform: rotate(90deg);
+}
+
+#match-disclosure:not([open]) > summary,
+details.panel:not([open]) > summary[data-i18n-panel="rules"] {
+  margin-bottom: 0;
+}
+
+#manager-disclosure > summary[aria-disabled="true"] {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+
+/* Dado Goal — tournament and management visual polish v1. */
+
+/* Tournament: clearer hierarchy and compact dashboard. */
+#tournament-body > .locale-setting {
+  margin-bottom: 14px;
+}
+
+#tournament-dashboard .tournament-summary {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px 16px;
+  padding: 18px;
+  background: linear-gradient(145deg, #214536, #142d24);
+  border-color: #52735d;
+}
+
+#tournament-dashboard .tournament-summary > span:first-child {
+  grid-column: 1;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+#tournament-status {
+  grid-column: 2;
+  text-align: right;
+  color: #f3cf64;
+}
+
+#tournament-next {
+  grid-column: 1 / -1;
+  padding: 12px 0;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  font-size: 1.08rem;
+}
+
+#tournament-play-next {
+  grid-column: 1;
+  min-height: 46px;
+  font-weight: 750;
+}
+
+#tournament-close {
+  grid-column: 2;
+  min-height: 46px;
+  background: transparent;
+  color: #f0d6bf;
+  border: 1px solid #8a675a;
+  box-shadow: none;
+}
+
+#tournament-close:hover:not(:disabled) {
+  background: rgb(176 91 68 / 15%);
+}
+
+#tournament-dashboard .tournament-matchday-nav {
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  gap: 8px;
+  margin: 16px 0 12px;
+}
+
+#tournament-dashboard .tournament-matchday-nav strong {
+  padding: 11px 12px;
+  font-size: 0.96rem;
+}
+
+#tournament-dashboard .tournament-matchday {
+  align-items: start;
+}
+
+#tournament-dashboard .tournament-matchday > section {
+  align-self: start;
+}
+
+#tournament-dashboard .tournament-matchday h3 {
+  font-size: 0.98rem;
+}
+
+#tournament-dashboard .tournament-matchday li {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+#tournament-dashboard .tournament-table-wrap {
+  margin-top: 18px;
+}
+
+/* Management: primary file operations and distinct reset action. */
+.game-save-panel .game-save-content {
+  padding-top: 14px;
+}
+
+.game-save-panel .game-save-description {
+  margin: 0 0 16px;
+  line-height: 1.55;
+}
+
+.game-save-panel .game-save-actions {
+  gap: 12px;
+}
+
+.game-save-panel .game-save-actions button {
+  min-height: 48px;
+  font-weight: 700;
+}
+
+.game-save-panel #game-import {
+  background: #254b3b;
+  color: #f5e9c6;
+  border: 1px solid #71957c;
+}
+
+.game-save-panel .management-reset-action {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgb(255 255 255 / 15%);
+}
+
+.game-save-panel #reset-local-data {
+  min-height: 44px;
+  background: transparent;
+  color: #f0c5b9;
+  border: 1px solid #9c665e;
+  box-shadow: none;
+}
+
+.game-save-panel #reset-local-data:hover:not(:disabled) {
+  background: rgb(176 91 68 / 15%);
+}
+
+@media (max-width: 699px) {
+  #tournament-dashboard .tournament-summary {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+  }
+
+  #tournament-dashboard .tournament-summary > span:first-child,
+  #tournament-status,
+  #tournament-next,
+  #tournament-play-next,
+  #tournament-close {
+    grid-column: 1;
+  }
+
+  #tournament-status {
+    text-align: left;
+  }
+}
+
+
+/* Dado Goal — illustrated rules layout v1. */
+.rules-panel .rules-content {
+  padding: 18px 2px 4px;
+}
+
+.rules-panel .rules-intro {
+  padding: 20px 22px;
+  border: 1px solid #52735d;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #28513f, #173328);
+}
+
+.rules-panel .rules-eyebrow {
+  color: #f3cf64;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.rules-panel .rules-intro h2 {
+  margin: 8px 0 0;
+  font-size: clamp(1.25rem, 2.5vw, 1.7rem);
+}
+
+.rules-panel .rules-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rules-step;
+}
+
+.rules-panel .rules-steps li {
+  counter-increment: rules-step;
+  position: relative;
+  min-width: 0;
+  padding: 20px 18px 18px;
+  border: 1px solid #426650;
+  border-radius: 13px;
+  background: #173328;
+}
+
+.rules-panel .rules-steps li::before {
+  content: counter(rules-step, decimal-leading-zero);
+  display: block;
+  margin-bottom: 12px;
+  color: #f3cf64;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.rules-panel .rules-steps li:last-child {
+  grid-column: 1 / -1;
+  border-color: #8c7844;
+  background: linear-gradient(120deg, #284536, #173328);
+}
+
+.rules-panel .rules-steps p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+@media (max-width: 699px) {
+  .rules-panel .rules-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rules-panel .rules-steps li:last-child {
+    grid-column: 1;
+  }
+}
+
+
+/* Dado Goal — radio typography refresh v1. */
+.match-commentary {
+  padding: 16px 18px;
+  border-color: rgb(179 213 174 / 35%);
+  background: linear-gradient(145deg, #204936, #173729);
+}
+
+.match-commentary .commentary-header {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+#commentary-text {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-left: 3px solid #f0cd66;
+  border-radius: 8px;
+  background: rgb(5 25 16 / 30%);
+  color: #f8e4a6;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: clamp(1rem, 1.7vw, 1.13rem);
+  font-weight: 550;
+  letter-spacing: 0;
+  line-height: 1.7;
+  text-align: left;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+
+/* Dado Goal — balanced panel guide. */
+.rules-panel .rules-panel-guide {
+  margin-top: 24px;
+}
+
+.rules-panel .rules-panel-guide .rules-steps li:last-child {
+  grid-column: auto;
+  border-color: #426650;
+  background: #173328;
+}
+
+.rules-panel .rules-panel-guide .rules-steps li {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.rules-panel .rules-panel-guide .rules-steps p {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.rules-panel .rules-panel-guide .rules-steps strong {
+  display: block;
+  color: #f4e6bd;
+  font-size: 1.02rem;
+  line-height: 1.35;
+}
+
+.rules-panel .rules-panel-guide .rules-steps span {
+  display: block;
+  line-height: 1.55;
+}
+
+
+/* Tournament: collapse empty matchday columns. */
+
+
+
+
+
+
+
+
+
+/* Dado Goal — centered tournament panel layout. */
+#tournament-panel {
+  display: block;
+  min-width: 0;
+}
+
+#tournament-disclosure {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+#tournament-disclosure > summary {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+}
+
+#tournament-body {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 14px;
+}
+
+#tournament-body > .locale-setting,
+#tournament-setup,
+#tournament-dashboard {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#tournament-dashboard .tournament-table-wrap {
+  width: 100%;
+}
+
+#tournament-disclosure:not([open]) > #tournament-body,
+#tournament-dashboard[hidden],
+#tournament-setup[hidden] {
+  display: none;
+}
+
+/* Tournament — fixture rows and persistent results. */
+#tournament-body > .locale-setting[hidden] {
+  display: none;
+}
+
+#tournament-dashboard .tournament-matchday {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+#tournament-dashboard .tournament-matchday > section {
+  display: block;
+}
+
+#tournament-dashboard .tournament-matchday li.tournament-fixture {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) 26px auto 26px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 9px 8px;
+}
+
+#tournament-dashboard .tournament-fixture::before {
+  display: none;
+}
+
+.tournament-fixture-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+  font-size: 0.83rem;
+}
+
+.tournament-fixture-name.home {
+  text-align: left;
+}
+
+.tournament-fixture-name.away {
+  text-align: right;
+}
+
+.tournament-fixture-crest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 28px;
+}
+
+.tournament-fixture-crest img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.tournament-fixture-score {
+  min-width: 30px;
+  text-align: center;
+  font-weight: 800;
+  white-space: nowrap;
+  color: #f3cf64;
+}
+
+@media (max-width: 699px) {
+  #tournament-dashboard .tournament-matchday {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

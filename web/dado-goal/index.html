@@ -17,35 +17,16 @@
       <p>Quattro dadi. Due squadre. Un solo obiettivo: GOAL!</p>
     </header>
 
-    <section class="panel game-save-panel"
-             aria-labelledby="game-save-title">
-      <div class="game-save-heading">
-        <div>
-          <p class="manager-kicker">Dati</p>
-          <h2 id="game-save-title">Salvataggio Dado Goal</h2>
-        </div>
-      </div>
-      <p class="game-save-description">
-        Salva o ripristina torneo, carriera Manager, storico,
-        configurazione e partita single-player in corso.
-      </p>
-      <div class="game-save-actions">
-        <button id="game-export" type="button" disabled>
-          ↓ Salva tutto
-        </button>
-        <button id="game-import" type="button">
-          ↑ Carica salvataggio
-        </button>
-        <input id="game-import-file" type="file"
-               accept="application/json,.json" hidden>
-      </div>
-      <p id="game-save-status"
-         class="game-save-status"
-         aria-live="polite"></p>
-    </section>
 
-    <section class="panel settings friendly-panel"
-             aria-label="Amichevole">
+
+    <section class="panel configuration-panel" aria-label="Configurazione">
+      <details class="collapsible-content">
+        <summary class="collapsible-heading">
+          <span class="collapsible-title">
+            <strong data-i18n-panel="configuration">Configurazione</strong>
+          </span>
+        </summary>
+        <div class="configuration-content">
       <div class="match-setup-row">
         <label for="language" class="locale-setting">
           <span data-i18n="language">Lingua</span>
@@ -68,7 +49,21 @@
           </label>
         </div>
       </div>
+        </div>
+      </details>
+    </section>
 
+    <section class="panel settings friendly-panel"
+             aria-label="Amichevole">
+      <details class="collapsible-content" open>
+        <summary class="collapsible-heading">
+          <span class="collapsible-title">
+
+            <strong data-i18n-panel="friendly">Partita</strong>
+          </span>
+
+        </summary>
+        <div class="friendly-content">
       <div class="team-config">
         <label><span data-i18n-team="1">Squadra 1</span>
           <div class="team-select-with-logo">
@@ -135,32 +130,24 @@
 
       <div class="match-actions">
         <button id="new" type="button">Gioca amichevole</button>
-        <button id="reset-local-data" type="button">
-          Azzera dati
-        </button>
         <a class="multiplayer-button"
            href="https://dado-goal-multiplayer.giancarlo-cicellyn.workers.dev/multiplayer.html"
            target="_blank" rel="noopener noreferrer"
            aria-label="Apri Dado Goal Multiplayer in una nuova scheda">Multiplayer</a>
       </div>
+        </div>
+      </details>
     </section>
 
     <section id="tournament-panel" class="panel tournament-panel"
              aria-labelledby="tournament-title">
-      <div class="tournament-heading">
-        <div>
-          <p class="manager-kicker">Dado Goal!</p>
-          <h2 id="tournament-title">Torneo</h2>
-        </div>
-        <button id="tournament-toggle"
-                class="tournament-toggle"
-                type="button"
-                aria-controls="tournament-body"
-                aria-expanded="true">
-          Nascondi torneo
-        </button>
-      </div>
+      <details id="tournament-disclosure">
+        <summary class="tournament-heading">
+          <span>
 
+            <strong id="tournament-title" data-i18n-panel="tournament">Torneo</strong>
+          </span>
+        </summary>
       <div id="tournament-body">
       <div class="locale-setting">
         <select id="competition"
@@ -233,25 +220,23 @@
           </table>
         </div>
       </div>
-      </div>
+      </details>
     </section>
 
     <section class="panel manager-career-panel"
              aria-labelledby="manager-career-title">
-      <div class="manager-career-heading">
-        <div>
-          <p class="manager-kicker">Carriera</p>
-          <h2 id="manager-career-title">Manager</h2>
-        </div>
-        <button id="manager-toggle"
-                class="manager-toggle"
-                type="button"
-                aria-controls="manager-body"
-                aria-expanded="false">
-          Mostra Manager
-        </button>
+      <details id="manager-disclosure">
+        <summary class="manager-career-heading">
+          <span>
+
+            <strong id="manager-career-title" data-i18n-panel="manager">Carriera</strong>
+          </span>
+        </summary>
+      <div id="manager-body">
+      <div id="manager-empty-state" class="manager-empty-state" role="status">
+        <h3 id="manager-empty-title">Inizia la tua carriera</h3>
+        <p id="manager-empty-description">Scegli una squadra in Partita e premi +Manager per avviare la carriera.</p>
       </div>
-      <div id="manager-body" hidden inert>
       <div id="manager-dashboard" hidden>
         <div class="manager-summary">
           <div>
@@ -351,9 +336,13 @@
           </button>
         </div>
       </div>
-      </div>
+      </details>
     </section>
 
+    <details id="match-disclosure" class="match-disclosure">
+      <summary class="match-disclosure-heading">
+        <strong data-i18n-panel="field">Campo</strong>
+      </summary>
     <section class="panel" aria-label="Tabellone">
       <div class="scoreboard">
         <div class="team" id="panel-0">
@@ -369,9 +358,16 @@
         </div>
       </div>
       <section class="match-events" aria-labelledby="match-events-heading">
-        <h3 id="match-events-heading">📋 Cronaca della partita</h3>
+        <details class="collapsible-content">
+          <summary id="match-events-heading" class="collapsible-heading">
+            <span class="collapsible-title">
+              <strong data-i18n-panel="events">Cronaca della partita</strong>
+            </span>
+
+          </summary>
         <ol id="match-events-list" aria-live="polite"></ol>
         <p id="match-events-empty">Nessun evento registrato.</p>
+        </details>
       </section>
     </section>
 
@@ -450,41 +446,98 @@
           </p>
         </section>
         <section class="match-stats" aria-label="Statistiche partita">
-          <h3>Statistiche della partita</h3>
+          <details class="collapsible-content">
+            <summary class="collapsible-heading">
+            <span class="collapsible-title">
+              <strong data-i18n-panel="matchStats">Statistiche partita</strong>
+            </span>
+
+          </summary>
           <div class="stat-row stat-header">
             <strong id="stats-team-0"></strong>
             <strong>Voce</strong>
             <strong id="stats-team-1"></strong>
           </div>
           <div id="match-stats"></div>
+          </details>
         </section>
-        <section class="player-stats player-stats-panel"
-                 aria-label="Statistiche LIVE">
-          <div class="player-stats-header">
-            <h3 id="player-stats-heading">Statistiche LIVE</h3>
-            <button id="player-stats-toggle"
-                    type="button"
-                    aria-expanded="false"
-                    aria-controls="player-stats-body">
-              Mostra
-            </button>
-          </div>
-          <div id="player-stats-body" hidden>
-            <div id="player-stats"></div>
-          </div>
-        </section>
-
-      </div>
+</div>
       <p id="message" class="message" aria-live="polite"></p>
     </section>
+    </details>
 
-    <details class="panel">
-      <summary>Come si gioca?</summary>
-      <p>Ogni giocatore lancia il proprio dado squadra. Un tiro in porta o un cross porta al dado rosa.</p>
-      <p>Il dado rosa determina lo sviluppo dell'azione. Mezza rovesciata, rovesciata e colpo di testa portano al dado finale rosso/blu.</p>
-      <p>Il dado finale può segnare GOAL oppure terminare l'azione senza goal. RIGORE fa rilanciare lo stesso dado.</p>
-      <p>Passaggio permette di rilanciare il dado squadra. Ogni fine mano passa il gioco all'avversario, anche dopo un goal.</p>
-      <p>Vince chi segna più goal dopo il numero concordato di lanci per squadra. Il pareggio è ammesso.</p>
+    <section class="panel game-save-panel"
+             aria-labelledby="game-save-title">
+      <details class="collapsible-content">
+        <summary class="collapsible-heading">
+          <span class="collapsible-title">
+
+            <strong id="game-save-title" data-i18n-panel="saves">Gestione</strong>
+          </span>
+
+        </summary>
+        <div class="game-save-content">
+      <p class="game-save-description">
+        Salva o ripristina torneo, carriera Manager, storico,
+        configurazione e partita single-player in corso.
+      </p>
+      <div class="game-save-actions">
+        <button id="game-export" type="button" disabled>
+          ↓ Salva tutto
+        </button>
+        <button id="game-import" type="button">
+          ↑ Carica salvataggio
+        </button>
+        <input id="game-import-file" type="file"
+               accept="application/json,.json" hidden>
+      </div>
+      <p id="game-save-status"
+         class="game-save-status"
+         aria-live="polite"></p>
+        </div>
+        <div class="management-reset-action">
+        <button id="reset-local-data" type="button">
+          Azzera dati
+        </button>
+  </div>
+      </details>
+    </section>
+
+    <details class="panel rules-panel">
+      <summary data-i18n-panel="rules">Regole</summary>
+      <div class="rules-content">
+        <header class="rules-intro">
+          <span class="rules-eyebrow">DADO GOAL</span>
+          <h2 id="rules-heading">Come si gioca?</h2>
+        </header>
+        <ol class="rules-steps">
+          <li><p id="rules-step-1">Ogni giocatore lancia il proprio dado squadra. Un tiro in porta o un cross porta al dado rosa.</p></li>
+          <li><p id="rules-step-2">Il dado rosa determina lo sviluppo dell'azione. Mezza rovesciata, rovesciata e colpo di testa portano al dado finale rosso.</p></li>
+          <li><p id="rules-step-3">Il dado finale può segnare GOAL oppure terminare l'azione senza goal. Se esce RIGORE, si lancia il dado verde dedicato, che determina l'esito del tiro dal dischetto.</p></li>
+          <li><p id="rules-step-4">Passaggio permette di rilanciare il dado squadra. Ogni fine mano passa il gioco all'avversario, anche dopo un goal.</p></li>
+          <li><p id="rules-step-5">Vince chi segna più goal dopo il numero concordato di lanci per squadra. Il pareggio è ammesso.</p></li>
+        </ol>
+        <section class="rules-panel-guide" aria-labelledby="rules-panel-guide-heading">
+          <header class="rules-intro">
+            <span class="rules-eyebrow">DADO GOAL</span>
+            <h2 id="rules-panel-guide-heading">I pannelli di gioco</h2>
+          </header>
+          <ol class="rules-steps">
+            <li><p><strong id="rules-panel-configuration-title">Configurazione</strong>
+                <span id="rules-panel-configuration-description">Imposta la lingua dell'interfaccia, il numero di lanci per squadra e l'opzione per gli eventi casuali prima di iniziare.</span></p></li>
+            <li><p><strong id="rules-panel-match-title">Partita</strong>
+                <span id="rules-panel-match-description">Scegli le due squadre, prepara una partita amichevole e avvia una nuova sfida con le impostazioni selezionate.</span></p></li>
+            <li><p><strong id="rules-panel-tournament-title">Torneo</strong>
+                <span id="rules-panel-tournament-description">Organizza un campionato, consulta le giornate del calendario, disputa gli incontri e segui risultati e classifica.</span></p></li>
+            <li><p><strong id="rules-panel-career-title">Carriera</strong>
+                <span id="rules-panel-career-description">Assumi la guida di una squadra, segui le partite disputate e consulta i progressi e le statistiche cumulative dei giocatori.</span></p></li>
+            <li><p><strong id="rules-panel-field-title">Campo</strong>
+                <span id="rules-panel-field-description">Lancia i dadi durante le azioni, controlla punteggio e andamento della partita e segui il racconto della Radio Stadio.</span></p></li>
+            <li><p><strong id="rules-panel-management-title">Gestione</strong>
+                <span id="rules-panel-management-description">Esporta un salvataggio, importa una partita o una carriera salvata e gestisci i dati memorizzati localmente.</span></p></li>
+          </ol>
+        </section>
+      </div>
     </details>
 
     <footer>

@@ -11,7 +11,6 @@ import { matchStatistics } from "./statistics.mjs";
 import { createRollEvent, normalizeRollEvents } from "./roll-event.mjs";
 import {
   managerPlayerStatistics,
-  playerStatistics,
 } from "./player-statistics.mjs";
 import { simulateMatch } from "./match-simulator.mjs";
 import { matchClock } from "./match-clock.mjs";
@@ -507,99 +506,6 @@ function render() {
     }),
   );
 
-  const playerTeams = playerStatistics(matchEvents);
-  const playerStatsPanel = byId("player-stats").closest(".player-stats-panel");
-  const playerStatsBody = byId("player-stats-body");
-  const playerStatsToggle = byId("player-stats-toggle");
-  const playerStatsVisible = !playerStatsBody.hidden;
-
-  byId("player-stats-heading").textContent = translate("playerStatistics");
-  playerStatsPanel.setAttribute(
-    "aria-label",
-    translate("playerStatistics"),
-  );
-  playerStatsToggle.textContent = translate(
-    playerStatsVisible
-      ? "playerStatisticsHide"
-      : "playerStatisticsShow",
-  );
-  playerStatsToggle.setAttribute(
-    "aria-expanded",
-    String(playerStatsVisible),
-  );
-
-  const playerStatsRoot = byId("player-stats");
-  playerStatsRoot.replaceChildren();
-
-  playerTeams.forEach((players, team) => {
-    const group = document.createElement("section");
-    group.className = "player-stat-team";
-
-    const heading = document.createElement("h4");
-    heading.textContent = names[team];
-    group.append(heading);
-
-    if (players.length === 0) {
-      const empty = document.createElement("p");
-      empty.className = "player-stat-empty";
-      empty.textContent = translate("playerStatisticsEmpty");
-      group.append(empty);
-      playerStatsRoot.append(group);
-      return;
-    }
-
-    const table = document.createElement("div");
-    table.className = "player-stat-table";
-
-    const header = document.createElement("div");
-    header.className = "player-stat-row player-stat-header";
-    [
-      translate("player"),
-      translate("goals"),
-      translate("penalties"),
-      translate("yellowCards"),
-      translate("redCards"),
-      translate("subbedOn"),
-      translate("subbedOff"),
-    ].forEach(label => {
-      const cell = document.createElement("strong");
-      cell.textContent = label;
-      header.append(cell);
-    });
-    table.append(header);
-
-    players.forEach(player => {
-      const row = document.createElement("div");
-      row.className = "player-stat-row";
-
-      const identity = document.createElement("span");
-      identity.className = "player-stat-name";
-      identity.textContent = player.name
-        ? `${player.name} (#${player.number})`
-        : `#${player.number}`;
-
-      const values = [
-        player.goals,
-        player.penalties,
-        player.yellowCards,
-        player.redCards,
-        player.subbedOn,
-        player.subbedOff,
-      ];
-
-      row.append(identity);
-      values.forEach(value => {
-        const cell = document.createElement("span");
-        cell.textContent = String(value);
-        row.append(cell);
-      });
-      table.append(row);
-    });
-
-    group.append(table);
-    playerStatsRoot.append(group);
-  });
-
   byId("stats-team-0").textContent = names[0];
   byId("stats-team-1").textContent = names[1];
 
@@ -607,22 +513,17 @@ function render() {
   const playing = matchStarted && !finished;
   const friendlyPlaying = playing && activeTournamentFixtureId === null;
 
-  if (friendlyPlaying) {
-    byId("tournament-body").hidden = true;
-  }
-
-  byId("tournament-body").inert = byId("tournament-body").hidden;
-  byId("tournament-toggle").disabled = friendlyPlaying;
-  byId("tournament-toggle").setAttribute(
-    "aria-expanded",
-    String(!byId("tournament-body").hidden)
+  const tournamentDisclosure = byId("tournament-disclosure");
+  if (friendlyPlaying) tournamentDisclosure.open = false;
+  tournamentDisclosure.querySelector("summary").setAttribute(
+    "aria-disabled", String(friendlyPlaying)
   );
-  byId("tournament-toggle").textContent = byId("tournament-body").hidden
-    ? "Mostra"
-    : "Nascondi";
 
   // Match configuration is immutable from kick-off to the final whistle.
   byId("competition").disabled = playing;
+  byId("tournament-create").disabled = playing;
+  byId("tournament-close").disabled = playing;
+  byId("manager-close").disabled = playing;
   byId("hands").disabled = playing;
   byId("random-hands").disabled = playing;
 
@@ -646,8 +547,11 @@ function render() {
     selectedTeamIds[0] !== "" &&
     selectedTeamIds[0] === selectedTeamIds[1];
 
-  byId("new").disabled = isRolling || (!playing && sameSelectedTeam);
-  byId("new").textContent = playing
+  const tournamentPlaying = playing &&
+    activeTournamentFixtureId !== null;
+  byId("new").disabled = isRolling || tournamentPlaying ||
+    (!playing && sameSelectedTeam);
+  byId("new").textContent = friendlyPlaying
     ? translate("cancelMatch")
     : "Gioca amichevole";
 
@@ -933,12 +837,25 @@ function managerClubMatches() {
 }
 
 function renderManagerDashboard() {
-  byId("manager-toggle").disabled = !managerState;
+  const managerSummary = byId("manager-disclosure").querySelector("summary");
+  managerSummary.setAttribute("aria-disabled", "false");
   const club = managerState?.club ?? null;
 
   syncNewManagerControls();
 
   byId("manager-dashboard").hidden = !club;
+  const emptyState = byId("manager-empty-state");
+  emptyState.hidden = Boolean(club);
+  if (!club) {
+    const italian = document.documentElement.lang?.toLowerCase().startsWith("it");
+    byId("manager-empty-title").textContent = italian
+      ? "Inizia la tua carriera"
+      : "Start your career";
+    byId("manager-empty-description").textContent = italian
+      ? "Scegli una squadra in Partita e premi +Manager per avviare la carriera."
+      : "Choose a team in Match and press +Manager to start your career.";
+  }
+
 
   if (!club) return;
 
@@ -1362,15 +1279,7 @@ function editManagerSelection() {
 }
 
 function setManagerPanelExpanded(expanded) {
-  const body = byId("manager-body");
-  const toggle = byId("manager-toggle");
-
-  body.hidden = !expanded;
-  body.inert = !expanded;
-  toggle.setAttribute("aria-expanded", String(expanded));
-  toggle.textContent = expanded
-    ? "Nascondi"
-    : "Mostra";
+  byId("manager-disclosure").open = Boolean(expanded);
 }
 
 function syncNewManagerControls() {
@@ -1401,7 +1310,8 @@ function newManagerCareer(seat) {
 }
 
 function closeManagerCareer() {
-  if (!managerState) return;
+  if (!managerState ||
+      (matchStarted && state.phase !== "finished")) return;
 
   if (!window.confirm(
     "Terminare la carriera Manager? Il torneo corrente e lo storico generale resteranno invariati."
@@ -1588,6 +1498,45 @@ function validateGlobalSave(source) {
   };
 }
 
+function globalSaveFilename(save, now = new Date()) {
+  const slug = value => String(value ?? "")
+    .normalize("NFKD")
+    .replace(/[\\u0300-\\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const pad = value => String(value).padStart(2, "0");
+  const timestamp = [
+    now.getFullYear(),
+    pad(now.getMonth() + 1),
+    pad(now.getDate()),
+  ].join("") + "-" + [
+    pad(now.getHours()),
+    pad(now.getMinutes()),
+    pad(now.getSeconds()),
+  ].join("");
+
+  const managerClub = save.persistent?.manager?.club;
+  const teamName = managerClub?.name
+    || save.runtime?.names?.find(name =>
+      name && !/^squadra\\s*[12]$/i.test(name)
+    );
+
+  const championshipId = save.persistent?.tournament?.championshipId;
+  const competition = championshipId
+    ? slug(championshipId)
+    : save.runtime?.matchStarted
+      ? "amichevole"
+      : "generale";
+
+  const parts = ["dado-goal"];
+  if (slug(teamName)) parts.push(slug(teamName));
+  parts.push(competition, timestamp);
+
+  return `${parts.join("-")}.json`;
+}
+
 function exportGlobalSave() {
   if (isRolling) {
     byId("game-save-status").textContent =
@@ -1595,13 +1544,14 @@ function exportGlobalSave() {
     return;
   }
 
-  const source = JSON.stringify(globalSaveDocument(), null, 2);
+  const save = globalSaveDocument();
+  const source = JSON.stringify(save, null, 2);
   const blob = new Blob([source], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
 
   link.href = url;
-  link.download = "dado-goal-save-v1.json";
+  link.download = globalSaveFilename(save);
   link.click();
 
   URL.revokeObjectURL(url);
@@ -2123,6 +2073,8 @@ function renderTournament() {
 
   setup.hidden = Boolean(tournamentState);
   dashboard.hidden = !tournamentState;
+  byId("competition").closest(".locale-setting").hidden =
+    Boolean(tournamentState);
 
   if (!tournamentState) {
     tournamentViewedMatchday = null;
@@ -2254,29 +2206,65 @@ function renderTournament() {
       `${tournamentTeamName(next.awayProviderTeamId)}`
     : "Nessuna partita pendente";
 
+  const renderFixtureItem = (fixture, record = null) => {
+    const item = document.createElement("li");
+    item.className = "tournament-fixture";
+
+    const teams = allCatalogueTeams();
+    const findTeam = id => teams.find(
+      team => String(team.providerTeamId) === String(id)
+    );
+
+    const home = findTeam(fixture.homeProviderTeamId);
+    const away = findTeam(fixture.awayProviderTeamId);
+
+    const name = (team, id, side) => {
+      const element = document.createElement("span");
+      element.className = `tournament-fixture-name ${side}`;
+      element.textContent = team?.name ?? tournamentTeamName(id);
+      return element;
+    };
+
+    const crest = team => {
+      const element = document.createElement("span");
+      element.className = "tournament-fixture-crest";
+      if (team?.logo) {
+        const image = document.createElement("img");
+        image.src = team.logo;
+        image.alt = "";
+        image.setAttribute("aria-hidden", "true");
+        image.loading = "lazy";
+        element.append(image);
+      }
+      return element;
+    };
+
+    const score = document.createElement("span");
+    score.className = "tournament-fixture-score";
+    score.textContent = record
+      ? `${record.score.home}–${record.score.away}`
+      : "–";
+
+    item.append(
+      name(home, fixture.homeProviderTeamId, "home"),
+      crest(home),
+      score,
+      crest(away),
+      name(away, fixture.awayProviderTeamId, "away")
+    );
+
+    return item;
+  };
+
   const resultItems = matchdayFixtures
     .filter(fixture => fixture.matchId !== null)
-    .map(fixture => {
-      const record = recordsById.get(fixture.matchId);
-      const item = document.createElement("li");
-      item.textContent = record
-        ? `${tournamentTeamName(fixture.homeProviderTeamId)} ` +
-          `${record.score.home}–${record.score.away} ` +
-          `${tournamentTeamName(fixture.awayProviderTeamId)}`
-        : `${tournamentTeamName(fixture.homeProviderTeamId)} – ` +
-          `${tournamentTeamName(fixture.awayProviderTeamId)}`;
-      return item;
-    });
+    .map(fixture => renderFixtureItem(
+      fixture, recordsById.get(fixture.matchId)
+    ));
 
   const pendingItems = matchdayFixtures
     .filter(fixture => fixture.matchId === null)
-    .map(fixture => {
-      const item = document.createElement("li");
-      item.textContent =
-        `${tournamentTeamName(fixture.homeProviderTeamId)} – ` +
-        `${tournamentTeamName(fixture.awayProviderTeamId)}`;
-      return item;
-    });
+    .map(fixture => renderFixtureItem(fixture));
 
   byId("tournament-results").replaceChildren(...resultItems);
   byId("tournament-results-empty").hidden = resultItems.length !== 0;
@@ -2284,11 +2272,13 @@ function renderTournament() {
   byId("tournament-pending-empty").hidden = pendingItems.length !== 0;
 
   byId("tournament-play-next").disabled =
-    !next || activeTournamentFixtureId !== null;
+    !next || activeTournamentFixtureId !== null ||
+    (matchStarted && state.phase !== "finished");
 }
 
 function closeTournament() {
-  if (!tournamentState) return;
+  if (!tournamentState ||
+      (matchStarted && state.phase !== "finished")) return;
 
   if (!window.confirm(
     "Abbandonare il torneo corrente? La carriera Manager resterà attiva."
@@ -2306,6 +2296,7 @@ function closeTournament() {
 }
 
 function createTournamentFromSelection() {
+  if (matchStarted && state.phase !== "finished") return;
   const participants = [...byId("tournament-participants").selectedOptions]
     .map(option => allCatalogueTeams().find(team =>
       String(team.providerTeamId) === option.value
@@ -2459,6 +2450,7 @@ function playTournamentFixture(fixture) {
 }
 
 function playNextTournamentFixture() {
+  if (matchStarted && state.phase !== "finished") return;
   const managedId = managerTournamentTeamId();
 
   if (managedId === null) {
@@ -2521,21 +2513,13 @@ byId("tournament-matchday-next").addEventListener("click", () => {
   }
 });
 
-byId("tournament-toggle").addEventListener("click", () => {
-  const body = byId("tournament-body");
-
-  if (byId("tournament-toggle").disabled) return;
-
-  body.hidden = !body.hidden;
-  body.inert = body.hidden;
-  byId("tournament-toggle").setAttribute(
-    "aria-expanded",
-    String(!body.hidden)
-  );
-  byId("tournament-toggle").textContent = body.hidden
-    ? "Mostra"
-    : "Nascondi";
-});
+byId("tournament-disclosure").querySelector("summary")
+  .addEventListener("click", event => {
+    const finished = state.phase === "finished";
+    if (matchStarted && !finished && activeTournamentFixtureId === null) {
+      event.preventDefault();
+    }
+  });
 
 byId("tournament-create").addEventListener(
   "click", createTournamentFromSelection
@@ -2751,6 +2735,7 @@ function start(activate = true) {
 
   state = newMatch(handsPerTeam);
   matchStarted = activate;
+  byId("match-disclosure").open = activate;
   autoRunning = false;
   isRolling = false;
   rollEvents = [];
@@ -2996,12 +2981,6 @@ async function runAuto() {
   render();
 }
 
-byId("player-stats-toggle").addEventListener("click", () => {
-  const body = byId("player-stats-body");
-  body.hidden = !body.hidden;
-  render();
-});
-
 byId("commentary-toggle").addEventListener("click", () => {
   commentaryEnabled = !commentaryEnabled;
   render();
@@ -3078,9 +3057,10 @@ byId("auto").addEventListener("click", () => {
   autoDialog.showModal();
 });
 
-byId("manager-toggle").addEventListener("click", () => {
-  setManagerPanelExpanded(byId("manager-body").hidden);
-});
+byId("manager-disclosure").querySelector("summary")
+  .addEventListener("click", event => {
+    // Career information remains accessible before creation.
+  });
 
 byId("manager-close").addEventListener(
   "click", closeManagerCareer
@@ -3094,6 +3074,7 @@ byId("new").addEventListener("click", () => {
   }
 
   if (matchStarted && state.phase !== "finished") {
+    if (activeTournamentFixtureId !== null) return;
     if (!window.confirm(translate("cancelConfirm"))) return;
     start(false);
     showMessage("matchCancelled");
