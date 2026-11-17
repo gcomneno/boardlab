@@ -3307,6 +3307,7 @@ details.panel:not([open]) > summary[data-i18n-panel="rules"] {
   display: block;
   width: 100%;
   min-width: 0;
+  padding: 0;
 }
 
 #tournament-disclosure > summary {
@@ -3423,6 +3424,7 @@ details.panel:not([open]) > summary[data-i18n-panel="rules"] {
   display: block;
   width: 100%;
   min-width: 0;
+  padding: 0;
 }
 
 #manager-disclosure > summary {
@@ -3713,4 +3715,11 @@ details.panel:not([open]) > summary[data-i18n-panel="rules"] {
 
 .manager-stat-icon--shirt-out {
   background: #87939b;
+}
+
+
+/* Dado Goal — measured tournament and career alignment. */
+.tournament-panel,
+.manager-career-panel {
+  padding-inline: 14px;
 }
