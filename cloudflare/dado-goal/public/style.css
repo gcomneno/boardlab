@@ -3411,3 +3411,306 @@ details.panel:not([open]) > summary[data-i18n-panel="rules"] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* Dado Goal — centered Manager career layout. */
+.manager-career-panel {
+  display: block;
+  min-width: 0;
+}
+
+#manager-disclosure {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+#manager-disclosure > summary {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+}
+
+#manager-body {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin-top: 14px;
+}
+
+#manager-empty-state,
+#manager-dashboard {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#manager-dashboard .manager-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+#manager-dashboard .manager-roster-grid > section {
+  min-width: 0;
+  overflow: hidden;
+}
+
+#manager-dashboard .manager-player-list {
+  min-width: 0;
+}
+
+#manager-dashboard .manager-player-statistics {
+  width: 100%;
+  min-width: 0;
+}
+
+#manager-dashboard .manager-player-statistics-wrap {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+#manager-disclosure:not([open]) > #manager-body,
+#manager-dashboard[hidden],
+#manager-empty-state[hidden] {
+  display: none;
+}
+
+@media (max-width: 699px) {
+  #manager-dashboard .manager-roster-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* Dado Goal — Manager statistics visual refinement v1. */
+#manager-dashboard .manager-player-statistics {
+  margin-top: 26px;
+}
+
+#manager-dashboard .manager-player-statistics > h3 {
+  margin: 0 0 14px;
+  padding-left: 12px;
+  border-left: 3px solid #f3c94c;
+  color: #f5f7f1;
+  font-size: 1.08rem;
+  letter-spacing: 0.01em;
+}
+
+#manager-dashboard .manager-player-statistics-wrap {
+  border: 1px solid #426650;
+  border-radius: 12px;
+  background: #142e25;
+  scrollbar-color: #648b70 #142e25;
+}
+
+#manager-dashboard .manager-player-statistics-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+#manager-dashboard .manager-player-statistics-table th,
+#manager-dashboard .manager-player-statistics-table td {
+  box-sizing: border-box;
+  padding: 10px 9px;
+  border-bottom: 1px solid rgb(255 255 255 / 7%);
+}
+
+#manager-dashboard .manager-player-statistics-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #244b3a;
+  color: #f3cf64;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+  border-bottom: 2px solid #648b70;
+}
+
+#manager-dashboard .manager-player-statistics-table thead th:first-child {
+  z-index: 3;
+  background: #244b3a;
+}
+
+#manager-dashboard .manager-player-statistics-table tbody tr:nth-child(even) {
+  background: rgb(255 255 255 / 3%);
+}
+
+#manager-dashboard .manager-player-statistics-table tbody tr:hover {
+  background: rgb(243 201 76 / 10%);
+}
+
+#manager-dashboard .manager-player-statistics-table tbody td {
+  color: #e2eee5;
+}
+
+#manager-dashboard .manager-player-statistics-table tbody td:first-child {
+  background: #193c2e;
+  color: #fff;
+  font-weight: 700;
+  border-right: 1px solid #426650;
+}
+
+#manager-dashboard .manager-player-statistics-table tbody tr:nth-child(even) td:first-child {
+  background: #1e4434;
+}
+
+#manager-dashboard .manager-player-statistics-table tbody tr:hover td:first-child {
+  background: #30513b;
+}
+
+#manager-dashboard .manager-player-statistics-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (max-width: 720px) {
+  #manager-dashboard .manager-player-statistics-table th,
+  #manager-dashboard .manager-player-statistics-table td {
+    padding: 9px 7px;
+  }
+}
+
+
+/* Dado Goal — Manager statistics iconography v1. */
+#manager-dashboard .manager-player-statistics-table thead th {
+  text-align: center;
+}
+
+#manager-dashboard .manager-player-statistics-table thead th:first-child {
+  text-align: left;
+}
+
+.manager-stat-icon {
+  display: inline-block;
+  width: 19px;
+  height: 19px;
+  vertical-align: middle;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.manager-stat-icon--clock {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2.4'/%3E%3Cpath d='M12 6v6l4 3' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.manager-stat-icon--ball {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='none' stroke='black' stroke-width='2'/%3E%3Cpath d='m12 6 5 4-2 6H9l-2-6zM12 6V2M7 10l-5-1m7 7-2 6m8-6 2 6m0-12 5-1' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.manager-stat-icon--target {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='black' stroke-width='2'/%3E%3Ccircle cx='12' cy='12' r='5' fill='none' stroke='black' stroke-width='2'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3C/svg%3E");
+}
+
+.manager-stat-icon--yellow,
+.manager-stat-icon--red {
+  width: 13px;
+  height: 19px;
+  border-radius: 2px;
+  transform: rotate(-9deg);
+  background: #f3cf64;
+}
+
+.manager-stat-icon--red {
+  background: #e7776d;
+}
+
+.manager-stat-icon--on,
+.manager-stat-icon--off,
+.manager-stat-icon--injury {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20V4m-6 6 6-6 6 6' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-color: #78c996;
+}
+
+.manager-stat-icon--off {
+  transform: rotate(180deg);
+  background-color: #f0a878;
+}
+
+.manager-stat-icon--injury {
+  background-color: #e7776d;
+  transform: rotate(180deg);
+}
+
+#manager-dashboard .manager-player-statistics-table td.manager-player-identity {
+  white-space: nowrap;
+  min-width: 12rem;
+}
+
+.manager-player-shirt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  margin-right: 9px;
+  vertical-align: middle;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: #488c65;
+  clip-path: polygon(27% 5%, 39% 0%, 61% 0%, 73% 5%, 100% 17%, 87% 46%, 76% 40%, 76% 100%, 24% 100%, 24% 40%, 13% 46%, 0% 17%);
+}
+
+.manager-player-shirt > span {
+  position: relative;
+  top: 2px;
+}
+
+.manager-player-name {
+  vertical-align: middle;
+}
+
+
+/* Dado Goal — Manager shirt status colors v1. */
+.manager-player-shirt--lineup {
+  background: #3aaf71;
+}
+
+.manager-player-shirt--bench {
+  background: #d4a63d;
+  color: #17281e;
+}
+
+.manager-player-shirt--out {
+  background: #87939b;
+  color: #17281e;
+}
+
+
+/* Dado Goal — colored shirt statistic headers v1. */
+.manager-stat-icon--shirt-lineup,
+.manager-stat-icon--shirt-bench,
+.manager-stat-icon--shirt-out {
+  width: 21px;
+  height: 21px;
+  background: #3aaf71;
+  clip-path: polygon(
+    27% 5%, 39% 0%, 61% 0%, 73% 5%,
+    100% 17%, 87% 46%, 76% 40%,
+    76% 100%, 24% 100%, 24% 40%,
+    13% 46%, 0% 17%
+  );
+}
+
+.manager-stat-icon--shirt-bench {
+  background: #d4a63d;
+}
+
+.manager-stat-icon--shirt-out {
+  background: #87939b;
+}

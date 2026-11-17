@@ -946,27 +946,115 @@ function renderManagerDashboard() {
 
   for (const [elementId, key] of Object.entries(managerPlayerHeaders)) {
     const header = byId(elementId);
-    header.textContent = translate(key);
-    if (
-      key === "managerStatSubbedOn" ||
-      key === "managerStatSubbedOff" ||
-      key === "managerStatInjuryOff"
-    ) {
-      header.title = translate(`${key}Tooltip`);
+    const label = translate(key);
+    const descriptions = {
+      en: {
+        managerStatAppearances: "Appearances",
+        managerStatMinutes: "Minutes played",
+        managerStatStarts: "Starting appearances",
+        managerStatBenchUnused: "Unused substitute",
+        managerStatNotSelected: "Not selected",
+        managerStatGoals: "Goals",
+        managerStatPenalties: "Penalties",
+        managerStatYellow: "Yellow cards",
+        managerStatRed: "Red cards",
+      },
+      it: {
+        managerStatAppearances: "Presenze",
+        managerStatMinutes: "Minuti giocati",
+        managerStatStarts: "Presenze da titolare",
+        managerStatBenchUnused: "Panchina senza ingresso",
+        managerStatNotSelected: "Non convocato",
+        managerStatGoals: "Gol",
+        managerStatPenalties: "Rigori",
+        managerStatYellow: "Cartellini gialli",
+        managerStatRed: "Cartellini rossi",
+      },
+    };
+    const locale = document.documentElement.lang === "en" ? "en" : "it";
+    const fullLabel = key.endsWith("SubbedOn") ||
+      key.endsWith("SubbedOff") ||
+      key.endsWith("InjuryOff")
+      ? translate(`${key}Tooltip`)
+      : descriptions[locale][key] ?? label;
+
+    header.title = fullLabel;
+    header.setAttribute("aria-label", fullLabel);
+
+    const iconName = {
+      managerStatMinutes: "clock",
+      managerStatStarts: "shirt-lineup",
+      managerStatBenchUnused: "shirt-bench",
+      managerStatNotSelected: "shirt-out",
+      managerStatGoals: "ball",
+      managerStatPenalties: "target",
+      managerStatYellow: "yellow",
+      managerStatRed: "red",
+      managerStatSubbedOn: "on",
+      managerStatSubbedOff: "off",
+      managerStatInjuryOff: "injury",
+    }[key];
+
+    header.replaceChildren();
+    if (iconName) {
+      const icon = document.createElement("span");
+      icon.className = `manager-stat-icon manager-stat-icon--${iconName}`;
+      icon.setAttribute("aria-hidden", "true");
+      header.append(icon);
+    } else {
+      header.textContent = label;
     }
   }
 
   const managerPlayerStatsBody = byId("manager-player-statistics");
   managerPlayerStatsBody.replaceChildren();
 
+  const lineupIds = new Set(club.lineup.map(String));
+  const benchIds = new Set(club.bench.map(String));
+  const shirtStatusLabels = document.documentElement.lang === "en"
+    ? {
+        lineup: "Starting eleven",
+        bench: "Substitute bench",
+        out: "Outside match squad",
+      }
+    : {
+        lineup: "Titolare",
+        bench: "Panchina",
+        out: "Fuori formazione",
+      };
+
   for (const player of cumulativePlayers) {
     const row = document.createElement("tr");
 
     const identity = document.createElement("td");
-    const number = player.number == null ? "—" : `#${player.number}`;
-    identity.textContent = player.name
-      ? `${number} ${player.name}`
-      : number;
+    const number = player.number == null ? "—" : String(player.number);
+    const shirt = document.createElement("span");
+    const playerId = player.providerPlayerId == null
+      ? null
+      : String(player.providerPlayerId);
+    const shirtStatus = playerId !== null && lineupIds.has(playerId)
+      ? "lineup"
+      : playerId !== null && benchIds.has(playerId)
+        ? "bench"
+        : "out";
+    shirt.className = `manager-player-shirt manager-player-shirt--${shirtStatus}`;
+    shirt.setAttribute("aria-hidden", "true");
+    shirt.title = shirtStatusLabels[shirtStatus];
+    const shirtNumber = document.createElement("span");
+    shirtNumber.textContent = number;
+    shirt.append(shirtNumber);
+
+    const playerName = document.createElement("span");
+    playerName.className = "manager-player-name";
+    playerName.textContent = player.name || number;
+
+    identity.classList.add("manager-player-identity");
+    identity.setAttribute(
+      "aria-label",
+      `${player.name ? `${number} ${player.name}` : number} — ${shirtStatusLabels[shirtStatus]}`
+    );
+    identity.title = shirtStatusLabels[shirtStatus];
+    identity.append(shirt, playerName);
 
     const values = [
       player.appearances,
