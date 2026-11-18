@@ -39,6 +39,9 @@ import {
   loadCupRecovery,
   saveCupRecovery,
   clearCupRecovery,
+  archiveCompletedCup,
+  loadCupArchive,
+  clearCup,
 } from "./cup-store.mjs";
 import { advanceCupIfReady } from "./cup.mjs";
 import { recordCupShootout } from "./cup-store.mjs";
@@ -2299,6 +2302,10 @@ function selectTournamentCompetitionParticipants() {
 
 function renderCupBracket() {
   const cup = cupState;
+  byId("tournament-close").textContent = "Archivia Coppa";
+  byId("tournament-close").disabled =
+    cup.championProviderTeamId === undefined ||
+    (matchStarted && state.phase !== "finished");
   const rounds = Math.log2(cup.participants.length);
   const currentRound = Math.max(...cup.fixtures.map(f => f.round));
   const viewedRound = Math.min(
@@ -2449,10 +2456,66 @@ byId("cup-shootout-confirm").addEventListener(
   "click", confirmCupShootout,
 );
 
+function renderCupArchive() {
+  const section = byId("cup-archive");
+  const list = byId("cup-archive-list");
+  let archive;
+
+  try {
+    archive = loadCupArchive(
+      window.localStorage, managementState.matches,
+    );
+  } catch (failure) {
+    section.hidden = false;
+    list.replaceChildren();
+    const warning = document.createElement("p");
+    warning.textContent =
+      `Archivio Coppe non disponibile: ${failure.message}`;
+    list.append(warning);
+    return;
+  }
+
+  section.hidden = archive.length === 0;
+  const records = new Map(
+    managementState.matches.map(match => [match.matchId, match]),
+  );
+
+  const entries = archive.map(cup => {
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    const name = id => cup.participants.find(team =>
+      String(team.providerTeamId) === String(id)
+    )?.name ?? String(id);
+
+    summary.textContent =
+      `${cup.name ?? "Coppa"} — Campione: ` +
+      `${name(cup.championProviderTeamId)} ` +
+      `(${cup.legs === 2 ? "andata e ritorno" : "gara unica"})`;
+    details.append(summary);
+
+    const matches = document.createElement("ol");
+    for (const fixture of cup.fixtures) {
+      const record = records.get(fixture.matchId);
+      const item = document.createElement("li");
+      item.textContent =
+        `Turno ${fixture.round}, gara ${fixture.leg}: ` +
+        `${name(fixture.homeProviderTeamId)} ` +
+        `${record.score.home}–${record.score.away} ` +
+        `${name(fixture.awayProviderTeamId)}`;
+      matches.append(item);
+    }
+    details.append(matches);
+    return details;
+  });
+
+  list.replaceChildren(...entries);
+}
+
 function renderTournament() {
   const setup = byId("tournament-setup");
   const dashboard = byId("tournament-dashboard");
   if (!setup || !dashboard) return;
+  renderCupArchive();
 
   setup.hidden = Boolean(tournamentState || cupState);
   dashboard.hidden = !tournamentState && !cupState;
@@ -2473,6 +2536,8 @@ function renderTournament() {
     renderCupBracket();
     return;
   }
+
+  byId("tournament-close").textContent = "Abbandona torneo";
 
   if (!tournamentState) {
     tournamentViewedMatchday = null;
@@ -2687,9 +2752,32 @@ function renderTournament() {
 }
 
 function closeTournament() {
-  if (!tournamentState ||
-      (matchStarted && state.phase !== "finished")) return;
+  if (matchStarted && state.phase !== "finished") return;
 
+  if (cupState && !tournamentState) {
+    if (cupState.championProviderTeamId === undefined) return;
+    if (!window.confirm(
+      "Archiviare questa Coppa completata? I risultati saranno conservati."
+    )) return;
+
+    try {
+      archiveCompletedCup(
+        window.localStorage, cupState, managementState.matches,
+      );
+      clearCup(window.localStorage);
+      clearCupRecovery(window.localStorage);
+      cupState = null;
+      activeTournamentFixtureId = null;
+      tournamentViewedMatchday = null;
+      renderTournament();
+      renderManagerDashboard();
+    } catch (failure) {
+      window.alert(`Archiviazione Coppa non completata: ${failure.message}`);
+    }
+    return;
+  }
+
+  if (!tournamentState) return;
   if (!window.confirm(
     "Abbandonare il torneo corrente? La carriera Manager resterà attiva."
   )) {

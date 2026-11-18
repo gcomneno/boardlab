@@ -2,6 +2,8 @@ import { createCup, resolveCupTie, validateCupProgression } from "./cup.mjs";
 
 export const CUP_SCHEMA_VERSION = 1;
 export const CUP_STORAGE_KEY = "dado-goal.cup.v1";
+export const CUP_ARCHIVE_STORAGE_KEY = "dado-goal.cup-archive.v1";
+
 
 export const CUP_RECOVERY_STORAGE_KEY = "dado-goal.cup-recovery.v1";
 
@@ -218,6 +220,54 @@ export function loadVerifiedCup(storage, matches) {
   if (source === null) return null;
   const document = importCupJson(source);
   return verifyCupDocument(document, matches, document.shootouts ?? {});
+}
+
+export function loadCupArchive(storage, matches) {
+  if (!storage || typeof storage.getItem !== "function") {
+    throw new TypeError("storage is unavailable");
+  }
+  const raw = storage.getItem(CUP_ARCHIVE_STORAGE_KEY);
+  if (raw === null) return [];
+
+  const archive = JSON.parse(raw);
+  if (!Array.isArray(archive)) {
+    throw new TypeError("invalid cup archive");
+  }
+
+  const ids = new Set();
+  return archive.map(document => {
+    const cup = verifyCupDocument(
+      document, matches, document?.shootouts ?? {},
+    );
+    if (cup.championProviderTeamId === undefined ||
+        ids.has(cup.cupId)) {
+      throw new TypeError("invalid archived cup");
+    }
+    ids.add(cup.cupId);
+    return cup;
+  });
+}
+
+export function archiveCompletedCup(storage, document, matches) {
+  if (!storage || typeof storage.setItem !== "function") {
+    throw new TypeError("storage is unavailable");
+  }
+
+  const cup = verifyCupDocument(
+    document, matches, document?.shootouts ?? {},
+  );
+  if (cup.championProviderTeamId === undefined) {
+    throw new TypeError("cup is not completed");
+  }
+
+  const archive = loadCupArchive(storage, matches);
+  if (archive.some(saved => saved.cupId === cup.cupId)) {
+    throw new TypeError("cup already archived");
+  }
+
+  const next = [...archive, cup];
+  storage.setItem(CUP_ARCHIVE_STORAGE_KEY, JSON.stringify(next));
+  return next;
 }
 
 export function recordCupShootout(document, matches, round, pair, penalties) {
