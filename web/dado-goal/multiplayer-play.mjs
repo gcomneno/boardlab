@@ -326,6 +326,9 @@ function render() {
       const eventDescription = event.type === "penalty"
         ? formatMessage("eventPenalty", {
             ...eventDisplayValues(event),
+            number: Number.isInteger(event.number) && event.number > 0
+              ? eventDisplayValues(event).number
+              : (getLocale() === "en" ? "unknown player" : "giocatore non identificato"),
             outcome: displayDieFace(event.outcome)
           })
         : event.classification === "narrative"
@@ -1154,11 +1157,13 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
     ? normalizeRollEvents(snapshot.rollEvents)
     : [];
 
-  matchEvents = multiplayerMatchEvents(rollEvents);
-
   if (snapshot.matchEventContext?.rosters) {
     rosters = snapshot.matchEventContext.rosters;
   }
+
+  matchEvents = multiplayerMatchEvents(
+    rollEvents, snapshot.matchEventContext?.rosters ?? null,
+  );
 
   if (snapshot.matchEventContext?.refereeStates) {
     refereeStates = snapshot.matchEventContext.refereeStates.map(

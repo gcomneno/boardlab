@@ -1,3 +1,5 @@
+import { enrichMatchEvent } from "./match-player-identity.mjs";
+
 import {
   describeFace,
   describeMatchEvent,
@@ -20,14 +22,22 @@ const EXTRAORDINARY_TYPES = new Set([
   "referee-equipment-problem",
 ]);
 
-export function multiplayerMatchEvents(rollEvents) {
+export function multiplayerMatchEvents(rollEvents, rosters = null) {
   if (!Array.isArray(rollEvents)) return [];
 
-  return rollEvents.flatMap((event) => [
-    ...(event?.penalty ? [event.penalty] : []),
-    ...(event?.goal && !event.penalty ? [event.goal] : []),
-    ...(event?.matchEvent ? [event.matchEvent] : []),
-  ]);
+  return rollEvents.flatMap(event => {
+    const project = item => {
+      if (!item) return [];
+      const roster = Array.isArray(rosters) ? rosters[item.team] : null;
+      return [roster ? enrichMatchEvent(roster, item) : item];
+    };
+
+    return [
+      ...project(event?.penalty),
+      ...(!event?.penalty ? project(event?.goal) : []),
+      ...project(event?.matchEvent),
+    ];
+  });
 }
 
 export function describeMultiplayerRollEvent(

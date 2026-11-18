@@ -149,3 +149,33 @@ test("multiplayer match event projection does not duplicate a scored penalty", (
 
   assert.deepEqual(events, [penalty]);
 });
+
+test("canonical penalty taker resolves identity without changing event", () => {
+  const penalty = {
+    type: "penalty", team: 0, minute: 51,
+    number: 7, outcome: "GOAL!",
+  };
+  const roster = {
+    identities: {
+      7: { providerPlayerId: "p7", name: "Regista" },
+    },
+  };
+  const events = multiplayerMatchEvents(
+    [{ penalty, goal: { type: "goal", team: 0, number: 7 } }],
+    [roster, null],
+  );
+  assert.equal(events.length, 1);
+  assert.equal(events[0].number, 7);
+  assert.equal(events[0].player.name, "Regista");
+  assert.equal(Object.hasOwn(penalty, "player"), false);
+});
+
+test("legacy penalty without roster retains canonical fields", () => {
+  const penalty = {
+    type: "penalty", team: 1, minute: 70, outcome: "FUORI",
+  };
+  assert.deepEqual(
+    multiplayerMatchEvents([{ penalty }], null),
+    [penalty],
+  );
+});
