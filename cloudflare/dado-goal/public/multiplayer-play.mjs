@@ -7,6 +7,7 @@ import {
 import { matchStatistics } from "./statistics.mjs";
 import { normalizeRollEvents } from "./roll-event.mjs";
 import { playerStatistics } from "./player-statistics.mjs";
+import { nextStatisticsSort, sortStatisticsRows } from "./statistics-sort.mjs";
 import { matchClock } from "./match-clock.mjs";
 import { createRoster, pickScorer } from "./match-roster.mjs";
 import { importCatalogueJson } from "./catalogue-json.mjs";
@@ -247,6 +248,7 @@ let lastCommentary = null;
 let lastRefereeEvent = null;
 let lastExtraordinaryEvent = null;
 let lastGoalScorer = null;
+const multiplayerPlayerSorting = [null, null];
 let messageKey = "setupPrompt";
 let messageValues = {};
 
@@ -514,22 +516,40 @@ function render() {
 
     const header = document.createElement("div");
     header.className = "player-stat-row player-stat-header";
-    [
-      translate("player"),
-      translate("goals"),
-      translate("penalties"),
-      translate("yellowCards"),
-      translate("redCards"),
-      translate("subbedOn"),
-      translate("subbedOff"),
-    ].forEach(label => {
-      const cell = document.createElement("strong");
-      cell.textContent = label;
+    const columns = [
+      ["name", translate("player")],
+      ["goals", translate("goals")],
+      ["assists", "Assist"],
+      ["penalties", translate("penalties")],
+      ["yellowCards", translate("yellowCards")],
+      ["redCards", translate("redCards")],
+      ["subbedOn", translate("subbedOn")],
+      ["subbedOff", translate("subbedOff")],
+    ];
+    columns.forEach(([column, label]) => {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "player-stat-sort-button";
+      const sorting = multiplayerPlayerSorting[team];
+      const direction = sorting?.column === column
+        ? sorting.direction : null;
+      cell.textContent = `${label}${direction === "asc"
+        ? " ↑" : direction === "desc" ? " ↓" : ""}`;
+      cell.setAttribute("aria-label", `${label}: ${direction ?? "original"}`);
+      if (direction) cell.setAttribute("aria-sort", direction === "asc"
+        ? "ascending" : "descending");
+      cell.addEventListener("click", () => {
+        multiplayerPlayerSorting[team] = nextStatisticsSort(
+          multiplayerPlayerSorting[team], column,
+        );
+        render();
+      });
       header.append(cell);
     });
     table.append(header);
 
-    players.forEach(player => {
+    sortStatisticsRows(players, multiplayerPlayerSorting[team])
+      .forEach(player => {
       const row = document.createElement("div");
       row.className = "player-stat-row";
 
@@ -541,6 +561,7 @@ function render() {
 
       const values = [
         player.goals,
+        player.assists,
         player.penalties,
         player.yellowCards,
         player.redCards,

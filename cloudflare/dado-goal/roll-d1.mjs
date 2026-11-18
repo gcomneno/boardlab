@@ -11,7 +11,7 @@ import { matchClock } from "./public/match-clock.mjs";
 import { commitRoll } from "./atomic.mjs";
 import { replayMatchEvents } from "./match-events-replay.mjs";
 import { evaluateCompletedHand } from "./match-events-authority.mjs";
-import { pickScorer } from "../../web/dado-goal/match-roster.mjs";
+import { pickScorer, pickAssist } from "../../web/dado-goal/match-roster.mjs";
 
 function randomFace(phase) {
   const faces = FACES[phase];
@@ -115,10 +115,17 @@ export async function rollAuthorized(
       );
 
       if (goal) {
+        const roster = context.rosters[seat];
+        const scorer = penalty?.number ??
+          pickScorer(roster, Math.random, goal.minute);
+        const assistNumber = penalty || scorer == null
+          ? null
+          : pickAssist(roster, scorer, Math.random);
+
         goal = {
           ...goal,
-          number: penalty?.number ??
-            pickScorer(context.rosters[seat], Math.random, goal.minute),
+          number: scorer,
+          ...(assistNumber === null ? {} : { assistNumber }),
         };
       }
     }

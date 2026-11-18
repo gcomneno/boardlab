@@ -123,3 +123,33 @@ export function sendOff(roster, random = Math.random) {
 
   return number;
 }
+
+/**
+ * Optional last-pass provider for a non-penalty goal.
+ * Never selects the scorer or a player outside the active lineup.
+ * A null result represents a goal without an assist.
+ */
+export function pickAssist(
+  roster,
+  scorerNumber,
+  random = Math.random,
+  probability = 0.65,
+) {
+  if (!Number.isFinite(probability) ||
+      probability < 0 || probability > 1) {
+    throw new RangeError("Invalid assist probability");
+  }
+
+  if (!roster || !Array.isArray(roster.active)) return null;
+
+  const eligible = roster.active.filter(number =>
+    Number.isInteger(number) &&
+    number > 0 &&
+    number !== scorerNumber
+  );
+
+  if (eligible.length === 0 || probability === 0) return null;
+  if (probability < 1 && random() >= probability) return null;
+
+  return eligible[pickIndex(eligible.length, random)];
+}

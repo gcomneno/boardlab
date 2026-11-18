@@ -27,6 +27,7 @@ const STATIC = new Set([
   "/cup.mjs",
   "/cup-store.mjs",
   "/cup-view.mjs",
+  "/statistics-sort.mjs",
   "/style.css",
   "/catalogues/serie-a-2024.json",
   "/catalogues/serie-b-2024.json",

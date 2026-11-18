@@ -12,9 +12,10 @@ import { createRollEvent, normalizeRollEvents } from "./roll-event.mjs";
 import {
   managerPlayerStatistics,
 } from "./player-statistics.mjs";
+import { nextStatisticsSort, sortStatisticsRows } from "./statistics-sort.mjs";
 import { simulateMatch } from "./match-simulator.mjs";
 import { matchClock } from "./match-clock.mjs";
-import { createRoster, pickScorer } from "./match-roster.mjs";
+import { createRoster, pickScorer, pickAssist } from "./match-roster.mjs";
 import { importCatalogueJson } from "./catalogue-json.mjs";
 import { createMatchRoster } from "./catalogue-roster.mjs";
 import {
@@ -595,6 +596,7 @@ let tournamentState = null;
 let cupState = null;
 let activeTournamentFixtureId = null;
 let tournamentViewedMatchday = null;
+let managerPlayerSorting = null;
 let matchRecorded = false;
 
 try {
@@ -1066,6 +1068,7 @@ function renderManagerDashboard() {
     "manager-player-stat-bench": "managerStatBenchUnused",
     "manager-player-stat-not-selected": "managerStatNotSelected",
     "manager-player-stat-goals": "managerStatGoals",
+    "manager-player-stat-assists": "managerStatAssists",
     "manager-player-stat-penalties": "managerStatPenalties",
     "manager-player-stat-yellow": "managerStatYellow",
     "manager-player-stat-red": "managerStatRed",
@@ -1085,6 +1088,7 @@ function renderManagerDashboard() {
         managerStatBenchUnused: "Unused substitute",
         managerStatNotSelected: "Not selected",
         managerStatGoals: "Goals",
+        managerStatAssists: "Assists",
         managerStatPenalties: "Penalties",
         managerStatYellow: "Yellow cards",
         managerStatRed: "Red cards",
@@ -1096,6 +1100,7 @@ function renderManagerDashboard() {
         managerStatBenchUnused: "Panchina senza ingresso",
         managerStatNotSelected: "Non convocato",
         managerStatGoals: "Gol",
+        managerStatAssists: "Assist",
         managerStatPenalties: "Rigori",
         managerStatYellow: "Cartellini gialli",
         managerStatRed: "Cartellini rossi",
@@ -1153,6 +1158,7 @@ function renderManagerDashboard() {
         out: "Fuori formazione",
       };
 
+  const managerPlayerRows = new Map();
   for (const player of cumulativePlayers) {
     const row = document.createElement("tr");
 
@@ -1193,6 +1199,7 @@ function renderManagerDashboard() {
       player.benchUnused,
       player.notSelected,
       player.goals,
+      player.assists,
       player.penalties,
       player.yellowCards,
       player.redCards,
@@ -1209,8 +1216,74 @@ function renderManagerDashboard() {
       row.append(cell);
     }
 
+    managerPlayerRows.set(player, row);
     managerPlayerStatsBody.append(row);
   }
+
+  const sortableColumns = [
+    "name", "appearances", "minutesPlayed", "starts",
+    "benchUnused", "notSelected", "goals", "assists", "penalties",
+    "yellowCards", "redCards", "subbedOn", "subbedOff",
+    "injurySubbedOff",
+  ];
+
+  const applyManagerPlayerSort = () => {
+    const ordered = sortStatisticsRows(
+      cumulativePlayers, managerPlayerSorting,
+    );
+    managerPlayerStatsBody.replaceChildren(
+      ...ordered.map(player => managerPlayerRows.get(player)),
+    );
+
+    Object.keys(managerPlayerHeaders).forEach((id, index) => {
+      const header = byId(id);
+      const direction = managerPlayerSorting?.column ===
+        sortableColumns[index]
+        ? managerPlayerSorting.direction : null;
+
+      if (direction) {
+        header.setAttribute(
+          "aria-sort",
+          direction === "asc" ? "ascending" : "descending",
+        );
+      } else {
+        header.removeAttribute("aria-sort");
+      }
+
+      header.querySelector(".manager-stat-sort-indicator")?.remove();
+      if (direction) {
+        const indicator = document.createElement("span");
+        indicator.className = "manager-stat-sort-indicator";
+        indicator.textContent = direction === "asc" ? " ↑" : " ↓";
+        indicator.setAttribute("aria-hidden", "true");
+        header.append(indicator);
+      }
+    });
+  };
+
+  Object.keys(managerPlayerHeaders).forEach((id, index) => {
+    const header = byId(id);
+    const column = sortableColumns[index];
+    header.tabIndex = 0;
+    header.style.cursor = "pointer";
+
+    const toggleSort = () => {
+      managerPlayerSorting = nextStatisticsSort(
+        managerPlayerSorting, column,
+      );
+      applyManagerPlayerSort();
+    };
+
+    // Replace handlers on each render; never accumulate stale closures.
+    header.onclick = toggleSort;
+    header.onkeydown = event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        toggleSort();
+      }
+    };
+  });
+  applyManagerPlayerSort();
 
   const career = teamStatistics(
     matches,
@@ -3427,11 +3500,15 @@ async function roll() {
         pickScorer(rosters[player], Math.random, minute);
 
       if (!penaltyResolved) {
+        const assistNumber = lastGoalScorer == null
+          ? null
+          : pickAssist(rosters[player], lastGoalScorer, Math.random);
         matchEvents.push(enrichMatchEvent(rosters[player], {
           type: "goal",
           team: player,
           minute,
-          number: lastGoalScorer
+          number: lastGoalScorer,
+          ...(assistNumber === null ? {} : { assistNumber }),
         }));
       }
     }

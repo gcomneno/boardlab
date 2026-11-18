@@ -24,6 +24,11 @@ export function enrichMatchEvent(roster, event) {
     return {
       ...event,
       player: playerIdentity(roster, event.number),
+      ...(event.type === "goal" && event.assistNumber != null
+        ? {
+            assistPlayer: playerIdentity(roster, event.assistNumber),
+          }
+        : {}),
     };
   }
 

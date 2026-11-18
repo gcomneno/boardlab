@@ -23,6 +23,7 @@ function playerRecord(identity, number) {
     name: identity?.name ?? null,
     number,
     goals: 0,
+    assists: 0,
     penalties: 0,
     yellowCards: 0,
     redCards: 0,
@@ -62,6 +63,13 @@ export function playerStatistics(events) {
 
     if (event.type === "goal") {
       record(event.team, event.number, event.player).goals += 1;
+      if (event.assistNumber != null) {
+        const assistNumber = requireNumber(event.assistNumber);
+        if (assistNumber === event.number) {
+          throw new RangeError("scorer cannot assist own goal");
+        }
+        record(event.team, assistNumber, event.assistPlayer).assists += 1;
+      }
       continue;
     }
 
@@ -155,6 +163,7 @@ export function managerPlayerStatistics(
         name,
         number,
         goals: 0,
+        assists: 0,
         penalties: 0,
         yellowCards: 0,
         redCards: 0,
@@ -245,6 +254,7 @@ export function managerPlayerStatistics(
       if (!record) continue;
 
       record.goals += player.goals;
+      record.assists += player.assists;
       record.penalties += player.penalties;
       record.yellowCards += player.yellowCards;
       record.redCards += player.redCards;
