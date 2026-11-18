@@ -3723,3 +3723,23 @@ details.panel:not([open]) > summary[data-i18n-panel="rules"] {
 .manager-career-panel {
   padding-inline: 14px;
 }
+
+/* M010 CUP BRACKET STATES */
+.tournament-fixture-detail {
+  font-size: 0.82em;
+  opacity: 0.85;
+}
+
+.tournament-fixture .cup-qualified {
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.tournament-fixture[data-status="penalties"] {
+  border-inline-start: 3px solid currentColor;
+}
+
+.tournament-fixture[data-status="pending"] {
+  opacity: 0.8;
+}

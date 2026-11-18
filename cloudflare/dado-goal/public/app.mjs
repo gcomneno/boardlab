@@ -44,6 +44,7 @@ import {
   clearCup,
 } from "./cup-store.mjs";
 import { advanceCupIfReady } from "./cup.mjs";
+import { cupFixturePresentation } from "./cup-view.mjs";
 import { recordCupShootout } from "./cup-store.mjs";
 import { completeCupFixture } from "./cup.mjs";
 import { managerMatchParticipation } from "./player-participation.mjs";
@@ -877,6 +878,11 @@ function recordCompletedMatch() {
         window.localStorage, nextCup, managementState.matches,
       );
       cupState = nextCup;
+      if (advancement.status === "advanced") {
+        tournamentViewedMatchday = Math.max(
+          ...nextCup.fixtures.map(fixture => fixture.round),
+        );
+      }
       activeTournamentFixtureId = null;
       clearCupRecovery(window.localStorage);
     } catch {
@@ -2383,19 +2389,42 @@ function renderCupBracket() {
   const renderFixture = fixture => {
     const item = document.createElement("li");
     item.className = "tournament-fixture";
-    const record = records.get(fixture.matchId);
+    const view = cupFixturePresentation(
+      cup, fixture, managementState.matches,
+    );
     const home = document.createElement("span");
     const away = document.createElement("span");
     const score = document.createElement("span");
+    const detail = document.createElement("span");
     home.className = "tournament-fixture-name home";
     away.className = "tournament-fixture-name away";
     score.className = "tournament-fixture-score";
+    detail.className = "tournament-fixture-detail";
     home.textContent = teamName(fixture.homeProviderTeamId);
     away.textContent = teamName(fixture.awayProviderTeamId);
-    score.textContent = record
-      ? `${record.score.home}–${record.score.away}`
-      : "–";
-    item.append(home, score, away);
+    score.textContent = view.score;
+    item.dataset.status = view.status;
+
+    if (view.status === "pending") {
+      detail.textContent = "Da giocare";
+    } else if (view.status === "penalties") {
+      detail.textContent = `Aggregato ${view.aggregate ?? view.score} · Rigori necessari`;
+    } else if (view.winnerProviderTeamId !== null) {
+      const winner = teamName(view.winnerProviderTeamId);
+      detail.textContent =
+        `${view.aggregate === null ? "" : `Aggregato ${view.aggregate} · `}` +
+        `Qualificata: ${winner}`;
+      const winnerId = String(view.winnerProviderTeamId);
+      if (String(fixture.homeProviderTeamId) === winnerId) {
+        home.classList.add("cup-qualified");
+      } else {
+        away.classList.add("cup-qualified");
+      }
+    } else {
+      detail.textContent = "Giocata · Eliminatoria in corso";
+    }
+
+    item.append(home, score, away, detail);
     return item;
   };
 
