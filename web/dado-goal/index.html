@@ -65,6 +65,15 @@
         </summary>
         <div class="friendly-content">
       <div class="team-config">
+        <label class="team-country-filter" for="team-country-0">Nazione
+          <select id="team-country-0" style="width:100%">
+          <option value="Italy">🇮🇹 Italia</option>
+          <option value="England">🇬🇧 Inghilterra</option>
+          <option value="France">🇫🇷 Francia</option>
+          <option value="Germany">🇩🇪 Germania</option>
+          <option value="Spain">🇪🇸 Spagna</option>
+          </select>
+        </label>
         <label><span data-i18n-team="1">Squadra 1</span>
           <div class="team-select-with-logo">
             <img id="team-logo-0" class="team-logo"
@@ -96,6 +105,15 @@
       </div>
 
       <div class="team-config">
+        <label class="team-country-filter" for="team-country-1">Nazione
+          <select id="team-country-1" style="width:100%">
+          <option value="Italy">🇮🇹 Italia</option>
+          <option value="England">🇬🇧 Inghilterra</option>
+          <option value="France">🇫🇷 Francia</option>
+          <option value="Germany">🇩🇪 Germania</option>
+          <option value="Spain">🇪🇸 Spagna</option>
+          </select>
+        </label>
         <label><span data-i18n-team="2">Squadra 2</span>
           <div class="team-select-with-logo">
             <img id="team-logo-1" class="team-logo"
@@ -150,12 +168,40 @@
         </summary>
       <div id="tournament-body">
       <div class="locale-setting">
-        <select id="competition"
-                name="competition"
+        <label for="tournament-country">Nazione</label>
+        <select id="tournament-country">
+          <option value="">🌍 Tutte</option>
+          <option value="Italy">🇮🇹 Italia</option>
+          <option value="England">🇬🇧 Inghilterra</option>
+          <option value="France">🇫🇷 Francia</option>
+          <option value="Germany">🇩🇪 Germania</option>
+          <option value="Spain">🇪🇸 Spagna</option>
+        </select>
+      </div>
+      <div class="locale-setting" hidden>
+        <label for="competition">Campionato</label>
+        <select id="competition" name="competition"
                 aria-label="Competizione torneo"></select>
       </div>
 
+      <div class="locale-setting">
+        <label for="tournament-mode">Tipo torneo</label>
+        <select id="tournament-mode">
+          <option value="championship">Campionato</option>
+          <option value="cup">Coppa</option>
+        </select>
+      </div>
+      <div class="locale-setting" id="cup-leg-setting" hidden>
+        <label for="cup-legs">Formula coppa</label>
+        <select id="cup-legs">
+          <option value="1">Gara unica</option>
+          <option value="2">Andata e ritorno</option>
+        </select>
+      </div>
       <div id="tournament-setup">
+        <label for="tournament-name">Nome torneo</label>
+        <input id="tournament-name" type="text" maxlength="80"
+               placeholder="La mia coppa">
         <label for="tournament-participants">Partecipanti</label>
         <select id="tournament-participants" multiple size="8"></select>
         <p id="tournament-error" class="tournament-error"
@@ -179,6 +225,27 @@
             Abbandona torneo
           </button>
         </div>
+
+        <section id="cup-shootout" hidden aria-labelledby="cup-shootout-title">
+          <h3 id="cup-shootout-title">Rigori di spareggio</h3>
+          <p id="cup-shootout-description"></p>
+          <div class="cup-shootout-inputs">
+            <label for="cup-penalties-home">
+              Rigori prima squadra
+              <input id="cup-penalties-home" type="number"
+                     min="0" step="1" inputmode="numeric">
+            </label>
+            <label for="cup-penalties-away">
+              Rigori seconda squadra
+              <input id="cup-penalties-away" type="number"
+                     min="0" step="1" inputmode="numeric">
+            </label>
+          </div>
+          <button id="cup-shootout-confirm" type="button" disabled>
+            Conferma risultato rigori
+          </button>
+          <p id="cup-shootout-error" role="alert"></p>
+        </section>
 
         <div class="tournament-matchday-nav"
              aria-label="Navigazione giornate">

@@ -55,3 +55,30 @@ test("rejects invalid adapters", async () => {
     /invalid provider adapter/,
   );
 });
+
+test("optional membership filter excludes teams before squad requests", async () => {
+  const requested = [];
+  const adapter = {
+    name: "fixture",
+    async fetchTeams() {
+      return [
+        { id: 492, name: "Napoli", logo: "https://example.test/492.png" },
+        { id: 497, name: "Roma", logo: "https://example.test/497.png" },
+      ];
+    },
+    async fetchPlayers({ teamId }) {
+      requested.push(teamId);
+      return [];
+    },
+  };
+
+  const catalogue = await importFootballCatalogue({
+    adapter,
+    competitionId: 135,
+    season: 2024,
+    allowedTeamIds: [492],
+  });
+
+  assert.deepEqual(catalogue.teams.map(team => team.providerTeamId), ["492"]);
+  assert.deepEqual(requested, [492]);
+});

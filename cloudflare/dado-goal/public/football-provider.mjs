@@ -6,6 +6,7 @@ export async function importFootballCatalogue({
   competitionId,
   season,
   importedAt = new Date().toISOString(),
+  allowedTeamIds = null,
 }) {
   if (!adapter || typeof adapter.fetchTeams !== "function" ||
       typeof adapter.fetchPlayers !== "function") {
@@ -18,8 +19,14 @@ export async function importFootballCatalogue({
   }
 
   const teams = [];
+  const allowed = allowedTeamIds === null
+    ? null
+    : new Set(allowedTeamIds.map(String));
 
   for (const rawTeam of rawTeams) {
+    if (allowed && !allowed.has(String(rawTeam.id))) {
+      continue;
+    }
     const team = createTeam({
       provider: adapter.name,
       providerTeamId: rawTeam.id,
@@ -28,6 +35,16 @@ export async function importFootballCatalogue({
       season,
       colors: socialColors(rawTeam.id),
       logo: rawTeam.logo,
+      enrichment: {
+        code: rawTeam.code ?? null,
+        country: rawTeam.country ?? null,
+        founded: rawTeam.founded ?? null,
+        venue: rawTeam.venue ?? null,
+        provenance: {
+          provider: adapter.name,
+          retrievedAt: importedAt,
+        },
+      },
     });
 
     const rawPlayers = await adapter.fetchPlayers({

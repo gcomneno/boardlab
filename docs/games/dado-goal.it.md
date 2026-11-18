@@ -22,6 +22,28 @@ Le innovazioni successive non devono essere presentate come regole storiche
 senza conferma dell'autore. Questo documento descrive le regole, non
 un'implementazione giocabile.
 
+## Evoluzione digitale — novembre 2026
+
+L'adattamento browser giocabile supera ormai la ricostruzione delle
+regole dell'infanzia. Le seguenti novità appartengono a Dado Goal
+Digitale/Evolution e non al gioco originale:
+
+- Amichevoli single-player con durata configurabile o casuale per partita.
+- Tornei di campionato con calendario, classifiche e avanzamento persistente.
+- Carriere Manager con scelta della squadra, storico delle partite e statistiche cumulative dei calciatori.
+- Salvataggio globale e recupero di tornei e carriere Manager.
+- Cataloghi di squadre reali estesi ai campionati italiani, inglesi, francesi, tedeschi e spagnoli.
+- Eventi di partita estesi, calci piazzati, provvedimenti disciplinari e sostituzioni.
+- Statistiche individuali, attribuzione degli eventi e valutazioni dei calciatori.
+- Navigazione responsive, pannelli dei tornei e rappresentazione delle maglie migliorati.
+- Localizzazione dell'interfaccia italiano/inglese e footer ufficiale GiadaWare.
+
+Il multiplayer online resta distinto dove regole, controlli o comportamento
+AUTO differiscono dal single-player.
+
+Queste funzionalità digitali non devono essere attribuite retroattivamente
+al gioco originale con i dadi artigianali.
+
 ## Componenti
 
 Due giocatori utilizzano quattro dadi a sei facce. Ogni giocatore possiede

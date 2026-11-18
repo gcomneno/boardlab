@@ -773,6 +773,9 @@ async function loadLiveCatalogue() {
     "61:2024": "./catalogues/ligue-1-2024.json",
     "78:2024": "./catalogues/bundesliga-2024.json",
     "140:2024": "./catalogues/la-liga-2024.json",
+    "79:2024": "./catalogues/2-bundesliga-2024.json",
+    "62:2024": "./catalogues/ligue-2-2024.json",
+    "141:2024": "./catalogues/segunda-division-2024.json",
   });
   const catalogueUrl = catalogueUrls[`${competitionId}:${season}`];
 

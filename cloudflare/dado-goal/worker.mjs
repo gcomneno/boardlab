@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS dado_login_limits (
 )`;
 
 const STATIC = new Set([
+  "/",
+  "/index.html",
+  "/app.mjs",
+  "/cup.mjs",
+  "/cup-store.mjs",
   "/style.css",
   "/catalogues/serie-a-2024.json",
   "/catalogues/serie-b-2024.json",
@@ -29,6 +34,9 @@ const STATIC = new Set([
   "/catalogues/ligue-1-2024.json",
   "/catalogues/bundesliga-2024.json",
   "/catalogues/la-liga-2024.json",
+  "/catalogues/2-bundesliga-2024.json",
+  "/catalogues/ligue-2-2024.json",
+  "/catalogues/segunda-division-2024.json",
   "/multiplayer.html",
   "/multiplayer-play.mjs",
   "/engine.mjs",
@@ -147,7 +155,10 @@ export default {
         if (!env.ASSETS || typeof env.ASSETS.fetch !== "function") {
           return error(503, "ASSETS_UNAVAILABLE");
         }
-        return env.ASSETS.fetch(request);
+        const assetRequest = path === "/"
+          ? new Request(new URL("/index.html", request.url), request)
+          : request;
+        return env.ASSETS.fetch(assetRequest);
       }
 
       // D1 is required for every session; the private key is only

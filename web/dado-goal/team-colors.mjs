@@ -154,6 +154,69 @@ const TEAM_COLORS = Object.freeze({
   "1355": ["#174A8B", "#F4F4F4"], // Portsmouth
   "1357": ["#177245", "#F4F4F4"], // Plymouth
   "1359": ["#F58220", "#173F7A"], // Luton
+
+  // 2. Bundesliga 2024 — indicative colors
+  "158": ["#D71920", "#F4F4F4"], // Fortuna Düsseldorf
+  "159": ["#174A8B", "#F4F4F4"], // Hertha BSC
+  "166": ["#177245", "#111111"], // Hannover 96
+  "171": ["#D71920", "#111111"], // 1. FC Nürnberg
+  "174": ["#174A8B", "#F4F4F4"], // FC Schalke 04
+  "175": ["#174A8B", "#F4F4F4"], // Hamburger SV
+  "177": ["#D71920", "#F4F4F4"], // SSV Jahn Regensburg
+  "178": ["#177245", "#F4F4F4"], // SpVgg Greuther Fürth
+  "179": ["#174A8B", "#F4F4F4"], // 1. FC Magdeburg
+  "181": ["#174A8B", "#F4F4F4"], // SV Darmstadt 98
+  "185": ["#174A8B", "#111111"], // SC Paderborn 07
+  "192": ["#F4F4F4", "#D71920"], // 1. FC Köln
+  "744": ["#F4D000", "#174A8B"], // Eintracht Braunschweig
+  "745": ["#D71920", "#F4F4F4"], // 1. FC Kaiserslautern
+  "785": ["#174A8B", "#F4F4F4"], // Karlsruher SC
+  "1313": ["#111111", "#F4F4F4"], // Preußen Münster
+  "1652": ["#111111", "#F4F4F4"], // SSV Ulm 1846
+
+  // Ligue 2 2024 — indicative colors
+  "87": ["#F4F4F4", "#111111"], // Amiens
+  "88": ["#D71920", "#174A8B"], // Caen
+  "90": ["#D71920", "#111111"], // Guingamp
+  "97": ["#F58220", "#111111"], // Lorient
+  "98": ["#D71920", "#F4F4F4"], // Ajaccio
+  "99": ["#D71920", "#174A8B"], // Clermont Foot
+  "101": ["#174A8B", "#F4F4F4"], // Grenoble
+  "104": ["#D71920", "#F4F4F4"], // RED Star FC 93
+  "110": ["#174A8B", "#F4F4F4"], // Estac Troyes
+  "114": ["#174A8B", "#F4F4F4"], // Paris FC
+  "433": ["#F58220", "#111111"], // Laval
+  "1297": ["#F4D000", "#174A8B"], // PAU
+  "1301": ["#D71920", "#F4D000"], // Rodez
+  "1304": ["#174A8B", "#F4F4F4"], // Dunkerque
+  "1305": ["#174A8B", "#F4F4F4"], // Bastia
+  "3012": ["#D71920", "#F4F4F4"], // Annecy
+  "3200": ["#D71920", "#F4D000"], // Martigues
+
+  // Segunda División 2024 — indicative colors
+  "535": ["#174A8B", "#F4F4F4"], // Malaga
+  "539": ["#174A8B", "#7A263A"], // Levante
+  "544": ["#174A8B", "#F4F4F4"], // Deportivo La Coruna
+  "545": ["#174A8B", "#7A263A"], // Eibar
+  "713": ["#177245", "#F4F4F4"], // Cordoba
+  "715": ["#D71920", "#F4F4F4"], // Granada CF
+  "718": ["#174A8B", "#F4F4F4"], // Oviedo
+  "719": ["#174A8B", "#F4F4F4"], // Tenerife
+  "722": ["#F4F4F4", "#D71920"], // Albacete
+  "723": ["#D71920", "#F4F4F4"], // Almeria
+  "724": ["#F4D000", "#174A8B"], // Cadiz
+  "726": ["#174A8B", "#D71920"], // Huesca
+  "731": ["#D71920", "#F4F4F4"], // Sporting Gijon
+  "732": ["#F4F4F4", "#174A8B"], // Zaragoza
+  "797": ["#177245", "#F4F4F4"], // Elche
+  "799": ["#D71920", "#111111"], // Mirandes
+  "4665": ["#177245", "#F4F4F4"], // Racing Santander
+  "5254": ["#111111", "#F4F4F4"], // Castellón
+  "5262": ["#111111", "#F4F4F4"], // FC Cartagena
+  "9409": ["#177245", "#F4F4F4"], // Racing Ferrol
+  "9580": ["#F4F4F4", "#111111"], // Burgos
+  "9692": ["#D71920", "#174A8B"], // Eldense
+
 });
 
 export function socialColors(providerTeamId) {

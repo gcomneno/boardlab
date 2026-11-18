@@ -4,6 +4,30 @@ const GAME_URL = "http://127.0.0.1:4173/web/dado-goal/";
 const MANAGER_KEY = "dado-goal.manager.v1";
 const SHARED_KEY = "dado-goal.team-management.v1";
 
+async function openDisclosure(page, selector) {
+  const disclosure = page.locator(selector);
+  if (!(await disclosure.evaluate(element => element.open))) {
+    await disclosure.locator(":scope > summary").click();
+  }
+  await expect(disclosure).toHaveAttribute("open", "");
+}
+
+async function openConfiguration(page) {
+  await openDisclosure(page, ".configuration-panel > details");
+}
+
+async function openTournament(page) {
+  await openDisclosure(page, "#tournament-disclosure");
+}
+
+async function openField(page) {
+  await openDisclosure(page, "#match-disclosure");
+}
+
+async function openManagement(page) {
+  await openDisclosure(page, ".game-save-panel > details");
+}
+
 test("Manager persists an isolated catalogue-backed squad and launches normal play", async ({ page }) => {
   const runtimeErrors = [];
   page.on("pageerror", error => runtimeErrors.push(error.message));
@@ -61,10 +85,12 @@ test("Manager persists an isolated catalogue-backed squad and launches normal pl
     expect(sharedDocument.club).toBeUndefined();
   }
 
+  await openConfiguration(page);
   await page.locator("#hands").fill("1");
   await page.locator("#new").click();
 
   await expect(page.locator("#roll")).toBeEnabled();
+  await openField(page);
   await page.locator("#roll").click();
 
   await expect.poll(async () =>
@@ -93,6 +119,7 @@ test("Manager launches its next canonical tournament fixture", async ({ page }) 
 
   await page.goto(GAME_URL);
 
+  await openTournament(page);
   await page.locator("#competition").selectOption("40:2024");
 
   const participants = page.locator("#tournament-participants");
@@ -143,6 +170,7 @@ test("Manager launches its next canonical tournament fixture", async ({ page }) 
 
   await expect(page.locator("#tournament-play-next")).toBeEnabled();
 
+  await openConfiguration(page);
   await page.locator("#hands").fill("1");
   await page.locator("#tournament-play-next").click();
 
@@ -185,11 +213,14 @@ test("Manager launches its next canonical tournament fixture", async ({ page }) 
   await page.reload();
 
   await expect(page.locator("#manager-body")).toBeHidden();
-  await expect(page.locator("#manager-toggle")).toHaveAttribute(
-    "aria-expanded",
-    "false"
+  await expect(page.locator("#manager-disclosure")).not.toHaveAttribute(
+    "open"
   );
-  await page.locator("#manager-toggle").click();
+  await page.locator("#manager-disclosure > summary").click();
+  await expect(page.locator("#manager-disclosure")).toHaveAttribute(
+    "open",
+    ""
+  );
   await expect(page.locator("#manager-dashboard")).toBeVisible();
 
   const restored = await page.evaluate(() =>
@@ -309,11 +340,14 @@ test("Manager derives career summary and recent results from persisted history",
 
   await page.reload();
   await expect(page.locator("#manager-body")).toBeHidden();
-  await expect(page.locator("#manager-toggle")).toHaveAttribute(
-    "aria-expanded",
-    "false"
+  await expect(page.locator("#manager-disclosure")).not.toHaveAttribute(
+    "open"
   );
-  await page.locator("#manager-toggle").click();
+  await page.locator("#manager-disclosure > summary").click();
+  await expect(page.locator("#manager-disclosure")).toHaveAttribute(
+    "open",
+    ""
+  );
   await expect(page.locator("#manager-dashboard")).toBeVisible();
 
   await expect(page.locator("#manager-career-played")).toHaveText("4");
@@ -338,6 +372,7 @@ test("Manager derives career summary and recent results from persisted history",
 test("ending Manager career preserves the current tournament", async ({ page }) => {
   await page.goto(GAME_URL);
 
+  await openTournament(page);
   await page.locator("#competition").selectOption("40:2024");
 
   const participants = page.locator("#tournament-participants");
@@ -373,6 +408,7 @@ test("ending Manager career preserves the current tournament", async ({ page }) 
 test("abandoning tournament preserves the Manager career", async ({ page }) => {
   await page.goto(GAME_URL);
 
+  await openTournament(page);
   await page.locator("#competition").selectOption("40:2024");
 
   const participants = page.locator("#tournament-participants");
@@ -418,6 +454,7 @@ test("abandoning tournament preserves the Manager career", async ({ page }) => {
 test("Global save restores tournament and Manager together", async ({ page }) => {
   await page.goto(GAME_URL);
 
+  await openTournament(page);
   await page.locator("#competition").selectOption("40:2024");
 
   const participants = page.locator("#tournament-participants");
@@ -433,6 +470,7 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
   await page.locator("#team-0").selectOption(selected[0]);
   await page.locator("#manager-new-0").click();
 
+  await openConfiguration(page);
   await page.locator("#random-hands").check();
 
   const before = await page.evaluate(() => ({
@@ -460,6 +498,7 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
     };
   });
 
+  await openManagement(page);
   await page.locator("#game-export").click();
 
   const exported = await page.evaluate(async () => ({
@@ -467,7 +506,7 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
     source: await window.__dadoGoalSaveBlob.text(),
   }));
 
-  expect(exported.filename).toBe("dado-goal-save-v1.json");
+  expect(exported.filename).toMatch(/^dado-goal-[a-z0-9-]+-\d{8}-\d{6}\.json$/);
 
   const exportedDocument = JSON.parse(exported.source);
   expect(exportedDocument.schemaVersion).toBe(1);
@@ -489,7 +528,9 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
   await page.reload();
 
   await expect(page.locator("#tournament-dashboard")).toBeHidden();
-  await expect(page.locator("#manager-toggle")).toBeDisabled();
+  await page.locator("#manager-disclosure > summary").click();
+  await expect(page.locator("#manager-empty-state")).toBeVisible();
+  await expect(page.locator("#manager-dashboard")).toBeHidden();
 
   let importAlert = null;
   page.once("dialog", async dialog => {
@@ -509,8 +550,10 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
 
   await expect(page.locator("#game-save-status"))
     .toHaveText("Salvataggio caricato.");
+  await openTournament(page);
   await expect(page.locator("#tournament-dashboard")).toBeVisible();
-  await expect(page.locator("#manager-toggle")).toBeEnabled();
+  await openDisclosure(page, "#manager-disclosure");
+  await expect(page.locator("#manager-dashboard")).toBeVisible();
   await expect(page.locator("#random-hands")).toBeChecked();
 
   const after = await page.evaluate(() => ({
@@ -535,6 +578,7 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
 test("simulated tournament fixture recovers after tournament persistence failure", async ({ page }) => {
   await page.goto(GAME_URL);
 
+  await openTournament(page);
   await page.locator("#competition").selectOption("40:2024");
 
   const participants = page.locator("#tournament-participants");
@@ -566,6 +610,7 @@ test("simulated tournament fixture recovers after tournament persistence failure
 
   expect(managerFixture).toBeTruthy();
 
+  await openConfiguration(page);
   await page.locator("#hands").fill("1");
   await page.locator("#tournament-play-next").click();
 
@@ -603,8 +648,10 @@ test("simulated tournament fixture recovers after tournament persistence failure
 
     if (recovery !== null) break;
 
+    await openField(page);
     await expect(page.locator("#roll")).toBeEnabled();
-    await page.locator("#roll").click();
+    await openField(page);
+  await page.locator("#roll").click();
 
     await expect.poll(async () => {
       const recovery = await page.evaluate(() =>

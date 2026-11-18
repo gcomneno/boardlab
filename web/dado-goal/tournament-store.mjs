@@ -13,6 +13,12 @@ function validateDocument(data) {
     throw new TypeError("unsupported tournament schema");
   }
 
+  if (data.name !== undefined &&
+      (typeof data.name !== "string" ||
+       !data.name.trim() || data.name.length > 80)) {
+    throw new TypeError("invalid tournament name");
+  }
+
   const championship = createChampionship({
     championshipId: data.championshipId,
     participants: data.participants,
@@ -45,12 +51,15 @@ function validateDocument(data) {
     }
   }
 
-  return restored;
+  return data.name === undefined
+    ? restored
+    : { ...restored, name: data.name };
 }
 
 export function createTournamentDocument({
   championshipId,
   participants,
+  name,
   fixtures = null,
 } = {}) {
   const championship = createChampionship({
@@ -58,10 +67,17 @@ export function createTournamentDocument({
     participants,
   });
 
+  if (name !== undefined &&
+      (typeof name !== "string" ||
+       !name.trim() || name.length > 80)) {
+    throw new TypeError("invalid tournament name");
+  }
+
   if (fixtures === null) {
     return {
       schemaVersion: TOURNAMENT_SCHEMA_VERSION,
       ...structuredClone(championship),
+      ...(name === undefined ? {} : { name }),
     };
   }
 
@@ -71,6 +87,7 @@ export function createTournamentDocument({
       schemaVersion: TOURNAMENT_SCHEMA_VERSION,
       championshipId,
       participants,
+      name,
       fixtures,
     })),
   };

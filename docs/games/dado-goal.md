@@ -21,6 +21,28 @@ no photograph is included by this change.
 Later innovations must not be presented as historical rules without the
 author's confirmation. This document records rules, not a playable implementation.
 
+## Digital evolution — November 2026
+
+The playable browser adaptation now extends beyond the reconstructed
+childhood rules. These additions belong to Dado Goal Digital/Evolution,
+not to the historical original:
+
+- Single-player friendly matches with configurable or randomized match length.
+- Championship tournaments with fixtures, standings and persisted progress.
+- Manager careers with team selection, match history and cumulative player statistics.
+- Global save and recovery flows covering tournaments and Manager careers.
+- Real-team catalogues expanded to Italian, English, French, German and Spanish leagues.
+- Extended match events, set pieces, disciplinary actions and substitutions.
+- Player-level match statistics, event attribution and ratings.
+- Refined responsive navigation, tournament dashboards and player shirt presentation.
+- English/Italian interface localization and the official GiadaWare footer.
+
+The online multiplayer track remains separate where its rules, controls
+or AUTO behaviour differ from single-player.
+
+These digital features must not be retroactively attributed to the
+original handmade-dice game.
+
 ## Components
 
 Two players use four six-sided dice. Each player has a team die in their

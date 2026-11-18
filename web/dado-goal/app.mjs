@@ -32,6 +32,17 @@ import {
   clearManager,
 } from "./manager-store.mjs";
 import { createMatchRecord, teamStatistics } from "./team-history.mjs";
+import {
+  createCupDocument,
+  loadVerifiedCup,
+  saveVerifiedCup,
+  loadCupRecovery,
+  saveCupRecovery,
+  clearCupRecovery,
+} from "./cup-store.mjs";
+import { advanceCupIfReady } from "./cup.mjs";
+import { recordCupShootout } from "./cup-store.mjs";
+import { completeCupFixture } from "./cup.mjs";
 import { managerMatchParticipation } from "./player-participation.mjs";
 import {
   championshipStandings,
@@ -577,6 +588,7 @@ let selectedMatchTeams = [null, null];
 let managementState = createManagementDocument();
 let managerState = null;
 let tournamentState = null;
+let cupState = null;
 let activeTournamentFixtureId = null;
 let tournamentViewedMatchday = null;
 let matchRecorded = false;
@@ -597,6 +609,62 @@ try {
   tournamentState = loadTournament(window.localStorage);
 } catch {
   tournamentState = null;
+}
+
+try {
+  cupState = loadVerifiedCup(window.localStorage, managementState.matches);
+} catch {
+  cupState = null;
+}
+
+try {
+  const recovery = loadCupRecovery(window.localStorage);
+
+  if (recovery) {
+    const canonicalMatch = managementState.matches.find(
+      match => match.matchId === recovery.matchId
+    );
+    const sameCup = cupState?.cupId === recovery.cupId;
+    const fixture = sameCup
+      ? cupState.fixtures.find(
+          candidate => candidate.fixtureId === recovery.fixtureId
+        )
+      : null;
+
+    if (canonicalMatch && fixture?.matchId === null) {
+      const homeMatches =
+        String(canonicalMatch.home.providerTeamId) ===
+        String(fixture.homeProviderTeamId);
+      const awayMatches =
+        String(canonicalMatch.away.providerTeamId) ===
+        String(fixture.awayProviderTeamId);
+
+      if (homeMatches && awayMatches) {
+        const reconciled = completeCupFixture(
+          cupState, recovery.fixtureId, recovery.matchId,
+        );
+        const advancement = advanceCupIfReady(
+          reconciled,
+          managementState.matches,
+          reconciled.shootouts ?? {},
+        );
+        saveVerifiedCup(
+          window.localStorage, advancement.cup, managementState.matches,
+        );
+        cupState = advancement.cup;
+        clearCupRecovery(window.localStorage);
+      }
+    } else if (
+      canonicalMatch &&
+      fixture?.matchId === recovery.matchId
+    ) {
+      clearCupRecovery(window.localStorage);
+    } else if (!canonicalMatch || !sameCup) {
+      clearCupRecovery(window.localStorage);
+    }
+  }
+} catch {
+  // Preserve the journal when reconciliation cannot complete.
 }
 
 try {
@@ -708,6 +776,20 @@ function recordCompletedMatch() {
 
   let canonicalMatchPersisted = false;
   let tournamentRecoveryPrepared = false;
+  let cupRecoveryPrepared = false;
+
+  if (cupState && !tournamentState && activeTournamentFixtureId) {
+    try {
+      saveCupRecovery(window.localStorage, {
+        cupId: cupState.cupId,
+        fixtureId: activeTournamentFixtureId,
+        matchId: record.matchId,
+      });
+      cupRecoveryPrepared = true;
+    } catch {
+      // Never associate a cup fixture without durable recovery intent.
+    }
+  }
 
   if (tournamentState && activeTournamentFixtureId) {
     try {
@@ -722,13 +804,26 @@ function recordCompletedMatch() {
     }
   }
 
-  try {
-    saveManagement(window.localStorage, nextState);
-    managementState = nextState;
-    canonicalMatchPersisted = true;
-    markGlobalSaveDirty();
-  } catch {
-    // Local persistence failure must never affect gameplay.
+  const cupPersistenceReady =
+    !cupState || !activeTournamentFixtureId || cupRecoveryPrepared;
+
+  if (cupPersistenceReady) {
+    try {
+      saveManagement(window.localStorage, nextState);
+      managementState = nextState;
+      canonicalMatchPersisted = true;
+      markGlobalSaveDirty();
+    } catch {
+      // Local persistence failure must never affect gameplay.
+    }
+  }
+
+  if (!canonicalMatchPersisted && cupRecoveryPrepared) {
+    try {
+      clearCupRecovery(window.localStorage);
+    } catch {
+      // Reload discards a journal without a canonical match.
+    }
   }
 
   if (!canonicalMatchPersisted && tournamentRecoveryPrepared) {
@@ -757,6 +852,32 @@ function recordCompletedMatch() {
       }
     } catch {
       // A durable journal reconciles the canonical match on next reload.
+    }
+  }
+
+  if (canonicalMatchPersisted &&
+      cupState &&
+      !tournamentState &&
+      activeTournamentFixtureId &&
+      cupRecoveryPrepared) {
+    try {
+      const completedCup = completeCupFixture(
+        cupState, activeTournamentFixtureId, record.matchId,
+      );
+      const advancement = advanceCupIfReady(
+        completedCup,
+        managementState.matches,
+        completedCup.shootouts ?? {},
+      );
+      const nextCup = advancement.cup;
+      saveVerifiedCup(
+        window.localStorage, nextCup, managementState.matches,
+      );
+      cupState = nextCup;
+      activeTournamentFixtureId = null;
+      clearCupRecovery(window.localStorage);
+    } catch {
+      // Durable cup journal permits reconciliation after restart.
     }
   }
 
@@ -1949,6 +2070,21 @@ const competitions = Object.freeze([
     label: "La Liga",
     url: "./catalogues/la-liga-2024.json",
   }),
+  Object.freeze({
+    value: "79:2024",
+    label: "2. Bundesliga",
+    url: "./catalogues/2-bundesliga-2024.json",
+  }),
+  Object.freeze({
+    value: "62:2024",
+    label: "Ligue 2",
+    url: "./catalogues/ligue-2-2024.json",
+  }),
+  Object.freeze({
+    value: "141:2024",
+    label: "Segunda División",
+    url: "./catalogues/segunda-division-2024.json",
+  }),
 ]);
 
 let footballCatalogues = [];
@@ -1977,6 +2113,8 @@ function syncCompetitionSelector() {
   }
 }
 
+const tournamentSelectedTeamIds = new Set();
+
 function allCatalogueTeams() {
   return footballCatalogues.flatMap(catalogue => catalogue.teams);
 }
@@ -2002,8 +2140,10 @@ function renderCatalogueTeams() {
     const select = byId(`team-${seat}`);
     const current = select.value;
 
-    const visibleTeams = [...friendlyTeams];
-
+    const country = byId(`team-country-${seat}`).value;
+    const visibleTeams = friendlyTeams.filter(team =>
+      !country || team.enrichment?.country === country
+    );
     select.replaceChildren(new Option(`Squadra ${seat + 1}`, ""));
 
     for (const team of visibleTeams) {
@@ -2149,40 +2289,222 @@ function selectTournamentCompetitionParticipants() {
     )
   );
 
+  tournamentSelectedTeamIds.clear();
+  for (const id of selectedIds) tournamentSelectedTeamIds.add(id);
+
   for (const option of list.options) {
     option.selected = selectedIds.has(option.value);
   }
 }
+
+function renderCupBracket() {
+  const cup = cupState;
+  const rounds = Math.log2(cup.participants.length);
+  const currentRound = Math.max(...cup.fixtures.map(f => f.round));
+  const viewedRound = Math.min(
+    Math.max(tournamentViewedMatchday ?? currentRound, 1),
+    currentRound,
+  );
+  tournamentViewedMatchday = viewedRound;
+
+  const records = new Map(
+    managementState.matches.map(match => [match.matchId, match]),
+  );
+  const teamName = id =>
+    cup.participants.find(team =>
+      String(team.providerTeamId) === String(id)
+    )?.name ?? String(id);
+
+  const fixtures = cup.fixtures.filter(f => f.round === viewedRound);
+  const completed = cup.fixtures.filter(f => f.matchId !== null).length;
+  const next = cup.fixtures.find(f => f.matchId === null);
+  const roundNames = {
+    1: cup.participants.length === 4 ? "Semifinali" :
+       cup.participants.length === 8 ? "Quarti di finale" :
+       cup.participants.length === 16 ? "Ottavi di finale" :
+       "Sedicesimi di finale",
+  };
+  const roundName = viewedRound === rounds
+    ? "Finale"
+    : viewedRound === rounds - 1
+      ? "Semifinali"
+      : viewedRound === rounds - 2
+        ? "Quarti di finale"
+        : viewedRound === rounds - 3
+          ? "Ottavi di finale"
+          : roundNames[viewedRound] ?? `Turno ${viewedRound}`;
+
+  byId("tournament-progress").textContent =
+    `${completed} / ${(cup.participants.length - 1) * cup.legs}`;
+  byId("tournament-status").textContent =
+    cup.championProviderTeamId !== undefined
+      ? `Campione: ${teamName(cup.championProviderTeamId)}`
+      : `${cup.name ?? "Coppa"} · turno ${currentRound} di ${rounds}`;
+  byId("tournament-next").textContent = next
+    ? `Prossima: ${teamName(next.homeProviderTeamId)} – ${teamName(next.awayProviderTeamId)}`
+    : cup.championProviderTeamId !== undefined
+      ? "Coppa conclusa"
+      : "Turno da risolvere";
+  byId("tournament-matchday-label").textContent = roundName;
+  byId("tournament-matchday-prev").disabled = viewedRound <= 1;
+  byId("tournament-matchday-next").disabled = viewedRound >= currentRound;
+  byId("tournament-play-next").disabled =
+    !next || (matchStarted && state.phase !== "finished");
+
+  const shootout = byId("cup-shootout");
+  const readiness = advanceCupIfReady(
+    cup, managementState.matches, cup.shootouts ?? {},
+  );
+  const needsPenalties = readiness.status === "pending-penalties";
+  shootout.hidden = !needsPenalties;
+  shootout.dataset.round = needsPenalties ? String(readiness.round) : "";
+  shootout.dataset.pair = needsPenalties ? String(readiness.pair) : "";
+  byId("cup-shootout-confirm").disabled = !needsPenalties;
+  byId("cup-shootout-error").textContent = "";
+
+  if (needsPenalties) {
+    const pairing = cup.fixtures.find(f =>
+      f.round === readiness.round && f.pair === readiness.pair &&
+      f.leg === 1
+    );
+    byId("cup-shootout-description").textContent =
+      `${teamName(pairing.homeProviderTeamId)} – ` +
+      `${teamName(pairing.awayProviderTeamId)}: parità aggregata. ` +
+      "Inserisci il risultato dei rigori.";
+  }
+
+  const renderFixture = fixture => {
+    const item = document.createElement("li");
+    item.className = "tournament-fixture";
+    const record = records.get(fixture.matchId);
+    const home = document.createElement("span");
+    const away = document.createElement("span");
+    const score = document.createElement("span");
+    home.className = "tournament-fixture-name home";
+    away.className = "tournament-fixture-name away";
+    score.className = "tournament-fixture-score";
+    home.textContent = teamName(fixture.homeProviderTeamId);
+    away.textContent = teamName(fixture.awayProviderTeamId);
+    score.textContent = record
+      ? `${record.score.home}–${record.score.away}`
+      : "–";
+    item.append(home, score, away);
+    return item;
+  };
+
+  const results = fixtures.filter(f => f.matchId !== null)
+    .map(renderFixture);
+  const pending = fixtures.filter(f => f.matchId === null)
+    .map(renderFixture);
+  byId("tournament-results").replaceChildren(...results);
+  byId("tournament-results-empty").hidden = results.length !== 0;
+  byId("tournament-pending").replaceChildren(...pending);
+  byId("tournament-pending-empty").hidden = pending.length !== 0;
+}
+
+function confirmCupShootout() {
+  if (!cupState || tournamentState) return;
+
+  const panel = byId("cup-shootout");
+  if (panel.hidden) return;
+
+  const error = byId("cup-shootout-error");
+  const homeRaw = byId("cup-penalties-home").value.trim();
+  const awayRaw = byId("cup-penalties-away").value.trim();
+  const home = Number(homeRaw);
+  const away = Number(awayRaw);
+  const round = Number(panel.dataset.round);
+  const pair = Number(panel.dataset.pair);
+
+  if (!/^\\d+$/.test(homeRaw) || !/^\\d+$/.test(awayRaw) ||
+      !Number.isSafeInteger(home) || !Number.isSafeInteger(away) ||
+      home === away) {
+    error.textContent = "Inserisci due punteggi interi, non negativi e diversi.";
+    return;
+  }
+
+  try {
+    const decided = recordCupShootout(
+      cupState, managementState.matches, round, pair, { home, away },
+    );
+    const advancement = advanceCupIfReady(
+      decided, managementState.matches, decided.shootouts ?? {},
+    );
+    saveVerifiedCup(
+      window.localStorage, advancement.cup, managementState.matches,
+    );
+    cupState = advancement.cup;
+    tournamentViewedMatchday = Math.max(
+      ...cupState.fixtures.map(f => f.round),
+    );
+    byId("cup-penalties-home").value = "";
+    byId("cup-penalties-away").value = "";
+    renderTournament();
+  } catch (failure) {
+    error.textContent = failure.message;
+  }
+}
+
+byId("cup-shootout-confirm").addEventListener(
+  "click", confirmCupShootout,
+);
 
 function renderTournament() {
   const setup = byId("tournament-setup");
   const dashboard = byId("tournament-dashboard");
   if (!setup || !dashboard) return;
 
-  setup.hidden = Boolean(tournamentState);
-  dashboard.hidden = !tournamentState;
-  byId("competition").closest(".locale-setting").hidden =
-    Boolean(tournamentState);
+  setup.hidden = Boolean(tournamentState || cupState);
+  dashboard.hidden = !tournamentState && !cupState;
+  const cupMode = byId("tournament-mode").value === "cup";
+  const competitionExists = Boolean(tournamentState || cupState);
+  // Keep the competition selector available internally, but never display it.
+  byId("competition").closest(".locale-setting").hidden = true;
+  byId("cup-leg-setting").hidden =
+    Boolean(tournamentState) || !cupMode;
+  byId("tournament-create").disabled = competitionExists;
+  if (!tournamentState) {
+    byId("tournament-error").textContent = cupState
+      ? `Coppa "${cupState.name ?? "Coppa personalizzata"}" salvata. Il tabellone sarà disponibile dopo l'integrazione M008-B.`
+      : "";
+  }
+
+  if (cupState) {
+    renderCupBracket();
+    return;
+  }
 
   if (!tournamentState) {
     tournamentViewedMatchday = null;
 
-    const teams = [...allCatalogueTeams()].sort(
+    const country = byId("tournament-country").value;
+    const teams = allCatalogueTeams()
+      .filter(team => !country || team.enrichment?.country === country)
+      .sort(
       (left, right) => left.name.localeCompare(
         right.name, undefined, { sensitivity: "base" }
       )
     );
     const list = byId("tournament-participants");
-    const selected = new Set(
-      [...list.selectedOptions].map(option => option.value)
+    const selected = new Set([
+      ...[...list.selectedOptions].map(option => option.value),
+      ...tournamentSelectedTeamIds,
+    ]);
+    tournamentSelectedTeamIds.clear();
+    for (const id of selected) tournamentSelectedTeamIds.add(id);
+    const selectedOutsideFilter = allCatalogueTeams().filter(team =>
+      selected.has(String(team.providerTeamId)) &&
+      !teams.some(visible =>
+        String(visible.providerTeamId) === String(team.providerTeamId)
+      )
     );
+    teams.push(...selectedOutsideFilter);
     list.replaceChildren(...teams.map(team => {
       const option = new Option(team.name, String(team.providerTeamId));
       option.selected = selected.has(option.value);
       return option;
     }));
 
-    selectTournamentCompetitionParticipants();
     return;
   }
 
@@ -2384,17 +2706,37 @@ function closeTournament() {
 }
 
 function createTournamentFromSelection() {
+  if (tournamentState || cupState) {
+    byId("tournament-error").textContent =
+      "Esiste già una competizione salvata.";
+    return;
+  }
   if (matchStarted && state.phase !== "finished") return;
-  const participants = [...byId("tournament-participants").selectedOptions]
-    .map(option => allCatalogueTeams().find(team =>
-      String(team.providerTeamId) === option.value
+  const participants = [...tournamentSelectedTeamIds]
+    .map(id => allCatalogueTeams().find(team =>
+      String(team.providerTeamId) === id
     ))
     .filter(Boolean);
 
   try {
+    if (byId("tournament-mode").value === "cup") {
+      const document = createCupDocument({
+        cupId: crypto.randomUUID(),
+        participants,
+        legs: Number(byId("cup-legs").value),
+        name: byId("tournament-name").value.trim() || "Coppa personalizzata",
+      });
+      saveVerifiedCup(window.localStorage, document, managementState.matches);
+      cupState = document;
+      activeTournamentFixtureId = null;
+      renderTournament();
+      return;
+    }
+
     const document = createTournamentDocument({
       championshipId: crypto.randomUUID(),
       participants,
+      name: byId("tournament-name").value.trim() || "Torneo personalizzato",
     });
     saveTournament(window.localStorage, document);
     tournamentState = document;
@@ -2531,14 +2873,27 @@ function playTournamentFixture(fixture) {
     applySelectedTeamColor(seat);
   }
 
+  const started = start(true);
+  if (started !== true) return false;
+
   activeTournamentFixtureId = fixture.fixtureId;
-  start(true);
   renderTournament();
   renderManagerDashboard();
+  return true;
 }
 
 function playNextTournamentFixture() {
   if (matchStarted && state.phase !== "finished") return;
+
+  if (cupState && !tournamentState) {
+    const currentRound = Math.max(...cupState.fixtures.map(f => f.round));
+    const nextCupFixture = cupState.fixtures.find(
+      fixture => fixture.round === currentRound && fixture.matchId === null,
+    );
+    if (nextCupFixture) playTournamentFixture(nextCupFixture);
+    return;
+  }
+
   const managedId = managerTournamentTeamId();
 
   if (managedId === null) {
@@ -2696,6 +3051,35 @@ function applySelectedTeamColor(seat) {
   renderSelectedTeamLogo(seat);
 }
 
+for (const seat of [0, 1]) {
+  byId(`team-country-${seat}`).addEventListener("change", () => {
+    renderCatalogueTeams();
+  });
+}
+
+byId("tournament-mode").addEventListener("change", () => {
+  renderTournament();
+});
+
+byId("cup-legs").addEventListener("change", () => {
+  renderTournament();
+});
+
+byId("tournament-country").addEventListener("change", () => {
+  renderTournament();
+});
+
+byId("tournament-participants").addEventListener("change", () => {
+  const list = byId("tournament-participants");
+  for (const option of list.options) {
+    if (option.selected) {
+      tournamentSelectedTeamIds.add(option.value);
+    } else {
+      tournamentSelectedTeamIds.delete(option.value);
+    }
+  }
+});
+
 byId("competition").addEventListener("change", () => {
   renderCatalogueTeams();
 
@@ -2746,7 +3130,7 @@ function start(activate = true) {
     n > 1000
   ) {
     showMessage("invalidHands");
-    return;
+    return false;
   }
 
   const handsPerTeam = byId("random-hands").checked
@@ -2762,7 +3146,7 @@ function start(activate = true) {
       selectedTeamIds[0] === selectedTeamIds[1]) {
     showMessage("sameTeamConflict");
     render();
-    return;
+    return false;
   }
 
   const selectedTeams = [0, 1].map(
@@ -2775,7 +3159,7 @@ function start(activate = true) {
   if (activate && mixedCatalogueMatch) {
     showMessage("mixedTeamConflict");
     render();
-    return;
+    return false;
   }
 
   names = [0, 1].map((i) =>
@@ -2850,6 +3234,7 @@ function start(activate = true) {
     showMessage("setupPrompt");
   }
   render();
+  return true;
 }
 
 async function animateRoll(phase, player, finalFace, durationMs = 700) {

@@ -15,6 +15,7 @@ export async function buildFootballCatalogue({
   fetchImpl = globalThis.fetch,
   wait = sleep,
   requestIntervalMs = DEFAULT_REQUEST_INTERVAL_MS,
+  allowedTeamIds = null,
 }) {
   let firstRequest = true;
 
@@ -35,6 +36,7 @@ export async function buildFootballCatalogue({
     adapter,
     competitionId,
     season,
+    allowedTeamIds,
   });
 }
 

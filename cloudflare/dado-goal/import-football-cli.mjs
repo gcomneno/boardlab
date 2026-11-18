@@ -34,10 +34,34 @@ if (!apiKey) {
   throw new Error("API_FOOTBALL_KEY missing from .env.secrets");
 }
 
+const excludedTeams = {
+  "79:2024": new Set(["1639"]),
+  "62:2024": new Set(["1299"]),
+};
+
+const excluded = excludedTeams[`${competitionId}:${season}`];
+let allowedTeamIds = null;
+
+if (excluded) {
+  const { createApiFootballAdapter } = await import(
+    "../../web/dado-goal/providers/api-football.mjs"
+  );
+  const adapter = createApiFootballAdapter({ apiKey });
+  const teams = await adapter.fetchTeams({ competitionId, season });
+  allowedTeamIds = teams
+    .filter((team) => !excluded.has(String(team.id)))
+    .map((team) => team.id);
+
+  if (allowedTeamIds.length !== 18 || teams.length !== 19) {
+    throw new Error("unexpected competition membership; import blocked");
+  }
+}
+
 const catalogue = await buildFootballCatalogue({
   apiKey,
   competitionId,
   season,
+  allowedTeamIds,
 });
 
 await writeFile(

@@ -7,6 +7,26 @@ Format: https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Added — November 2026 digital evolution
+
+- Championship tournaments with fixtures, standings and persistent progress.
+- Manager career flows and cumulative player statistics.
+- Global save and recovery for Manager and tournament state.
+- French, German and Spanish league catalogues alongside existing Italian and English competitions.
+- Extended match rules, set pieces, player events and individual statistics.
+- Configurable random per-match roll counts in single-player.
+- Additional substitution pressure late in matches.
+- Refined tournament dashboard, navigation, player shirts and Manager statistics.
+- Official GiadaWare footer and English/Italian localization refinements.
+
+### Fixed
+
+- Tournament standings synchronized with the selected matchday.
+- Crash-safe tournament simulation persistence.
+- Single-player random-roll localization kept separate from multiplayer AUTO.
+- Tournament and career navigation panel alignment.
+
+
 ## [Multiplayer 1.0.0] — 2026-11-09
 
 ### Added — Online multiplayer release
