@@ -1,6 +1,7 @@
 #include "graphics2d_m005.c"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -126,8 +127,25 @@ static void test_defeat_and_restart(void)
     M005Gui gui;
     m005_gui_init(&gui);
 
-    while (!gui.state.finished)
+    for (int attempt = 0;
+         attempt < CHRONO_MAX_TURNS && !gui.state.finished;
+         ++attempt) {
+        unsigned int previous_turn = gui.state.turn;
         turn(&gui);
+        if (!gui.state.finished && gui.state.turn == previous_turn) {
+            fprintf(stderr,
+                    "M005_TURN_STALLED: attempt=%d turn=%d finished=%d\\n",
+                    attempt, gui.state.turn, (int)gui.state.finished);
+            fflush(stderr);
+            abort();
+        }
+    }
+    if (!gui.state.finished) {
+        fprintf(stderr, "M005_TURN_LIMIT_NOT_REACHED: turn=%d\\n",
+                gui.state.turn);
+        fflush(stderr);
+        abort();
+    }
 
     assert(gui.state.turn == CHRONO_MAX_TURNS);
     assert(!gui.state.victory);
@@ -288,8 +306,25 @@ static void test_action_availability(void)
     assert(m005_action_available(&gui.state, 3));
     assert(!m005_action_available(&gui.state, 2));
 
-    while (!gui.state.finished)
+    for (int attempt = 0;
+         attempt < CHRONO_MAX_TURNS && !gui.state.finished;
+         ++attempt) {
+        unsigned int previous_turn = gui.state.turn;
         turn(&gui);
+        if (!gui.state.finished && gui.state.turn == previous_turn) {
+            fprintf(stderr,
+                    "M005_TURN_STALLED: attempt=%d turn=%d finished=%d\\n",
+                    attempt, gui.state.turn, (int)gui.state.finished);
+            fflush(stderr);
+            abort();
+        }
+    }
+    if (!gui.state.finished) {
+        fprintf(stderr, "M005_TURN_LIMIT_NOT_REACHED: turn=%d\\n",
+                gui.state.turn);
+        fflush(stderr);
+        abort();
+    }
 
     for (int i = 0; i < M005_GUI_ACTION_COUNT; ++i)
         assert(!m005_action_available(&gui.state, i));
