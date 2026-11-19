@@ -104,6 +104,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-001 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-001)
     chrono_test_assertions(chrono-test-2d-001)
     add_test(
@@ -123,6 +124,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-002 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-002)
     chrono_test_assertions(chrono-test-2d-002)
     add_test(
@@ -142,6 +144,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-003 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-003)
     chrono_test_assertions(chrono-test-2d-003)
     add_test(
@@ -161,6 +164,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-004 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-004)
     chrono_test_assertions(chrono-test-2d-004)
     add_test(
@@ -180,6 +184,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-005 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-005)
     chrono_test_assertions(chrono-test-2d-005)
     add_test(
