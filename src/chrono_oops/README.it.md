@@ -17,7 +17,57 @@ computazionali devono rimanere esplicite, deterministiche e verificabili.
 Questa directory contiene una campagna CLI giocabile di cinque missioni,
 basata su motori deterministici C11. Le sezioni didattiche seguenti
 approfondiscono in particolare il motore della Missione 001.
-Non è presente un'interfaccia grafica.
+È disponibile anche un'interfaccia grafica nativa SDL2 per tutte
+e cinque le missioni, quando SDL2 e SDL2_ttf sono installate.
+
+## Campagna grafica e distribuzione nativa
+
+ChronoOops! comprende due applicazioni eseguibili:
+
+- `chrono-oops`: campagna da terminale di cinque missioni.
+- `chrono-oops-2d`: campagna grafica di cinque missioni.
+
+La GUI supporta mouse, navigazione con le frecce, Invio per attivare
+il controllo selezionato, Spazio per terminare il turno, R per
+ricominciare ed Esc per tornare alla selezione delle missioni.
+La disponibilità delle azioni è indicata direttamente nell'interfaccia.
+
+### Compilazione locale
+
+Dalla directory `src/chrono_oops`:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release
+ctest --test-dir build -C Release --output-on-failure
+```
+
+La versione grafica viene compilata soltanto quando sono disponibili
+le dipendenze di sviluppo SDL2 e SDL2_ttf. La campagna da terminale
+rimane disponibile anche senza queste librerie opzionali.
+
+### Archivi multipiattaforma
+
+Il workflow CI prevede Linux x86-64, Windows x86-64 e macOS Apple Silicon.
+La creazione degli archivi e la verifica dell'esecuzione sono gate
+distinti: la sola configurazione CI non equivale a una pubblicazione.
+
+Estrarre l'archivio prima dell'esecuzione. Gli ZIP della CI collocano
+gli eseguibili nella directory estratta: su Linux/macOS avviare
+`./chrono-oops` oppure `./chrono-oops-2d`; su Windows utilizzare
+`chrono-oops.exe` oppure `chrono-oops-2d.exe`. Gli archivi TGZ/ZIP
+generati da CPack collocano invece gli eseguibili in `bin/`:
+su Linux/macOS avviare `./bin/chrono-oops` oppure
+`./bin/chrono-oops-2d`.
+
+Su Linux/macOS la GUI richiede librerie runtime SDL2 e SDL2_ttf
+compatibili, installate sul sistema. Il pacchetto Windows è progettato
+per includere le DLL MinGW/SDL2 necessarie. Serve un font di sistema
+leggibile; `CHRONO_FONT_PATH` consente di specificare un file font.
+
+La distribuzione include la licenza MIT. I binari macOS non vengono
+automaticamente firmati o notarizzati.
+
 
 ## Campagna CLI — Missioni 001–005
 

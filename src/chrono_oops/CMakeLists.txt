@@ -85,7 +85,7 @@ if(TARGET PkgConfig::CHRONO_SDL2 AND TARGET PkgConfig::CHRONO_SDL2_TTF)
         mission004.c
         mission005.c
     )
-    target_compile_definitions(chrono-oops-2d PRIVATE CHRONO_WITH_M002)
+    target_compile_definitions(chrono-oops-2d PRIVATE CHRONO_WITH_M002 SDL_MAIN_HANDLED)
     target_link_libraries(chrono-oops-2d PRIVATE
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
@@ -104,6 +104,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-001 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-001)
     chrono_test_assertions(chrono-test-2d-001)
     add_test(
@@ -123,6 +124,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-002 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-002)
     chrono_test_assertions(chrono-test-2d-002)
     add_test(
@@ -142,6 +144,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-003 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-003)
     chrono_test_assertions(chrono-test-2d-003)
     add_test(
@@ -161,6 +164,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-004 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-004)
     chrono_test_assertions(chrono-test-2d-004)
     add_test(
@@ -180,6 +184,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-2d-005 PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-2d-005)
     chrono_test_assertions(chrono-test-2d-005)
     add_test(
@@ -187,3 +192,38 @@ if(TARGET chrono-oops-2d)
         COMMAND chrono-test-2d-005
     )
 endif()
+
+# Native distributable: CLI always, graphical frontend when SDL2 is available.
+include(GNUInstallDirs)
+
+install(TARGETS chrono-oops
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT Runtime
+)
+
+if(TARGET chrono-oops-2d)
+    install(TARGETS chrono-oops-2d
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        BUNDLE DESTINATION .
+        COMPONENT Runtime
+    )
+endif()
+
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+    "${CMAKE_CURRENT_SOURCE_DIR}/README.it.md"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../LICENSE"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/doc/chrono-oops"
+    COMPONENT Runtime
+)
+
+set(CPACK_PACKAGE_NAME "chrono-oops")
+set(CPACK_PACKAGE_VENDOR "GiadaWare BoardLab")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+    "ChronoOops! cooperative time-travel campaign")
+set(CPACK_PACKAGE_FILE_NAME
+    "chrono-oops-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_GENERATOR "TGZ;ZIP")
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)
+include(CPack)
