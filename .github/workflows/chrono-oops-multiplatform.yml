@@ -96,7 +96,11 @@ jobs:
       - name: Test campaign (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
-        run: ctest --test-dir build/chrono-oops --output-on-failure
+        run: |
+          echo '=== M004 effective compiler flags ==='
+          grep -A 12 'test_graphics2d_m004.c.obj:' build/chrono-oops/build.ninja | head -n 13
+          echo '=== Windows CTest campaign ==='
+          ctest --test-dir build/chrono-oops --output-on-failure --timeout 30 -V
 
       - name: Require graphical build and all 11 tests (Linux/macOS)
         if: runner.os != 'Windows'
