@@ -1,14 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { rollAuthorized } from "./roll-d1.mjs";
+import { replayServerV2, rollServerV2 } from "./rules-v2.mjs";
+import { newV2Match } from "../../web/dado-goal/engine-v2.mjs";
 import { initialState, applyRoll, FACES } from "./game.mjs";
 import { matchClock } from "./public/match-clock.mjs";
 import { createRoster } from "../../web/dado-goal/match-roster.mjs";
 import { replayMatchEvents } from "./match-events-replay.mjs";
 
 
-function fakeD1(state, seat, initialRosters = null) {
+function fakeD1(state, seat, initialRosters = null, rulesVersion) {
   const row = {
+    rules_version: rulesVersion,
     revision: 0,
     status: "active",
     state_json: JSON.stringify(state),
@@ -404,4 +407,46 @@ test("M2D: yellow card persists once and replays after retry", async () => {
       });
     }
   }
+});
+
+test("M034: V2 persists two canonical events and retries use the saved receipt", async () => {
+  let initial = newV2Match(2);
+  initial = rollServerV2(initial, () => 0).state;
+  initial = rollServerV2(initial, () => 0).state;
+  assert.equal(initial.phase, "result");
+
+  const d1 = fakeD1(initial, initial.player, null, 2);
+  const run = (id, revision, options) =>
+    rollAuthorized(d1.authority, "match", "seat-token", id, revision, options);
+
+  await assert.rejects(run("award", 0), /V2 rolls are not enabled/);
+  assert.equal(d1.batches, 0);
+
+  const award = await run("award", 0, { allowV2: true, byteSource: () => 0 });
+  assert.equal(award.event.type, "penalty-awarded");
+  assert.equal(award.state.phase, "penalty");
+  assert.equal(award.state.player, initial.player);
+  assert.equal(award.revision, 1);
+  assert.equal(Object.hasOwn(award.event, "die"), false);
+
+  const kick = await run("kick", 1, { allowV2: true, byteSource: () => 4 });
+  assert.equal(kick.event.kind, "penalty-goal");
+  assert.equal(kick.event.faceIndex, 4);
+  assert.equal(kick.revision, 2);
+  assert.equal(kick.state.goals[initial.player], 1);
+  assert.deepEqual(d1.events, [award.event, kick.event]);
+  assert.deepEqual(d1.events.reduce(replayServerV2, initial), kick.state);
+
+  const persisted = await d1.authority.match("match");
+  assert.equal(persisted.rules_version, 2);
+  assert.deepEqual(JSON.parse(persisted.state_json), kick.state);
+
+  const noDraw = () => assert.fail("A retry attempted a draw");
+  for (const [id, revision, original] of [["award", 0, award], ["kick", 1, kick]]) {
+    const retry = await run(id, revision, { allowV2: true, byteSource: noDraw });
+    assert.deepEqual(retry, { ...original, duplicate: true });
+  }
+  assert.equal(d1.revision, 2);
+  assert.equal(d1.events.length, 2);
+  assert.equal(d1.batches, 2);
 });

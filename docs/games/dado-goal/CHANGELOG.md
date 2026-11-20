@@ -7,6 +7,15 @@ Format: https://keepachangelog.com/en/1.1.0/
 
 ## [Unreleased]
 
+### Qualification — M034 V2 LOCAL — 2026-11-20 — NOT DEPLOYED
+
+- LOCAL QUALIFICATION PASS: regression (38/38 Node, 9/9 SQLite), local
+  HTTP/SQLite authority, Playwright road test (2 passed) and user-confirmed
+  manual Monza–Roma completion. Public V1 remains active; no deployment,
+  remote D1 migrations or production V2 activation authorization.
+  See [the qualification report](m034-v2-local-road-test.md) for evidence,
+  fixes and remaining limitations.
+
 ### Added — November 2026 digital evolution
 
 - Championship tournaments with fixtures, standings and persistent progress.

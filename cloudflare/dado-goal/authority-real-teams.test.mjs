@@ -121,6 +121,7 @@ function fakeD1() {
             revision: 0,
             status: "waiting",
             state_json: args[1],
+            rules_version: args[6],
             invite_digest: args[2],
             invite_used: 0,
             created_at: args[3],
@@ -189,6 +190,10 @@ function fakeD1() {
       return results;
     },
 
+    get storedMatch() {
+      return match;
+    },
+
     get matchTeams() {
       return matchTeams;
     },
@@ -206,6 +211,8 @@ test("#69: create and join persist authoritative real rosters", async () => {
   const created = await authority.create(6, teams);
 
   assert.equal(created.snapshot.status, "waiting");
+  assert.equal(created.snapshot.rulesVersion, 1);
+  assert.equal(db.storedMatch.rules_version, 1);
   assert.equal(db.matchTeams.length, 2);
 
   const joined = await authority.join(
@@ -214,6 +221,29 @@ test("#69: create and join persist authoritative real rosters", async () => {
   );
 
   assert.equal(joined.snapshot.status, "active");
+  assert.equal(joined.snapshot.rulesVersion, 1);
+
+  // Reconnect through a fresh authority instance backed by the
+  // same persisted D1 fixture. Seat authentication is stubbed
+  // because this fixture models match persistence, not tokens.
+  const reconnected = new D1Authority(db);
+  reconnected.seat = async (_matchId, suppliedToken) => {
+    assert.equal(_matchId, created.matchId);
+    assert.equal(suppliedToken, joined.guestToken);
+    return 1;
+  };
+
+  const recovered = await reconnected.snapshot(
+    created.matchId,
+    joined.guestToken,
+  );
+
+  assert.equal(db.storedMatch.rules_version, 1);
+  assert.equal(recovered.rulesVersion, 1);
+  assert.equal(recovered.status, "active");
+  assert.equal(recovered.seat, 1);
+  assert.deepEqual(recovered.state, joined.snapshot.state);
+
   assert.equal(db.events.length, 1);
   assert.equal(db.events[0].type, "joined");
 

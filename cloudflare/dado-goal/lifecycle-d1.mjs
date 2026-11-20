@@ -28,6 +28,7 @@ export async function createMatch(db, input) {
   const {
     matchId,
     stateJson,
+    rulesVersion = 1,
     inviteDigest,
     hostDigest,
     createdAt,
@@ -38,6 +39,7 @@ export async function createMatch(db, input) {
   if (
     !matchId ||
     typeof stateJson !== "string" ||
+    rulesVersion !== 1 ||
     !inviteDigest ||
     !hostDigest ||
     !Number.isSafeInteger(createdAt) ||
@@ -69,11 +71,12 @@ export async function createMatch(db, input) {
       INSERT INTO lifecycle_matches (
         match_id, revision, status, state_json,
         invite_digest, invite_used,
-        created_at, updated_at, expires_at, completed_at
-      ) VALUES (?, 0, 'waiting', ?, ?, 0, ?, ?, ?, NULL)
+        created_at, updated_at, expires_at, completed_at,
+        rules_version
+      ) VALUES (?, 0, 'waiting', ?, ?, 0, ?, ?, ?, NULL, ?)
     `).bind(
       matchId, stateJson, inviteDigest,
-      createdAt, createdAt, expiresAt
+      createdAt, createdAt, expiresAt, rulesVersion
     ),
 
     db.prepare(`

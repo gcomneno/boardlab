@@ -7,8 +7,10 @@
  */
 
 import { FACES, applyRoll, validateState } from "./game.mjs";
+import { validateV2State } from "../../web/dado-goal/engine-v2.mjs";
 import { matchClock } from "./public/match-clock.mjs";
 import { commitRoll } from "./atomic.mjs";
+import { dispatchRulesRoll, resolveRulesVersion } from "./rules-dispatch.mjs";
 import { replayMatchEvents } from "./match-events-replay.mjs";
 import { evaluateCompletedHand } from "./match-events-authority.mjs";
 import { pickScorer, pickAssist } from "../../web/dado-goal/match-roster.mjs";
@@ -41,33 +43,7 @@ function replay(saved, expectedRevision) {
   return { ...JSON.parse(saved.response_json), duplicate: true };
 }
 
-export async function rollAuthorized(
-  authority, matchId, seatToken, requestId, expectedRevision
-) {
-  if (typeof requestId !== "string" ||
-      requestId.length < 1 || requestId.length > 128) {
-    throw new Error("Invalid request ID");
-  }
-  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
-    throw new Error("Invalid revision");
-  }
-
-  const seat = await authority.seat(matchId, seatToken);
-  const db = authority.db;
-  const row = await authority.match(matchId);
-  const now = authority.now();
-
-  if (now >= row.expires_at) throw new Error("Match expired");
-
-  const saved = await receipt(db, matchId, seat, requestId);
-  if (saved) return replay(saved, expectedRevision);
-
-  if (row.status !== "active") throw new Error("Match is not active");
-  if (row.revision !== expectedRevision) throw new Error("Stale revision");
-
-  const state = validateState(JSON.parse(row.state_json));
-  if (state.player !== seat) throw new Error("Not your turn");
-
+async function legacyRoll(authority, matchId, seat, state) {
   const phase = state.phase;
   const face = randomFace(phase);
   const next = applyRoll(state, face);
@@ -131,6 +107,58 @@ export async function rollAuthorized(
     }
   }
 
+  return {
+    state: next,
+    event: { type: "roll", seat, die: phase, face,
+      ...(goal ? { goal } : {}),
+      ...(penalty ? { penalty } : {}),
+      ...(matchEvent ? { matchEvent } : {}) },
+  };
+}
+
+export async function rollAuthorized(
+  authority, matchId, seatToken, requestId, expectedRevision,
+  { allowV2 = false, byteSource } = {},
+) {
+  if (typeof requestId !== "string" ||
+      requestId.length < 1 || requestId.length > 128) {
+    throw new Error("Invalid request ID");
+  }
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    throw new Error("Invalid revision");
+  }
+
+  const seat = await authority.seat(matchId, seatToken);
+  const db = authority.db;
+  const row = await authority.match(matchId);
+  const now = authority.now();
+
+  if (now >= row.expires_at) throw new Error("Match expired");
+
+  const saved = await receipt(db, matchId, seat, requestId);
+  if (saved) return replay(saved, expectedRevision);
+
+  if (row.status !== "active") throw new Error("Match is not active");
+  if (row.revision !== expectedRevision) throw new Error("Stale revision");
+
+  const rulesVersion = resolveRulesVersion(row.rules_version);
+  if (rulesVersion === 2 && !allowV2) {
+    throw new RangeError("V2 rolls are not enabled");
+  }
+
+  const persistedState = JSON.parse(row.state_json);
+  const state = rulesVersion === 2
+    ? validateV2State(persistedState)
+    : validateState(persistedState);
+  if (state.player !== seat) throw new Error("Not your turn");
+
+  const { event, state: next } = await dispatchRulesRoll({
+    persistedRulesVersion: rulesVersion,
+    state,
+    rollLegacy: legacyState => legacyRoll(authority, matchId, seat, legacyState),
+    byteSource,
+  });
+
   const status = next.phase === "finished" ? "completed" : "active";
   const completedTTL = authority.completedTTL ?? 86400;
   const ttl = status === "completed" ? completedTTL : authority.activeTTL;
@@ -140,8 +168,7 @@ export async function rollAuthorized(
 
   const response = {
     revision: expectedRevision + 1,
-    die: phase,
-    face,
+    ...(rulesVersion === 2 ? { event } : { die: event.die, face: event.face }),
     status,
     state: next,
     duplicate: false,
@@ -155,10 +182,7 @@ export async function rollAuthorized(
     updatedAt,
     expiresAt: updatedAt + ttl,
     completedAt: status === "completed" ? updatedAt : null,
-    eventJson: JSON.stringify({ type: "roll", seat, die: phase, face,
-      ...(goal ? { goal } : {}),
-      ...(penalty ? { penalty } : {}),
-      ...(matchEvent ? { matchEvent } : {}) }),
+    eventJson: JSON.stringify(event),
     seat,
     requestId,
     responseJson: JSON.stringify(response),

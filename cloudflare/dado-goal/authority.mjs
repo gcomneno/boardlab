@@ -18,6 +18,10 @@ import { initialState, validateState } from "./game.mjs";
 import { createMatch, joinMatch } from "./lifecycle-d1.mjs";
 import { rollAuthorized } from "./roll-d1.mjs";
 import { matchStatistics } from "../../web/dado-goal/statistics.mjs";
+import { validateV2State } from "../../web/dado-goal/engine-v2.mjs";
+import { normalizeV2Event } from "../../web/dado-goal/roll-event-v2.mjs";
+import { matchStatisticsV2 } from "../../web/dado-goal/statistics-v2.mjs";
+import { resolveRulesVersion } from "./rules-dispatch.mjs";
 import { replayMatchEvents } from "./match-events-replay.mjs";
 
 export class AuthorityError extends Error {
@@ -81,11 +85,14 @@ async function matchTeamNames(db, matchId) {
 }
 
 function snapshot(row, seat) {
+  const rulesVersion = resolveRulesVersion(row.rules_version);
+  const state = JSON.parse(row.state_json);
   return {
+    rulesVersion,
     revision: row.revision,
     status: row.status,
     seat,
-    state: validateState(JSON.parse(row.state_json)),
+    state: rulesVersion === 2 ? validateV2State(state) : validateState(state),
   };
 }
 
@@ -117,7 +124,7 @@ export class D1Authority {
 
   async match(matchId) {
     const row = await this.db.prepare(`
-      SELECT revision, status, state_json,
+      SELECT revision, status, state_json, rules_version,
              created_at, updated_at, expires_at, completed_at
       FROM lifecycle_matches
       WHERE match_id = ?
@@ -166,6 +173,7 @@ export class D1Authority {
 
     await createMatch(this.db, {
       matchId,
+      rulesVersion: 1,
       stateJson: JSON.stringify(state),
       inviteDigest: await digest(inviteToken),
       hostDigest: await digest(hostToken),
@@ -179,6 +187,7 @@ export class D1Authority {
       hostToken,
       inviteToken,
       snapshot: {
+        rulesVersion: 1,
         revision: 0,
         status: "waiting",
         seat: 0,
@@ -263,6 +272,7 @@ export class D1Authority {
       throw new AuthorityError("Match expired");
     }
 
+    const current = snapshot(row, seat);
     const history = await this.matchHistory(matchId);
 
     const rollEvents = [];
@@ -270,7 +280,20 @@ export class D1Authority {
 
     for (const entry of history) {
       const event = JSON.parse(entry.event_json);
-      if (event.type !== "roll") continue;
+      if (event.type !== "roll" &&
+          !(current.rulesVersion === 2 && event.type === "penalty-awarded")) {
+        continue;
+      }
+
+      if (current.rulesVersion === 2) {
+        const rulesEvent = {
+          ...normalizeV2Event(event),
+          revision: entry.revision,
+        };
+        rollEvents.push(rulesEvent);
+        if (rulesEvent.type === "roll") lastRoll = rulesEvent;
+        continue;
+      }
 
       rollEvents.push({
         revision: entry.revision,
@@ -291,7 +314,7 @@ export class D1Authority {
     }
 
     return {
-      ...snapshot(row, seat),
+      ...current,
       teamNames: await matchTeamNames(this.db, matchId),
       teams: await matchTeamPresentation(this.db, matchId),
       lastRoll,
@@ -306,7 +329,9 @@ export class D1Authority {
           })),
         };
       })(),
-      statistics: matchStatistics(rollEvents),
+      statistics: current.rulesVersion === 2
+        ? matchStatisticsV2(rollEvents)
+        : matchStatistics(rollEvents),
     };
   }
 }

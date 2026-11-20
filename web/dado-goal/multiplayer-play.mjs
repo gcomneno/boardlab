@@ -1,3 +1,4 @@
+import { localizedError } from "./error-i18n.mjs";
 
 import { newMatch } from "./engine.mjs";
 import {
@@ -5,6 +6,9 @@ import {
   MultiplayerAPIError,
 } from "./multiplayer-client.mjs";
 import { matchStatistics } from "./statistics.mjs";
+import { FACES_V2 } from "./engine-v2.mjs";
+import { normalizeV2Event } from "./roll-event-v2.mjs";
+import { matchStatisticsV2 } from "./statistics-v2.mjs";
 import { normalizeRollEvents } from "./roll-event.mjs";
 import { playerStatistics } from "./player-statistics.mjs";
 import { nextStatisticsSort, sortStatisticsRows } from "./statistics-sort.mjs";
@@ -47,7 +51,7 @@ import {
 } from "./commentary.mjs";
 import { multiplayerMatchEvents } from "./multiplayer-commentary.mjs";
 import { DICE_ART, PENALTY_DICE_ART } from "./dice-art.mjs";
-import { initializeLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
+import { initializeMultiplayerLocale, getLocale, translate, formatMessage } from "./i18n.mjs";
 import { socialColors } from "./team-colors.mjs";
 
 const byId = (id) => document.getElementById(id);
@@ -140,6 +144,7 @@ const dieFaceMessageKeys = Object.freeze({
 
 function displayDieFace(face) {
   const key = dieFaceMessageKeys[face];
+  if (!key && snapshot?.rulesVersion === 2) return face;
   if (!key) throw new RangeError("Unknown die face");
   return translate(key);
 }
@@ -212,6 +217,20 @@ function buildDie3d(phase, player) {
     face.className = `die-face die-face-${index}`;
     face.style.transform = dieFaceTransforms[index];
     face.innerHTML = svg;
+    if (snapshot?.rulesVersion === 2) {
+      const label = displayDieFace(FACES_V2[phase][index]);
+      const graphic = face.querySelector("svg");
+      const [glyph, caption, ...extraLines] =
+        graphic.querySelectorAll("svg > text");
+      graphic.setAttribute("aria-label", label);
+      glyph.textContent = "⚽";
+      caption.textContent = label;
+      if (label.length > 21) {
+        caption.setAttribute("textLength", "220");
+        caption.setAttribute("lengthAdjust", "spacingAndGlyphs");
+      }
+      extraLines.forEach(line => line.remove());
+    }
     cube.append(face);
   });
 
@@ -219,7 +238,9 @@ function buildDie3d(phase, player) {
   return cube;
 }
 
-function displayFace(phase, player, index) {
+function displayFace(
+  phase, player, index, face = diceFaces[phase][index],
+) {
   if (!Number.isInteger(index) || index < 0 || index > 5) {
     throw new RangeError("Invalid die face");
   }
@@ -230,7 +251,7 @@ function displayFace(phase, player, index) {
 
   die.setAttribute(
     "aria-label",
-    `${phaseName(phase)}: ${displayDieFace(diceFaces[phase][index])}`,
+    `${phaseName(phase)}: ${displayDieFace(face)}`,
   );
 }
 
@@ -293,6 +314,16 @@ function render() {
     return;
   }
   byId("message").textContent = formatMessage(messageKey, messageValues);
+  if (snapshot?.rulesVersion === 2) {
+    const pendingLabel = getLocale() === "en"
+      ? "Penalty to take"
+      : "Rigore da battere";
+    byId("result").textContent = state.phase === "penalty"
+      ? pendingLabel
+      : snapshot.lastRoll
+        ? displayDieFace(snapshot.lastRoll.face)
+        : "⚽";
+  }
 
   // Keep events recorded, but hide their narrative when commentary is OFF.
   byId("match-events-list").closest(".match-events").hidden = !commentaryEnabled;
@@ -426,7 +457,9 @@ function render() {
     state.phase === "result" || state.phase === "penalty",
   );
 
-  const [home, away] = matchStatistics(rollEvents);
+  const [home, away] = snapshot?.rulesVersion === 2
+    ? matchStatisticsV2(rollEvents)
+    : matchStatistics(rollEvents);
   const metrics = [
     ["goals", "goals"],
     ["possession", "possession"],
@@ -440,7 +473,7 @@ function render() {
     ["penalties", "penalties"],
   ];
   byId("match-stats").replaceChildren(
-    ...metrics.map(([label, key]) => {
+    ...metrics.filter(([, key]) => Object.hasOwn(home, key)).map(([label, key]) => {
       const row = document.createElement("div");
       row.className = "stat-row stat-comparison";
 
@@ -1014,9 +1047,11 @@ function start(activate = true) {
   render();
 }
 
-async function animateRoll(phase, player, finalFace, durationMs = 700) {
+async function animateRoll(
+  phase, player, finalFace, durationMs = 700,
+  finalIndex = diceFaces[phase].indexOf(finalFace),
+) {
   const die = byId("die");
-  const finalIndex = diceFaces[phase].indexOf(finalFace);
   if (finalIndex < 0) throw new RangeError("Unknown die result");
 
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
@@ -1031,7 +1066,7 @@ async function animateRoll(phase, player, finalFace, durationMs = 700) {
     die.classList.remove("rolling");
   }
 
-  displayFace(phase, player, finalIndex);
+  displayFace(phase, player, finalIndex, finalFace);
   byId("result").textContent = displayDieFace(finalFace);
 }
 
@@ -1057,6 +1092,27 @@ async function roll() {
       snapshot.revision,
       crypto.randomUUID()
     );
+
+    if (snapshot.rulesVersion === 2) {
+      const event = normalizeV2Event(result.event);
+      if (result.revision > snapshot.revision) {
+        const entry = { ...event, revision: result.revision };
+        if (event.type === "roll") {
+          await animateRoll(event.die, event.seat, event.face, 700, event.faceIndex);
+        }
+        adoptAuthoritativeSnapshot({
+          ...snapshot,
+          revision: result.revision,
+          status: result.status,
+          state: result.state,
+          lastRoll: event.type === "roll" ? entry : snapshot.lastRoll,
+          rollEvents: [...rollEvents, entry],
+        });
+      }
+
+      adoptAuthoritativeSnapshot(await multiplayerClient.snapshot());
+      return state.phase === "finished" || state.player !== player;
+    }
 
     await animateRoll(result.die, player, result.face);
 
@@ -1153,17 +1209,20 @@ function adoptAuthoritativeSnapshot(nextSnapshot) {
     names = [...snapshot.teamNames];
   }
 
-  rollEvents = Array.isArray(snapshot.rollEvents)
-    ? normalizeRollEvents(snapshot.rollEvents)
-    : [];
+  const history = snapshot.rollEvents ?? [];
+  rollEvents = snapshot.rulesVersion === 2
+    ? history.map(normalizeV2Event)
+    : Array.isArray(history) ? normalizeRollEvents(history) : [];
 
   if (snapshot.matchEventContext?.rosters) {
     rosters = snapshot.matchEventContext.rosters;
   }
 
-  matchEvents = multiplayerMatchEvents(
-    rollEvents, snapshot.matchEventContext?.rosters ?? null,
-  );
+  matchEvents = snapshot.rulesVersion === 2
+    ? []
+    : multiplayerMatchEvents(
+        rollEvents, snapshot.matchEventContext?.rosters ?? null,
+      );
 
   if (snapshot.matchEventContext?.refereeStates) {
     refereeStates = snapshot.matchEventContext.refereeStates.map(
@@ -1233,6 +1292,7 @@ async function multiplayerCreate() {
     startMultiplayerSync();
   } finally {
     multiplayerBusy = false;
+    syncMultiplayerControls();
   }
 }
 
@@ -1301,9 +1361,7 @@ async function multiplayerLogout() {
 }
 
 function showMultiplayerError(error) {
-  const message = error instanceof MultiplayerAPIError
-    ? `${error.code}: ${error.message}`
-    : error?.message || String(error);
+  const message = localizedError(error, "multiplayer");
 
   byId("auth-status").textContent = message;
   console.error(error);
@@ -1331,10 +1389,27 @@ byId("copy-invite").addEventListener("click", async () => {
   const invite = byId("invite-code").value.trim();
   if (!invite) return;
 
+  let status = byId("copy-invite-status");
+  if (!status) {
+    status = document.createElement("p");
+    status.id = "copy-invite-status";
+    status.className = "game-notes";
+    status.setAttribute("role", "status");
+    status.setAttribute("aria-live", "polite");
+    byId("copy-invite").parentElement.after(status);
+  }
+  status.textContent = "";
+
   try {
     await navigator.clipboard.writeText(invite);
+    status.textContent = getLocale() === "en"
+      ? "Code copied"
+      : "Codice copiato";
   } catch {
     byId("invite-code").select();
+    status.textContent = getLocale() === "en"
+      ? "Copy failed: press Ctrl+C"
+      : "Copia non riuscita: premi Ctrl+C";
   }
 });
 
@@ -1360,7 +1435,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-initializeLocale(() => {
+initializeMultiplayerLocale(() => {
   syncCompetitionSelector();
   render();
   void reloadLiveCatalogue();
