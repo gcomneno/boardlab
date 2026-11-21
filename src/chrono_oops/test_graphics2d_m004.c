@@ -249,8 +249,12 @@ static void test_m004_keyboard_and_mouse_focus(void)
 
 static void test_m004_action_availability(void)
 {
+    fprintf(stderr, "M004_CHECKPOINT=ENTRY\n");
+    fflush(stderr);
     M004Gui gui;
     m004_gui_init(&gui);
+    fprintf(stderr, "M004_CHECKPOINT=INIT_DONE\n");
+    fflush(stderr);
 
     ChronoM004State snapshot = gui.state;
 
@@ -264,11 +268,19 @@ static void test_m004_action_availability(void)
     assert(strcmp(m004_action_owner(3), "B") == 0);
     assert(memcmp(&snapshot, &gui.state, sizeof(snapshot)) == 0);
 
+    fprintf(stderr, "M004_CHECKPOINT=BEFORE_CLICK\n");
+    fflush(stderr);
     click(&gui, 1);
+    fprintf(stderr, "M004_CHECKPOINT=AFTER_CLICK\n");
+    fflush(stderr);
     assert(m004_action_available(&gui.state, 2));
     assert(!m004_action_available(&gui.state, 1));
 
+    fprintf(stderr, "M004_CHECKPOINT=BEFORE_TURN\n");
+    fflush(stderr);
     turn(&gui);
+    fprintf(stderr, "M004_CHECKPOINT=AFTER_TURN\n");
+    fflush(stderr);
     assert(m004_action_available(&gui.state, 0));
     assert(m004_action_available(&gui.state, 3));
     assert(!m004_action_available(&gui.state, 2));

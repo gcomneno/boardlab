@@ -286,8 +286,12 @@ static void test_keyboard_focus(void)
 
 static void test_action_availability(void)
 {
+    fprintf(stderr, "M005_CHECKPOINT=ENTRY\n");
+    fflush(stderr);
     M005Gui gui;
     m005_gui_init(&gui);
+    fprintf(stderr, "M005_CHECKPOINT=INIT_DONE\n");
+    fflush(stderr);
 
     ChronoM005State snapshot = gui.state;
 
@@ -297,11 +301,19 @@ static void test_action_availability(void)
     assert(!m005_action_available(&gui.state, 3));
     assert(memcmp(&snapshot, &gui.state, sizeof(snapshot)) == 0);
 
+    fprintf(stderr, "M005_CHECKPOINT=BEFORE_CLICK\n");
+    fflush(stderr);
     click(&gui, 1);
+    fprintf(stderr, "M005_CHECKPOINT=AFTER_CLICK\n");
+    fflush(stderr);
     assert(m005_action_available(&gui.state, 2));
     assert(!m005_action_available(&gui.state, 1));
 
+    fprintf(stderr, "M005_CHECKPOINT=BEFORE_TURN\n");
+    fflush(stderr);
     turn(&gui);
+    fprintf(stderr, "M005_CHECKPOINT=AFTER_TURN\n");
+    fflush(stderr);
     assert(m005_action_available(&gui.state, 0));
     assert(m005_action_available(&gui.state, 3));
     assert(!m005_action_available(&gui.state, 2));
