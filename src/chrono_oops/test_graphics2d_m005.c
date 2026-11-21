@@ -321,7 +321,18 @@ static void test_action_availability(void)
     fflush(stderr);
     fprintf(stderr, "M005_AVAIL=BEFORE_2\n");
     fflush(stderr);
-    assert(m005_action_available(&gui.state, 3));
+    {
+        bool available = m005_action_available(&gui.state, 3);
+        fprintf(stderr,
+                "M005_AVAIL_RESULT index=3 available=%d player=%d turn=%u\n",
+                (int)available, (int)gui.state.active_player, gui.state.turn);
+        fflush(stderr);
+        if (!available) {
+            fprintf(stderr, "M005_AVAILABILITY_ASSERTION=FAIL index=3\n");
+            fflush(stderr);
+            _Exit(1);
+        }
+    }
     fprintf(stderr, "M005_AVAIL=AFTER_2\n");
     fflush(stderr);
     fprintf(stderr, "M005_AVAIL=BEFORE_3\n");

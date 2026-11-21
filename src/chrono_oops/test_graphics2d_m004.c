@@ -336,12 +336,41 @@ static void test_m004_action_availability(void)
 
 int main(void)
 {
+    fprintf(stderr, "M004_TEST=AVAILABILITY_BEFORE\n");
+    fflush(stderr);
     test_m004_action_availability();
+    fprintf(stderr, "M004_TEST=AVAILABILITY_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=FOCUS_BEFORE\n");
+    fflush(stderr);
     test_m004_keyboard_and_mouse_focus();
+    fprintf(stderr, "M004_TEST=FOCUS_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=NOMINAL_BEFORE\n");
+    fflush(stderr);
     test_nominal_victory();
+    fprintf(stderr, "M004_TEST=NOMINAL_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=RECOVERY_5_BEFORE\n");
+    fflush(stderr);
     test_recovery(5, CHRONO_M004_CONFIG_BEACON);
+    fprintf(stderr, "M004_TEST=RECOVERY_5_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=RECOVERY_6_BEFORE\n");
+    fflush(stderr);
     test_recovery(6, CHRONO_M004_CONFIG_REGISTER);
+    fprintf(stderr, "M004_TEST=RECOVERY_6_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=DEFEAT_BEFORE\n");
+    fflush(stderr);
     test_defeat_and_restart();
+    fprintf(stderr, "M004_TEST=DEFEAT_AFTER\n");
+    fflush(stderr);
     puts("CHRONOOOPS_M004_SDL_EVENTS_GATE=PASS");
     return 0;
 }
