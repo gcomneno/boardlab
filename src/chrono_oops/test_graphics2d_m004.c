@@ -288,8 +288,14 @@ static void test_m004_action_availability(void)
     for (int attempt = 0;
          attempt < CHRONO_MAX_TURNS && !gui.state.finished;
          ++attempt) {
+        fprintf(stderr, "M004_LOOP=BEFORE attempt=%d turn=%u finished=%d\n",
+                attempt, gui.state.turn, (int)gui.state.finished);
+        fflush(stderr);
         unsigned int previous_turn = gui.state.turn;
         turn(&gui);
+        fprintf(stderr, "M004_LOOP=AFTER attempt=%d turn=%u finished=%d\n",
+                attempt, gui.state.turn, (int)gui.state.finished);
+        fflush(stderr);
         if (!gui.state.finished && gui.state.turn == previous_turn) {
             fprintf(stderr,
                     "M004_TURN_STALLED: attempt=%d turn=%d finished=%d\\n",
