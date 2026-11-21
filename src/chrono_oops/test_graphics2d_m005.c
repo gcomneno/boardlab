@@ -314,9 +314,21 @@ static void test_action_availability(void)
     turn(&gui);
     fprintf(stderr, "M005_CHECKPOINT=AFTER_TURN\n");
     fflush(stderr);
+    fprintf(stderr, "M005_AVAIL=BEFORE_1\n");
+    fflush(stderr);
     assert(m005_action_available(&gui.state, 0));
+    fprintf(stderr, "M005_AVAIL=AFTER_1\n");
+    fflush(stderr);
+    fprintf(stderr, "M005_AVAIL=BEFORE_2\n");
+    fflush(stderr);
     assert(m005_action_available(&gui.state, 3));
+    fprintf(stderr, "M005_AVAIL=AFTER_2\n");
+    fflush(stderr);
+    fprintf(stderr, "M005_AVAIL=BEFORE_3\n");
+    fflush(stderr);
     assert(!m005_action_available(&gui.state, 2));
+    fprintf(stderr, "M005_AVAIL=AFTER_3\n");
+    fflush(stderr);
 
     for (int attempt = 0;
          attempt < CHRONO_MAX_TURNS && !gui.state.finished;

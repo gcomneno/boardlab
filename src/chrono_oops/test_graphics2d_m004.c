@@ -281,9 +281,21 @@ static void test_m004_action_availability(void)
     turn(&gui);
     fprintf(stderr, "M004_CHECKPOINT=AFTER_TURN\n");
     fflush(stderr);
+    fprintf(stderr, "M004_AVAIL=BEFORE_1\n");
+    fflush(stderr);
     assert(m004_action_available(&gui.state, 0));
+    fprintf(stderr, "M004_AVAIL=AFTER_1\n");
+    fflush(stderr);
+    fprintf(stderr, "M004_AVAIL=BEFORE_2\n");
+    fflush(stderr);
     assert(m004_action_available(&gui.state, 3));
+    fprintf(stderr, "M004_AVAIL=AFTER_2\n");
+    fflush(stderr);
+    fprintf(stderr, "M004_AVAIL=BEFORE_3\n");
+    fflush(stderr);
     assert(!m004_action_available(&gui.state, 2));
+    fprintf(stderr, "M004_AVAIL=AFTER_3\n");
+    fflush(stderr);
 
     for (int attempt = 0;
          attempt < CHRONO_MAX_TURNS && !gui.state.finished;
@@ -311,8 +323,13 @@ static void test_m004_action_availability(void)
         abort();
     }
 
-    for (int i = 0; i < M004_GUI_ACTION_COUNT; ++i)
+    for (int i = 0; i < M004_GUI_ACTION_COUNT; ++i) {
+        fprintf(stderr, "M004_FINAL_AVAIL=BEFORE index=%d\n", i);
+        fflush(stderr);
         assert(!m004_action_available(&gui.state, i));
+        fprintf(stderr, "M004_FINAL_AVAIL=AFTER index=%d\n", i);
+        fflush(stderr);
+    }
 
     puts("M004_ACTION_AVAILABILITY_UX_GATE=PASS");
 }
