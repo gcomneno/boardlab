@@ -23,7 +23,26 @@ static void turn(M005Gui *gui)
     SDL_Event event = {0};
     event.type = SDL_KEYDOWN;
     event.key.keysym.sym = SDLK_SPACE;
+    unsigned before_turn = gui->state.turn;
+    ChronoPlayer before_player = gui->state.active_player;
+    fprintf(stderr,
+            "M005_TURN_BEFORE turn=%u player=%d finished=%d message=%s\n",
+            before_turn, (int)before_player,
+            (int)gui->state.finished, gui->message);
+    fflush(stderr);
     m005_gui_event(gui, &event);
+    fprintf(stderr,
+            "M005_TURN_AFTER turn=%u player=%d finished=%d message=%s\n",
+            gui->state.turn, (int)gui->state.active_player,
+            (int)gui->state.finished, gui->message);
+    fflush(stderr);
+    if (!gui->state.finished &&
+        (gui->state.turn != before_turn + 1 ||
+         gui->state.active_player == before_player)) {
+        fprintf(stderr, "M005_TURN_TRANSITION_GATE=FAIL\n");
+        fflush(stderr);
+        _Exit(1);
+    }
 }
 
 static void prefix(M005Gui *gui, bool superficial)
