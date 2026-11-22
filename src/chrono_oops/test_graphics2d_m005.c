@@ -181,8 +181,16 @@ static void test_defeat_and_restart(void)
 
     SDL_Event event = {0};
     event.type = SDL_KEYDOWN;
+    event.key.type = SDL_KEYDOWN;
+    event.key.repeat = 0;
     event.key.keysym.sym = SDLK_r;
+    fprintf(stderr, "M005_RESTART=BEFORE turn=%u finished=%d\\n",
+            gui.state.turn, (int)gui.state.finished);
+    fflush(stderr);
     m005_gui_event(&gui, &event);
+    fprintf(stderr, "M005_RESTART=AFTER turn=%u finished=%d\\n",
+            gui.state.turn, (int)gui.state.finished);
+    fflush(stderr);
 
     assert(gui.state.turn == 1);
     assert(gui.state.active_player == CHRONO_PLAYER_A);
