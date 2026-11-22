@@ -132,20 +132,6 @@ jobs:
           test -n "$(find dist/windows-runtime -maxdepth 1 -iname '*SDL2*.dll' -print -quit)"
           test -n "$(find dist/windows-runtime -maxdepth 1 -iname '*SDL2_ttf*.dll' -print -quit)"
 
-      - name: Collect Windows runtime DLLs
-        if: runner.os == 'Windows'
-        shell: msys2 {0}
-        run: |
-          mkdir -p dist/windows-runtime
-          for exe in build/chrono-oops/chrono-oops.exe build/chrono-oops/chrono-oops-2d.exe; do
-            ldd "$exe" | awk '{print $3}' | grep -E '^/mingw64/bin/.*\.dll$' >> dist/windows-runtime-list.txt || true
-          done
-          sort -u dist/windows-runtime-list.txt -o dist/windows-runtime-list.txt
-          while IFS= read -r dll; do
-            cp "$dll" dist/windows-runtime/
-          done < dist/windows-runtime-list.txt
-          test -n "$(find dist/windows-runtime -maxdepth 1 -iname '*SDL2*.dll' -print -quit)"
-          test -n "$(find dist/windows-runtime -maxdepth 1 -iname '*SDL2_ttf*.dll' -print -quit)"
       - name: Stage native executable and instructions
         shell: pwsh
         run: |

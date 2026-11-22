@@ -27,23 +27,7 @@ static void turn(M004Gui *gui)
     event.key.keysym.sym = SDLK_SPACE;
     unsigned before_turn = gui->state.turn;
     ChronoPlayer before_player = gui->state.active_player;
-    fprintf(stderr,
-            "M004_TURN_BEFORE turn=%u player=%d finished=%d message=%s\n",
-            before_turn, (int)before_player,
-            (int)gui->state.finished, gui->message);
-    fflush(stderr);
-    fprintf(stderr,
-            "M004_TURN_EVENT type=%u key_type=%u repeat=%u sym=%d expected_type=%u expected_sym=%d\n",
-            (unsigned)event.type, (unsigned)event.key.type,
-            (unsigned)event.key.repeat, (int)event.key.keysym.sym,
-            (unsigned)SDL_KEYDOWN, (int)SDLK_SPACE);
-    fflush(stderr);
     m004_gui_event(gui, &event);
-    fprintf(stderr,
-            "M004_TURN_AFTER turn=%u player=%d finished=%d message=%s\n",
-            gui->state.turn, (int)gui->state.active_player,
-            (int)gui->state.finished, gui->message);
-    fflush(stderr);
     if (!gui->state.finished &&
         (gui->state.turn != before_turn + 1 ||
          gui->state.active_player == before_player)) {
@@ -174,14 +158,14 @@ static void test_defeat_and_restart(void)
         turn(&gui);
         if (!gui.state.finished && gui.state.turn == previous_turn) {
             fprintf(stderr,
-                    "M004_TURN_STALLED: attempt=%d turn=%d finished=%d\\n",
+                    "M004_TURN_STALLED: attempt=%d turn=%d finished=%d\n",
                     attempt, gui.state.turn, (int)gui.state.finished);
             fflush(stderr);
             abort();
         }
     }
     if (!gui.state.finished) {
-        fprintf(stderr, "M004_TURN_LIMIT_NOT_REACHED: turn=%d\\n",
+        fprintf(stderr, "M004_TURN_LIMIT_NOT_REACHED: turn=%d\n",
                 gui.state.turn);
         fflush(stderr);
         abort();
@@ -276,12 +260,8 @@ static void test_m004_keyboard_and_mouse_focus(void)
 
 static void test_m004_action_availability(void)
 {
-    fprintf(stderr, "M004_CHECKPOINT=ENTRY\n");
-    fflush(stderr);
     M004Gui gui;
     m004_gui_init(&gui);
-    fprintf(stderr, "M004_CHECKPOINT=INIT_DONE\n");
-    fflush(stderr);
 
     ChronoM004State snapshot = gui.state;
 
@@ -295,67 +275,37 @@ static void test_m004_action_availability(void)
     assert(strcmp(m004_action_owner(3), "B") == 0);
     assert(memcmp(&snapshot, &gui.state, sizeof(snapshot)) == 0);
 
-    fprintf(stderr, "M004_CHECKPOINT=BEFORE_CLICK\n");
-    fflush(stderr);
     click(&gui, 1);
-    fprintf(stderr, "M004_CHECKPOINT=AFTER_CLICK\n");
-    fflush(stderr);
     assert(m004_action_available(&gui.state, 2));
     assert(!m004_action_available(&gui.state, 1));
 
-    fprintf(stderr, "M004_CHECKPOINT=BEFORE_TURN\n");
-    fflush(stderr);
     turn(&gui);
-    fprintf(stderr, "M004_CHECKPOINT=AFTER_TURN\n");
-    fflush(stderr);
-    fprintf(stderr, "M004_AVAIL=BEFORE_1\n");
-    fflush(stderr);
     assert(m004_action_available(&gui.state, 0));
-    fprintf(stderr, "M004_AVAIL=AFTER_1\n");
-    fflush(stderr);
-    fprintf(stderr, "M004_AVAIL=BEFORE_2\n");
-    fflush(stderr);
     assert(m004_action_available(&gui.state, 3));
-    fprintf(stderr, "M004_AVAIL=AFTER_2\n");
-    fflush(stderr);
-    fprintf(stderr, "M004_AVAIL=BEFORE_3\n");
-    fflush(stderr);
     assert(!m004_action_available(&gui.state, 2));
-    fprintf(stderr, "M004_AVAIL=AFTER_3\n");
-    fflush(stderr);
 
     for (int attempt = 0;
          attempt < CHRONO_MAX_TURNS && !gui.state.finished;
          ++attempt) {
-        fprintf(stderr, "M004_LOOP=BEFORE attempt=%d turn=%u finished=%d\n",
-                attempt, gui.state.turn, (int)gui.state.finished);
-        fflush(stderr);
         unsigned int previous_turn = gui.state.turn;
         turn(&gui);
-        fprintf(stderr, "M004_LOOP=AFTER attempt=%d turn=%u finished=%d\n",
-                attempt, gui.state.turn, (int)gui.state.finished);
-        fflush(stderr);
         if (!gui.state.finished && gui.state.turn == previous_turn) {
             fprintf(stderr,
-                    "M004_TURN_STALLED: attempt=%d turn=%d finished=%d\\n",
+                    "M004_TURN_STALLED: attempt=%d turn=%d finished=%d\n",
                     attempt, gui.state.turn, (int)gui.state.finished);
             fflush(stderr);
             abort();
         }
     }
     if (!gui.state.finished) {
-        fprintf(stderr, "M004_TURN_LIMIT_NOT_REACHED: turn=%d\\n",
+        fprintf(stderr, "M004_TURN_LIMIT_NOT_REACHED: turn=%d\n",
                 gui.state.turn);
         fflush(stderr);
         abort();
     }
 
     for (int i = 0; i < M004_GUI_ACTION_COUNT; ++i) {
-        fprintf(stderr, "M004_FINAL_AVAIL=BEFORE index=%d\n", i);
-        fflush(stderr);
         assert(!m004_action_available(&gui.state, i));
-        fprintf(stderr, "M004_FINAL_AVAIL=AFTER index=%d\n", i);
-        fflush(stderr);
     }
 
     puts("M004_ACTION_AVAILABILITY_UX_GATE=PASS");
