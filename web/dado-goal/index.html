@@ -211,6 +211,9 @@
         </button>
       </div>
 
+      <p id="cup-storage-status" tabindex="-1" role="status" aria-live="polite" aria-atomic="true"></p>
+      <button id="cup-storage-retry" type="button" hidden>Ricarica dati Coppa</button>
+
       <section id="cup-archive" hidden aria-labelledby="cup-archive-title">
         <h3 id="cup-archive-title">Coppe archiviate</h3>
         <div id="cup-archive-list"></div>
@@ -234,21 +237,32 @@
         <section id="cup-shootout" hidden aria-labelledby="cup-shootout-title">
           <h3 id="cup-shootout-title">Rigori di spareggio</h3>
           <p id="cup-shootout-description"></p>
-          <div class="cup-shootout-inputs">
-            <label for="cup-penalties-home">
-              Rigori prima squadra
-              <input id="cup-penalties-home" type="number"
-                     min="0" step="1" inputmode="numeric">
-            </label>
-            <label for="cup-penalties-away">
-              Rigori seconda squadra
-              <input id="cup-penalties-away" type="number"
-                     min="0" step="1" inputmode="numeric">
-            </label>
-          </div>
-          <button id="cup-shootout-confirm" type="button" disabled>
-            Conferma risultato rigori
-          </button>
+          <p id="cup-shootout-rules"></p>
+          <img id="cup-shootout-die" width="96" height="96" alt="" hidden>
+          <p id="cup-shootout-score"></p>
+          <p id="cup-shootout-turn" tabindex="-1" role="status" aria-live="polite" aria-atomic="true"></p>
+          <ol id="cup-shootout-sequence" aria-label="Sequenza rigori"></ol>
+          <button id="cup-shootout-start" type="button">Gioca i rigori</button>
+          <button id="cup-shootout-kick" type="button" hidden>Tira il rigore</button>
+          <button id="cup-shootout-retry" type="button" hidden>Riprova salvataggio</button>
+          <fieldset id="cup-shootout-manual">
+            <legend id="cup-shootout-manual-title">Inserisci risultato manuale</legend>
+            <div class="cup-shootout-inputs">
+              <label for="cup-penalties-home">
+                <span id="cup-penalties-home-label">Rigori prima squadra</span>
+                <input id="cup-penalties-home" type="number"
+                       min="0" step="1" inputmode="numeric">
+              </label>
+              <label for="cup-penalties-away">
+                <span id="cup-penalties-away-label">Rigori seconda squadra</span>
+                <input id="cup-penalties-away" type="number"
+                       min="0" step="1" inputmode="numeric">
+              </label>
+            </div>
+            <button id="cup-shootout-confirm" type="button" disabled>
+              Conferma risultato rigori
+            </button>
+          </fieldset>
           <p id="cup-shootout-error" role="alert"></p>
         </section>
 
@@ -564,6 +578,7 @@
         <input id="game-import-file" type="file"
                accept="application/json,.json" hidden>
       </div>
+      <p id="cup-global-omission">Il salvataggio globale non include la Coppa.</p>
       <p id="game-save-status"
          class="game-save-status"
          aria-live="polite"></p>

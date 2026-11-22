@@ -6,7 +6,7 @@ import {
   remainingHands
 } from "./auto-play.mjs";
 
-import { applyRoll, newMatch, rollFace } from "./engine.mjs";
+import { FACES, applyRoll, newMatch, rollFace } from "./engine.mjs";
 import { matchStatistics } from "./statistics.mjs";
 import { createRollEvent, normalizeRollEvents } from "./roll-event.mjs";
 import {
@@ -34,6 +34,8 @@ import {
 } from "./manager-store.mjs";
 import { createMatchRecord, teamStatistics } from "./team-history.mjs";
 import {
+  CUP_STORAGE_KEY,
+  createCupShootoutCoordinator,
   createCupDocument,
   loadVerifiedCup,
   saveVerifiedCup,
@@ -45,6 +47,7 @@ import {
   clearCup,
 } from "./cup-store.mjs";
 import { advanceCupIfReady } from "./cup.mjs";
+import { CupShootoutError, replayCupShootout } from "./cup-shootout.mjs";
 import { cupFixturePresentation } from "./cup-view.mjs";
 import { recordCupShootout } from "./cup-store.mjs";
 import { completeCupFixture } from "./cup.mjs";
@@ -594,6 +597,14 @@ let managementState = createManagementDocument();
 let managerState = null;
 let tournamentState = null;
 let cupState = null;
+let cupLoadError = null;
+let cupLock = null;
+let cupLockRequest = null;
+let cupCoordinator = null;
+let cupShootoutBusy = false;
+let cupShootoutPendingSave = false;
+let cupShootoutError = null;
+let cupShootoutNotice = null;
 let activeTournamentFixtureId = null;
 let tournamentViewedMatchday = null;
 let managerPlayerSorting = null;
@@ -619,11 +630,13 @@ try {
 
 try {
   cupState = loadVerifiedCup(window.localStorage, managementState.matches);
-} catch {
-  cupState = null;
+} catch (failure) {
+  cupLoadError = failure.code ?? "CUP_SHOOTOUT_INVALID_STATE";
 }
 
-try {
+// Cup recovery writes run only after acquiring the active Cup's Web Lock.
+function reconcileCupRecovery() {
+  requireCupOwnership();
   const recovery = loadCupRecovery(window.localStorage);
 
   if (recovery) {
@@ -659,18 +672,23 @@ try {
         );
         cupState = advancement.cup;
         clearCupRecovery(window.localStorage);
+        if (activeTournamentFixtureId === recovery.fixtureId) activeTournamentFixtureId = null;
+      } else {
+        throw new CupShootoutError("CUP_SHOOTOUT_INVALID_STATE");
       }
     } else if (
       canonicalMatch &&
       fixture?.matchId === recovery.matchId
     ) {
       clearCupRecovery(window.localStorage);
+      if (activeTournamentFixtureId === recovery.fixtureId) activeTournamentFixtureId = null;
     } else if (!canonicalMatch || !sameCup) {
       clearCupRecovery(window.localStorage);
+    } else {
+      // Do not enable new Cup writes over an unresolved canonical association.
+      throw new CupShootoutError("CUP_SHOOTOUT_INVALID_STATE");
     }
   }
-} catch {
-  // Preserve the journal when reconciliation cannot complete.
 }
 
 try {
@@ -786,6 +804,7 @@ function recordCompletedMatch() {
 
   if (cupState && !tournamentState && activeTournamentFixtureId) {
     try {
+      requireCupOwnership();
       saveCupRecovery(window.localStorage, {
         cupId: cupState.cupId,
         fixtureId: activeTournamentFixtureId,
@@ -867,6 +886,7 @@ function recordCompletedMatch() {
       activeTournamentFixtureId &&
       cupRecoveryPrepared) {
     try {
+      requireCupOwnership();
       const completedCup = completeCupFixture(
         cupState, activeTournamentFixtureId, record.matchId,
       );
@@ -887,8 +907,10 @@ function recordCompletedMatch() {
       }
       activeTournamentFixtureId = null;
       clearCupRecovery(window.localStorage);
-    } catch {
-      // Durable cup journal permits reconciliation after restart.
+    } catch (failure) {
+      // Offer the same lock-protected recovery without requiring a page reload.
+      // The canonical match and its journal remain authoritative.
+      cupLoadError = failure.code ?? "CUP_SHOOTOUT_STORAGE_UNAVAILABLE";
     }
   }
 
@@ -2028,7 +2050,10 @@ async function importGlobalSave(file) {
     );
   }
 
+  if (cupGlobalImportBlocked()) throw new CupShootoutError("CUP_GLOBAL_IMPORT_BLOCKED");
   const validated = validateGlobalSave(await file.text());
+  // Recheck after file I/O: another tab may have stored a Cup meanwhile.
+  if (cupGlobalImportBlocked()) throw new CupShootoutError("CUP_GLOBAL_IMPORT_BLOCKED");
 
   // Validate first, mutate only after the whole document is accepted.
   const keys = [
@@ -2075,9 +2100,11 @@ function initializeGlobalSaveUi() {
         await importGlobalSave(event.target.files?.[0]);
       } catch (caught) {
         window.alert(
-          caught instanceof Error
-            ? caught.message
-            : "Salvataggio Dado Goal non valido."
+          caught instanceof CupShootoutError
+            ? cupMessage(caught.code)
+            : caught instanceof Error
+              ? caught.message
+              : "Salvataggio Dado Goal non valido."
         );
       } finally {
         event.target.value = "";
@@ -2379,10 +2406,328 @@ function selectTournamentCompetitionParticipants() {
   }
 }
 
+// SP-01 app adapter: sporting state and draws remain in the coordinator.
+function cupText(it, en) {
+  return getLocale() === "en" ? en : it;
+}
+
+function cupMessage(code) {
+  const messages = {
+    CUP_SHOOTOUT_NOT_ELIGIBLE: ["Rigori non disponibili per questa eliminatoria.", "A shootout is not available for this tie."],
+    CUP_SHOOTOUT_STALE: ["Lo stato della Coppa è cambiato. Ricarica i dati salvati.", "The Cup state changed. Reload the saved data."],
+    CUP_SHOOTOUT_DECIDED: ["Questa eliminatoria è già decisa.", "This tie is already decided."],
+    CUP_SHOOTOUT_MANUAL_LOCKED: ["I rigori sono già iniziati: riprendi i tentativi salvati.", "The shootout has started: resume the saved attempts."],
+    CUP_SHOOTOUT_INVALID_SCORE: ["Inserisci due punteggi interi, non negativi e diversi.", "Enter two different nonnegative whole-number scores."],
+    CUP_SHOOTOUT_DRAW_INVALID: ["Impossibile risolvere il rigore. Nessun tentativo salvato.", "Unable to resolve the penalty. No attempt was saved."],
+    CUP_SHOOTOUT_SAVE_FAILED: ["Salvataggio non completato. Riprova prima di continuare. Ricaricare perde solo il tentativo non salvato.", "Save did not complete. Retry before continuing. Reloading loses only the unsaved attempt."],
+    CUP_SHOOTOUT_STORAGE_UNAVAILABLE: ["Salvataggio non disponibile. Ricarica i dati Coppa prima di continuare.", "Saving is unavailable. Reload Cup data before continuing."],
+    CUP_SHOOTOUT_INVALID_STATE: ["Dati della Coppa non validi. I dati salvati sono stati conservati.", "Invalid Cup data. The saved data has been preserved."],
+    CUP_SHOOTOUT_UNSUPPORTED_VERSION: ["Versione dei rigori non supportata. I dati salvati sono stati conservati.", "Unsupported shootout version. The saved data has been preserved."],
+    CUP_SHOOTOUT_OTHER_TAB: ["Coppa aperta in un'altra scheda. Questa vista è in sola lettura.", "The Cup is open in another tab. This view is read-only."],
+    CUP_SHOOTOUT_LOCK_UNAVAILABLE: ["Questo browser non supporta l'accesso esclusivo alla Coppa. Modifica non disponibile.", "This browser does not support exclusive Cup access. Editing is unavailable."],
+    CUP_GLOBAL_IMPORT_BLOCKED: ["Impossibile importare un salvataggio globale mentre è presente una Coppa.", "A global save cannot be imported while a Cup is stored."],
+  };
+  return cupText(...(messages[code] ?? messages.CUP_SHOOTOUT_INVALID_STATE));
+}
+
+function cupGlobalImportBlocked() {
+  try { return Boolean(cupState || cupLoadError || window.localStorage.getItem(CUP_STORAGE_KEY) !== null); }
+  catch { return true; }
+}
+
+function ownsCupLock() {
+  return Boolean(cupState && cupLock?.cupId === cupState.cupId);
+}
+
+function requireCupOwnership() {
+  if (cupLoadError) throw new CupShootoutError(cupLoadError);
+  if (!window.navigator?.locks?.request) throw new CupShootoutError("CUP_SHOOTOUT_LOCK_UNAVAILABLE");
+  if (!ownsCupLock()) throw new CupShootoutError("CUP_SHOOTOUT_OTHER_TAB");
+}
+
+function reloadCupForOwnership() {
+  if (cupShootoutPendingSave) return;
+  try {
+    const management = loadManagement(window.localStorage);
+    const cup = loadVerifiedCup(window.localStorage, management.matches);
+    managementState = management;
+    cupState = cup;
+    if (cupLock && cupLock.cupId !== cup?.cupId) releaseCupOwnership();
+    cupLoadError = null;
+    cupShootoutError = null;
+  } catch (failure) {
+    cupLoadError = failure.code ?? "CUP_SHOOTOUT_INVALID_STATE";
+  }
+}
+
+function refreshOwnedCup() {
+  reloadCupForOwnership();
+  if (!ownsCupLock() || cupLoadError || cupShootoutPendingSave) return;
+  try {
+    reconcileCupRecovery();
+    cupCoordinator = createCupShootoutCoordinator(window.localStorage, managementState.matches, {
+      ownsLock: ownsCupLock,
+    });
+    cupShootoutNotice = Object.values(cupState.shootoutSessions ?? {})
+      .some(session => session.status !== "complete") ? "resumed" : null;
+  } catch (failure) {
+    // Retain the journal and block new writes until recovery can finish.
+    cupLoadError = failure.code ?? "CUP_SHOOTOUT_STORAGE_UNAVAILABLE";
+  }
+}
+
+function releaseCupOwnership() {
+  const owned = cupLock;
+  cupLock = null;
+  owned?.release();
+}
+
+function requestCupOwnership() {
+  if (!cupState || cupLoadError || cupLockRequest || ownsCupLock()) return;
+  if (!window.navigator?.locks?.request) {
+    cupShootoutError = "CUP_SHOOTOUT_LOCK_UNAVAILABLE";
+    return;
+  }
+  const cupId = cupState.cupId;
+  const request = { cupId };
+  cupLockRequest = request;
+  // ifAvailable keeps a second tab read-only; its explicit retry requests handover.
+  void window.navigator.locks.request(`dado-goal.cup:${cupId}`, {
+    mode: "exclusive", ifAvailable: true,
+  }, async lock => {
+    if (!lock || cupState?.cupId !== cupId) {
+      cupShootoutError = "CUP_SHOOTOUT_OTHER_TAB";
+      return;
+    }
+    let release;
+    const held = new Promise(resolve => { release = resolve; });
+    cupLock = { cupId, release };
+    try {
+      refreshOwnedCup();
+      renderTournament();
+      await held;
+    } finally {
+      if (cupLock?.release === release) cupLock = null;
+    }
+  }).catch(() => {
+    cupShootoutError = "CUP_SHOOTOUT_LOCK_UNAVAILABLE";
+  }).finally(() => {
+    if (cupLockRequest === request) cupLockRequest = null;
+    renderTournament();
+  });
+}
+
+function renderCupStorageStatus() {
+  const error = cupLoadError ?? (cupState && !ownsCupLock()
+    ? (cupShootoutError === "CUP_SHOOTOUT_LOCK_UNAVAILABLE" || !window.navigator?.locks?.request
+      ? "CUP_SHOOTOUT_LOCK_UNAVAILABLE" : "CUP_SHOOTOUT_OTHER_TAB")
+    : ["CUP_SHOOTOUT_STORAGE_UNAVAILABLE", "CUP_SHOOTOUT_STALE", "CUP_SHOOTOUT_INVALID_STATE",
+      "CUP_SHOOTOUT_UNSUPPORTED_VERSION", "CUP_SHOOTOUT_SAVE_FAILED"].includes(cupShootoutError)
+      ? cupShootoutError : null);
+  let notice = "";
+  const manualKey = cupShootoutNotice?.manualKey;
+  const manualResult = cupState?.shootouts?.[manualKey];
+  if (manualResult) {
+    const firstLeg = cupState.fixtures.find(f => `r${f.round}-p${f.pair}` === manualKey && f.leg === 1);
+    const name = id => cupState.participants.find(team => String(team.providerTeamId) === id)?.name ?? id;
+    const winnerId = manualResult.home > manualResult.away ? firstLeg.homeProviderTeamId : firstLeg.awayProviderTeamId;
+    notice = cupText("Risultato rigori registrato manualmente: ", "Manually recorded shootout: ") +
+      `${name(firstLeg.homeProviderTeamId)} ${manualResult.home}–${manualResult.away} ${name(firstLeg.awayProviderTeamId)}. ` +
+      `${name(winnerId)} ` + cupText("vince ai rigori.", "wins the shootout.");
+  }
+  byId("cup-storage-status").textContent = error ? cupMessage(error) : notice;
+  const retry = byId("cup-storage-retry");
+  retry.hidden = !error;
+  retry.disabled = cupShootoutBusy || cupShootoutPendingSave;
+  retry.textContent = cupText("Ricarica dati / acquisisci Coppa", "Reload data / acquire Cup");
+  byId("cup-global-omission").textContent = cupText(
+    "Il salvataggio globale non include la Coppa.", "The global save does not include the Cup.",
+  );
+}
+
+function cupAttemptOutcome(attempt) {
+  const outcomes = {
+    "penalty-goal": ["Goal", "Goal"],
+    "penalty-woodwork": ["Palo/traversa · sbagliato", "Post/crossbar · missed"],
+    "penalty-saved": ["Parato/respinto · sbagliato", "Saved/blocked · missed"],
+    "penalty-wide": ["Fuori · sbagliato", "Wide · missed"],
+  };
+  return cupText(...outcomes[attempt.kind]);
+}
+
+function renderCupShootout(cup, teamName) {
+  const ready = advanceCupIfReady(cup, managementState.matches, cup.shootouts ?? {});
+  const needsPenalties = ready.status === "pending-penalties";
+  const panel = byId("cup-shootout");
+  const history = Object.values(cup.shootoutSessions ?? {});
+  const session = needsPenalties ? cup.shootoutSessions?.[`r${ready.round}-p${ready.pair}`]
+    : history.at(-1);
+  panel.hidden = !needsPenalties && !session;
+  if (panel.hidden) return;
+  panel.setAttribute("aria-busy", String(cupShootoutBusy));
+  panel.dataset.round = needsPenalties ? String(ready.round) : "";
+  panel.dataset.pair = needsPenalties ? String(ready.pair) : "";
+  const fixture = cup.fixtures.find(f => f.leg === 1 &&
+    f.round === (needsPenalties ? ready.round : session.round) &&
+    f.pair === (needsPenalties ? ready.pair : session.pair));
+  const teams = { home: teamName(fixture.homeProviderTeamId), away: teamName(fixture.awayProviderTeamId) };
+  const matchView = cupFixturePresentation(cup, fixture, managementState.matches);
+  byId("cup-shootout-title").textContent = cupText("Rigori di spareggio", "Penalty shootout");
+  byId("cup-shootout-description").textContent = `${teams.home} – ${teams.away} · ` +
+    cupText("Risultato partita", "Match score") + ` ${matchView.score}` +
+    (matchView.aggregate === null ? "" : ` · ${cupText("Aggregato", "Aggregate")} ${matchView.aggregate}`);
+  byId("cup-shootout-rules").textContent = cupText(
+    "Dado verde Extended v1: 3 facce Goal su 6. Cinque rigori alternati, poi oltranza a coppie. I rigori restano separati dal risultato partita.",
+    "Extended v1 green die: 3 Goal faces out of 6. Five alternating penalties, then paired sudden death. Shootout goals remain separate from the match score.",
+  );
+  const projection = session ? replayCupShootout(session) : null;
+  const lastAttempt = session?.attempts.at(-1);
+  const die = byId("cup-shootout-die");
+  die.hidden = !lastAttempt;
+  if (lastAttempt) {
+    // Display only the committed canonical face, in its own image. The regular
+    // match die, event stream, scorers and statistics are never touched.
+    die.src = `data:image/svg+xml,${encodeURIComponent(PENALTY_DICE_ART[FACES.penalty.indexOf(lastAttempt.face)])}`;
+    die.alt = cupText("Dado verde: ", "Green die: ") + cupAttemptOutcome(lastAttempt);
+  }
+  const editable = ownsCupLock() && !cupLoadError && !cupShootoutBusy &&
+    !cupShootoutPendingSave && !tournamentState;
+  const blocked = ["CUP_SHOOTOUT_STORAGE_UNAVAILABLE", "CUP_SHOOTOUT_STALE", "CUP_SHOOTOUT_INVALID_STATE",
+    "CUP_SHOOTOUT_UNSUPPORTED_VERSION"].includes(cupShootoutError);
+  const start = byId("cup-shootout-start");
+  start.hidden = Boolean(session) || !needsPenalties;
+  start.disabled = !editable || blocked;
+  start.textContent = cupText("Gioca i rigori", "Play shootout");
+  const manual = byId("cup-shootout-manual");
+  manual.hidden = Boolean(session) || !needsPenalties;
+  manual.disabled = !editable || blocked;
+  byId("cup-shootout-manual-title").textContent = cupText("Inserisci risultato manuale", "Enter manual result");
+  byId("cup-penalties-home-label").textContent = teams.home;
+  byId("cup-penalties-away-label").textContent = teams.away;
+  byId("cup-shootout-confirm").textContent = cupText("Conferma risultato rigori", "Confirm shootout result");
+  byId("cup-shootout-confirm").disabled = Boolean(session) || !editable || blocked;
+  const retry = byId("cup-shootout-retry");
+  retry.hidden = !cupShootoutPendingSave;
+  retry.disabled = !ownsCupLock() || cupShootoutBusy || Boolean(cupLoadError);
+  retry.textContent = cupText("Riprova salvataggio", "Retry save");
+  const kick = byId("cup-shootout-kick");
+  kick.hidden = !projection || projection.status === "complete";
+  kick.disabled = !editable || blocked || !projection?.nextTeam;
+  kick.onclick = null;
+  const goals = projection?.goals ?? { home: 0, away: 0 };
+  const counts = projection?.attemptsByTeam ?? { home: 0, away: 0 };
+  byId("cup-shootout-score").textContent = `${cupText("Rigori", "Penalties")}: ` +
+    `${teams.home} ${goals.home} – ${goals.away} ${teams.away} · ` +
+    `${cupText("Tentativi", "Attempts")}: ${counts.home}–${counts.away}`;
+  let status = cupText("Parità: scegli i rigori giocabili o il risultato manuale.", "Scores level: choose a playable shootout or a manual result.");
+  if (projection?.winner) {
+    status = `${teams[projection.winner]} ` + cupText("vince ai rigori", "wins the shootout") + ` ${goals.home}–${goals.away}.`;
+  } else if (projection) {
+    const team = teams[projection.nextTeam];
+    const count = projection.attemptsByTeam[projection.nextTeam];
+    status = projection.status === "initial"
+      ? cupText(`Serie iniziale · ${team} · rigore ${count + 1} di 5`, `Initial series · ${team} · attempt ${count + 1} of 5`)
+      : cupText(`Oltranza · coppia ${count - 4} · tira ${team}`, `Sudden death · pair ${count - 4} · ${team} to shoot`);
+    if (projection.status === "sudden-death" && session.attempts.length % 2 === 1) {
+      status += cupText(`. Nessun vincitore prima del rigore di ${team}.`, `. No winner before ${team}'s penalty.`);
+    }
+    kick.textContent = cupText(`Tira il dado verde per ${team}`, `Roll the green die for ${team}`);
+    // Capture exactly the displayed revision, including for delayed/duplicate handlers.
+    const expectedRevision = session.attempts.length;
+    const command = { cupId: cup.cupId, shootoutId: session.shootoutId, expectedRevision,
+      attemptId: JSON.stringify([cup.cupId, `r${session.round}-p${session.pair}`, expectedRevision + 1]) };
+    kick.onclick = event => {
+      if (event.detail > 1) return;
+      runCupShootoutAction("kick", command);
+    };
+  }
+  if (cupShootoutNotice === "resumed") status = cupText(
+    "Rigori ripresi dall'ultimo tentativo salvato. ", "Shootout resumed from the last saved attempt. ",
+  ) + status;
+  const savedSession = cup.shootoutSessions?.[cupShootoutNotice?.key];
+  const savedAttempt = savedSession?.attempts.find(attempt => attempt.attemptId === cupShootoutNotice.attemptId);
+  if (savedAttempt) {
+    const savedState = replayCupShootout(savedSession);
+    const savedTeams = {
+      home: teamName(savedSession.homeProviderTeamId),
+      away: teamName(savedSession.awayProviderTeamId),
+    };
+    let announcement = cupText("Rigore salvato. ", "Penalty saved. ") +
+      `${savedTeams[savedAttempt.team]}: ${cupAttemptOutcome(savedAttempt)}. ` +
+      `${savedTeams.home} ${savedState.goals.home}–${savedState.goals.away} ${savedTeams.away}. `;
+    if (savedState.winner) {
+      announcement += `${savedTeams[savedState.winner]} ` + cupText("vince ai rigori. ", "wins the shootout. ");
+    }
+    status = announcement + status;
+  }
+  if (cupShootoutBusy) status = cupText("Salvataggio del rigore…", "Saving penalty…");
+  byId("cup-shootout-turn").textContent = status;
+  const sequence = byId("cup-shootout-sequence");
+  sequence.setAttribute("aria-label", cupText("Sequenza rigori", "Penalty sequence"));
+  sequence.replaceChildren(...(session?.attempts ?? []).map(attempt => {
+    const item = document.createElement("li");
+    item.textContent = `${teams[attempt.team]} · ${attempt.index}: ${cupAttemptOutcome(attempt)}`;
+    return item;
+  }));
+  byId("cup-shootout-error").textContent = cupShootoutError ? cupMessage(cupShootoutError) : "";
+}
+
+async function runCupShootoutAction(action, command) {
+  if (cupShootoutBusy || (cupShootoutPendingSave && action !== "retry")) return;
+  cupShootoutBusy = true;
+  cupShootoutError = null;
+  cupShootoutNotice = null;
+  renderTournament();
+  let accepted = false;
+  try {
+    requireCupOwnership();
+    // Match completion replaces the matches array. Start a coordinator with that
+    // canonical input; never replace one retaining a prepared attempt.
+    if (action === "start") {
+      cupCoordinator = createCupShootoutCoordinator(window.localStorage, managementState.matches, { ownsLock: ownsCupLock });
+    }
+    if (!cupCoordinator) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+    const result = action === "start" ? { cup: cupCoordinator.startCupShootout(command) }
+      : action === "retry" ? cupCoordinator.retryCupShootoutSave()
+      : cupCoordinator.confirmCupShootoutAttempt(command);
+    // Commit has succeeded. Presentation below cannot turn it into a failed save.
+    cupState = result.cup;
+    cupShootoutPendingSave = false;
+    accepted = true;
+    cupShootoutNotice = result.attempt
+      ? { key: JSON.parse(result.attempt.attemptId)[1], attemptId: result.attempt.attemptId }
+      : "resumed";
+    tournamentViewedMatchday = Math.max(...cupState.fixtures.map(f => f.round));
+  } catch (failure) {
+    cupShootoutError = failure.code ?? "CUP_SHOOTOUT_INVALID_STATE";
+    if (action === "kick" && failure.code === "CUP_SHOOTOUT_SAVE_FAILED") cupShootoutPendingSave = true;
+  } finally {
+    // Keep repeated activation disabled through the next paint; this never draws.
+    await new Promise(resolve => window.requestAnimationFrame(resolve));
+    cupShootoutBusy = false;
+  }
+  try { renderTournament(); }
+  catch (failure) {
+    if (!accepted) throw failure;
+    // A committed result remains authoritative even if its first render fails.
+    refreshOwnedCup();
+    renderTournament();
+  }
+  if (accepted) {
+    const target = ["cup-shootout-kick", "cup-shootout-start", "tournament-play-next"]
+      .map(byId).find(button => !button.disabled && !button.hidden)
+      ?? byId("cup-shootout-turn");
+    target.focus();
+  }
+}
+
+// SP-01 app adapter end.
+
 function renderCupBracket() {
   const cup = cupState;
-  byId("tournament-close").textContent = "Archivia Coppa";
+  byId("tournament-close").textContent = cupText("Archivia Coppa", "Archive Cup");
   byId("tournament-close").disabled =
+    !ownsCupLock() || cupLoadError !== null || cupShootoutPendingSave || cupShootoutBusy ||
     cup.championProviderTeamId === undefined ||
     (matchStarted && state.phase !== "finished");
   const rounds = Math.log2(cup.participants.length);
@@ -2405,59 +2750,44 @@ function renderCupBracket() {
   const completed = cup.fixtures.filter(f => f.matchId !== null).length;
   const next = cup.fixtures.find(f => f.matchId === null);
   const roundNames = {
-    1: cup.participants.length === 4 ? "Semifinali" :
-       cup.participants.length === 8 ? "Quarti di finale" :
-       cup.participants.length === 16 ? "Ottavi di finale" :
-       "Sedicesimi di finale",
+    1: cup.participants.length === 4 ? cupText("Semifinali", "Semi-finals") :
+       cup.participants.length === 8 ? cupText("Quarti di finale", "Quarter-finals") :
+       cup.participants.length === 16 ? cupText("Ottavi di finale", "Round of 16") :
+       cupText("Sedicesimi di finale", "Round of 32"),
   };
   const roundName = viewedRound === rounds
-    ? "Finale"
+    ? cupText("Finale", "Final")
     : viewedRound === rounds - 1
-      ? "Semifinali"
+      ? cupText("Semifinali", "Semi-finals")
       : viewedRound === rounds - 2
-        ? "Quarti di finale"
+        ? cupText("Quarti di finale", "Quarter-finals")
         : viewedRound === rounds - 3
-          ? "Ottavi di finale"
-          : roundNames[viewedRound] ?? `Turno ${viewedRound}`;
+          ? cupText("Ottavi di finale", "Round of 16")
+          : roundNames[viewedRound] ?? cupText(`Turno ${viewedRound}`, `Round ${viewedRound}`);
 
   byId("tournament-progress").textContent =
     `${completed} / ${(cup.participants.length - 1) * cup.legs}`;
   byId("tournament-status").textContent =
     cup.championProviderTeamId !== undefined
-      ? `Campione: ${teamName(cup.championProviderTeamId)}`
-      : `${cup.name ?? "Coppa"} · turno ${currentRound} di ${rounds}`;
+      ? `${cupText("Campione", "Champion")}: ${teamName(cup.championProviderTeamId)}`
+      : `${cup.name ?? cupText("Coppa", "Cup")} · ` + cupText(`turno ${currentRound} di ${rounds}`, `round ${currentRound} of ${rounds}`);
   byId("tournament-next").textContent = next
-    ? `Prossima: ${teamName(next.homeProviderTeamId)} – ${teamName(next.awayProviderTeamId)}`
+    ? `${cupText("Prossima", "Next")}: ${teamName(next.homeProviderTeamId)} – ${teamName(next.awayProviderTeamId)}`
     : cup.championProviderTeamId !== undefined
-      ? "Coppa conclusa"
-      : "Turno da risolvere";
+      ? cupText("Coppa conclusa", "Cup completed")
+      : cupText("Turno da risolvere", "Round awaiting a decision");
+  byId("tournament-play-next").textContent = cupText("Gioca partita della Coppa", "Play Cup match");
+  byId("tournament-matchday-prev").setAttribute("aria-label", cupText("Turno precedente", "Previous round"));
+  byId("tournament-matchday-next").setAttribute("aria-label", cupText("Turno successivo", "Next round"));
   byId("tournament-matchday-label").textContent = roundName;
   byId("tournament-matchday-prev").disabled = viewedRound <= 1;
   byId("tournament-matchday-next").disabled = viewedRound >= currentRound;
   byId("tournament-play-next").disabled =
+    !ownsCupLock() || cupLoadError !== null || cupShootoutPendingSave || cupShootoutBusy ||
+    activeTournamentFixtureId !== null ||
     !next || (matchStarted && state.phase !== "finished");
 
-  const shootout = byId("cup-shootout");
-  const readiness = advanceCupIfReady(
-    cup, managementState.matches, cup.shootouts ?? {},
-  );
-  const needsPenalties = readiness.status === "pending-penalties";
-  shootout.hidden = !needsPenalties;
-  shootout.dataset.round = needsPenalties ? String(readiness.round) : "";
-  shootout.dataset.pair = needsPenalties ? String(readiness.pair) : "";
-  byId("cup-shootout-confirm").disabled = !needsPenalties;
-  byId("cup-shootout-error").textContent = "";
-
-  if (needsPenalties) {
-    const pairing = cup.fixtures.find(f =>
-      f.round === readiness.round && f.pair === readiness.pair &&
-      f.leg === 1
-    );
-    byId("cup-shootout-description").textContent =
-      `${teamName(pairing.homeProviderTeamId)} – ` +
-      `${teamName(pairing.awayProviderTeamId)}: parità aggregata. ` +
-      "Inserisci il risultato dei rigori.";
-  }
+  renderCupShootout(cup, teamName);
 
   const renderFixture = fixture => {
     const item = document.createElement("li");
@@ -2479,14 +2809,23 @@ function renderCupBracket() {
     item.dataset.status = view.status;
 
     if (view.status === "pending") {
-      detail.textContent = "Da giocare";
+      detail.textContent = cupText("Da giocare", "To be played");
     } else if (view.status === "penalties") {
-      detail.textContent = `Aggregato ${view.aggregate ?? view.score} · Rigori necessari`;
+      detail.textContent = `${cupText("Aggregato", "Aggregate")} ${view.aggregate ?? view.score} · ` +
+        cupText("Rigori necessari", "Shootout required");
     } else if (view.winnerProviderTeamId !== null) {
       const winner = teamName(view.winnerProviderTeamId);
       detail.textContent =
-        `${view.aggregate === null ? "" : `Aggregato ${view.aggregate} · `}` +
-        `Qualificata: ${winner}`;
+        `${view.aggregate === null ? "" : `${cupText("Aggregato", "Aggregate")} ${view.aggregate} · `}` +
+        `${cupText("Qualificata", "Qualified")}: ${winner}`;
+      if (view.decidedBy === "penalties") {
+        const key = `r${fixture.round}-p${fixture.pair}`;
+        const penalties = cup.shootouts[key];
+        const firstLeg = cup.fixtures.find(f => f.round === fixture.round && f.pair === fixture.pair && f.leg === 1);
+        detail.textContent += ` · ${cupText("Rigori", "Penalties")}: ` +
+          `${teamName(firstLeg.homeProviderTeamId)} ${penalties.home}–${penalties.away} ${teamName(firstLeg.awayProviderTeamId)}` +
+          (cup.shootoutSessions?.[key] ? "" : cupText(" (risultato manuale)", " (manual result)"));
+      }
       const winnerId = String(view.winnerProviderTeamId);
       if (String(fixture.homeProviderTeamId) === winnerId) {
         home.classList.add("cup-qualified");
@@ -2494,7 +2833,7 @@ function renderCupBracket() {
         away.classList.add("cup-qualified");
       }
     } else {
-      detail.textContent = "Giocata · Eliminatoria in corso";
+      detail.textContent = cupText("Giocata · Eliminatoria in corso", "Played · Tie in progress");
     }
 
     item.append(home, score, away, detail);
@@ -2512,55 +2851,86 @@ function renderCupBracket() {
 }
 
 function confirmCupShootout() {
-  if (!cupState || tournamentState) return;
-
+  if (!cupState || tournamentState || cupShootoutBusy || cupShootoutPendingSave) return;
   const panel = byId("cup-shootout");
   if (panel.hidden) return;
-
-  const error = byId("cup-shootout-error");
+  cupShootoutNotice = null;
   const homeRaw = byId("cup-penalties-home").value.trim();
   const awayRaw = byId("cup-penalties-away").value.trim();
   const home = Number(homeRaw);
   const away = Number(awayRaw);
   const round = Number(panel.dataset.round);
   const pair = Number(panel.dataset.pair);
-
-  if (!/^\\d+$/.test(homeRaw) || !/^\\d+$/.test(awayRaw) ||
+  if (!/^\d+$/.test(homeRaw) || !/^\d+$/.test(awayRaw) ||
       !Number.isSafeInteger(home) || !Number.isSafeInteger(away) ||
-      home === away) {
-    error.textContent = "Inserisci due punteggi interi, non negativi e diversi.";
+      home < 0 || away < 0 || home === away) {
+    cupShootoutError = "CUP_SHOOTOUT_INVALID_SCORE";
+    renderTournament();
     return;
   }
-
+  let accepted = false;
   try {
+    requireCupOwnership();
+    const latest = loadVerifiedCup(window.localStorage, managementState.matches);
+    if (latest?.cupId !== cupState.cupId) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
     const decided = recordCupShootout(
-      cupState, managementState.matches, round, pair, { home, away },
+      latest, managementState.matches, round, pair, { home, away },
     );
     const advancement = advanceCupIfReady(
       decided, managementState.matches, decided.shootouts ?? {},
     );
-    saveVerifiedCup(
-      window.localStorage, advancement.cup, managementState.matches,
-    );
+    saveVerifiedCup(window.localStorage, advancement.cup, managementState.matches);
     cupState = advancement.cup;
-    tournamentViewedMatchday = Math.max(
-      ...cupState.fixtures.map(f => f.round),
-    );
+    accepted = true;
+    cupShootoutError = null;
+    cupShootoutNotice = { manualKey: `r${round}-p${pair}` };
+    tournamentViewedMatchday = Math.max(...cupState.fixtures.map(f => f.round));
     byId("cup-penalties-home").value = "";
     byId("cup-penalties-away").value = "";
-    renderTournament();
   } catch (failure) {
-    error.textContent = failure.message;
+    cupShootoutError = failure.code ?? "CUP_SHOOTOUT_SAVE_FAILED";
+  }
+  renderTournament();
+  if (accepted) {
+    const target = ["cup-shootout-start", "tournament-play-next"]
+      .map(byId).find(button => !button.disabled && !button.hidden)
+      ?? byId("cup-storage-status");
+    target.focus();
   }
 }
 
-byId("cup-shootout-confirm").addEventListener(
-  "click", confirmCupShootout,
-);
+byId("cup-shootout-confirm").addEventListener("click", confirmCupShootout);
+byId("cup-storage-retry").addEventListener("click", () => {
+  if (cupShootoutPendingSave) return;
+  if (ownsCupLock()) refreshOwnedCup();
+  else {
+    reloadCupForOwnership();
+    requestCupOwnership();
+  }
+  renderTournament();
+});
+byId("cup-shootout-start").addEventListener("click", event => {
+  if (event.detail > 1) return;
+  const panel = byId("cup-shootout");
+  runCupShootoutAction("start", {
+    cupId: cupState?.cupId, round: Number(panel.dataset.round), pair: Number(panel.dataset.pair),
+  });
+});
+byId("cup-shootout-retry").addEventListener("click", () => runCupShootoutAction("retry"));
+
+// One deliberate key press requests one command, even when focus moves from a
+// finished shootout to the next tie or fixture while Enter is still held down.
+for (const id of ["cup-shootout-start", "cup-shootout-kick", "cup-shootout-confirm",
+  "cup-shootout-retry", "tournament-play-next"]) {
+  byId(id).addEventListener("keydown", event => {
+    if (event.repeat && (event.key === "Enter" || event.key === " ")) event.preventDefault();
+  });
+}
 
 function renderCupArchive() {
   const section = byId("cup-archive");
   const list = byId("cup-archive-list");
+  byId("cup-archive-title").textContent = cupText("Coppe archiviate", "Archived Cups");
   let archive;
 
   try {
@@ -2571,8 +2941,8 @@ function renderCupArchive() {
     section.hidden = false;
     list.replaceChildren();
     const warning = document.createElement("p");
-    warning.textContent =
-      `Archivio Coppe non disponibile: ${failure.message}`;
+    warning.textContent = cupText("Archivio Coppe non disponibile. ", "Cup archive unavailable. ") +
+      cupMessage(failure.code ?? "CUP_SHOOTOUT_INVALID_STATE");
     list.append(warning);
     return;
   }
@@ -2590,9 +2960,9 @@ function renderCupArchive() {
     )?.name ?? String(id);
 
     summary.textContent =
-      `${cup.name ?? "Coppa"} — Campione: ` +
+      `${cup.name ?? cupText("Coppa", "Cup")} — ${cupText("Campione", "Champion")}: ` +
       `${name(cup.championProviderTeamId)} ` +
-      `(${cup.legs === 2 ? "andata e ritorno" : "gara unica"})`;
+      `(${cup.legs === 2 ? cupText("andata e ritorno", "two legs") : cupText("gara unica", "single leg")})`;
     details.append(summary);
 
     const matches = document.createElement("ol");
@@ -2600,10 +2970,16 @@ function renderCupArchive() {
       const record = records.get(fixture.matchId);
       const item = document.createElement("li");
       item.textContent =
-        `Turno ${fixture.round}, gara ${fixture.leg}: ` +
+        cupText(`Turno ${fixture.round}, gara ${fixture.leg}: `, `Round ${fixture.round}, leg ${fixture.leg}: `) +
         `${name(fixture.homeProviderTeamId)} ` +
         `${record.score.home}–${record.score.away} ` +
         `${name(fixture.awayProviderTeamId)}`;
+      const penalties = cup.shootouts?.[`r${fixture.round}-p${fixture.pair}`];
+      if (penalties && fixture.leg === cup.legs) {
+        const firstLeg = cup.fixtures.find(f => f.round === fixture.round && f.pair === fixture.pair && f.leg === 1);
+        item.textContent += ` · ${cupText("Rigori", "Penalties")}: ` +
+          `${name(firstLeg.homeProviderTeamId)} ${penalties.home}–${penalties.away} ${name(firstLeg.awayProviderTeamId)}`;
+      }
       matches.append(item);
     }
     details.append(matches);
@@ -2618,20 +2994,20 @@ function renderTournament() {
   const dashboard = byId("tournament-dashboard");
   if (!setup || !dashboard) return;
   renderCupArchive();
+  renderCupStorageStatus();
+  if (!cupState) byId("cup-shootout").hidden = true;
 
   setup.hidden = Boolean(tournamentState || cupState);
   dashboard.hidden = !tournamentState && !cupState;
   const cupMode = byId("tournament-mode").value === "cup";
-  const competitionExists = Boolean(tournamentState || cupState);
+  const competitionExists = Boolean(tournamentState || cupState || cupLoadError);
   // Keep the competition selector available internally, but never display it.
   byId("competition").closest(".locale-setting").hidden = true;
   byId("cup-leg-setting").hidden =
     Boolean(tournamentState) || !cupMode;
   byId("tournament-create").disabled = competitionExists;
   if (!tournamentState) {
-    byId("tournament-error").textContent = cupState
-      ? `Coppa "${cupState.name ?? "Coppa personalizzata"}" salvata. Il tabellone sarà disponibile dopo l'integrazione M008-B.`
-      : "";
+    byId("tournament-error").textContent = "";
   }
 
   if (cupState) {
@@ -2639,6 +3015,10 @@ function renderTournament() {
     return;
   }
 
+  // Restore shared controls after leaving the Cup dashboard.
+  byId("tournament-play-next").textContent = cupText("Gioca partita del torneo", "Play tournament match");
+  byId("tournament-matchday-prev").setAttribute("aria-label", cupText("Giornata precedente", "Previous matchday"));
+  byId("tournament-matchday-next").setAttribute("aria-label", cupText("Giornata successiva", "Next matchday"));
   byId("tournament-close").textContent = "Abbandona torneo";
 
   if (!tournamentState) {
@@ -2857,24 +3237,29 @@ function closeTournament() {
   if (matchStarted && state.phase !== "finished") return;
 
   if (cupState && !tournamentState) {
-    if (cupState.championProviderTeamId === undefined) return;
+    if (!ownsCupLock() || cupLoadError || cupShootoutPendingSave || cupShootoutBusy ||
+        cupState.championProviderTeamId === undefined) return;
     if (!window.confirm(
-      "Archiviare questa Coppa completata? I risultati saranno conservati."
+      cupText("Archiviare questa Coppa completata? I risultati saranno conservati.",
+        "Archive this completed Cup? Its results will be retained.")
     )) return;
 
     try {
+      requireCupOwnership();
       archiveCompletedCup(
         window.localStorage, cupState, managementState.matches,
       );
       clearCup(window.localStorage);
       clearCupRecovery(window.localStorage);
       cupState = null;
+      releaseCupOwnership();
       activeTournamentFixtureId = null;
       tournamentViewedMatchday = null;
       renderTournament();
       renderManagerDashboard();
     } catch (failure) {
-      window.alert(`Archiviazione Coppa non completata: ${failure.message}`);
+      window.alert(cupText("Archiviazione Coppa non completata. ", "Cup archive did not complete. ") +
+        cupMessage(failure.code ?? "CUP_SHOOTOUT_SAVE_FAILED"));
     }
     return;
   }
@@ -2895,7 +3280,8 @@ function closeTournament() {
   renderManagerDashboard();
 }
 
-function createTournamentFromSelection() {
+async function createTournamentFromSelection() {
+  if (cupLoadError) return;
   if (tournamentState || cupState) {
     byId("tournament-error").textContent =
       "Esiste già una competizione salvata.";
@@ -2916,9 +3302,17 @@ function createTournamentFromSelection() {
         legs: Number(byId("cup-legs").value),
         name: byId("tournament-name").value.trim() || "Coppa personalizzata",
       });
-      saveVerifiedCup(window.localStorage, document, managementState.matches);
+      if (!window.navigator?.locks?.request) throw new CupShootoutError("CUP_SHOOTOUT_LOCK_UNAVAILABLE");
+      // Serialize creation too: independent new Cup IDs cannot protect one key.
+      await window.navigator.locks.request("dado-goal.cup.create", { mode: "exclusive" }, () => {
+        if (window.localStorage.getItem(CUP_STORAGE_KEY) !== null) {
+          throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+        }
+        saveVerifiedCup(window.localStorage, document, managementState.matches);
+      });
       cupState = document;
       activeTournamentFixtureId = null;
+      requestCupOwnership();
       renderTournament();
       return;
     }
@@ -2935,7 +3329,8 @@ function createTournamentFromSelection() {
     byId("tournament-error").textContent = "";
     renderTournament();
   } catch (error) {
-    byId("tournament-error").textContent = error.message;
+    byId("tournament-error").textContent = error instanceof CupShootoutError
+      ? cupMessage(error.code) : error.message;
   }
 }
 
@@ -3042,6 +3437,10 @@ function simulateTournamentFixture(fixture) {
 
 function playTournamentFixture(fixture) {
   if (!fixture) return;
+  if (cupState && !tournamentState) {
+    try { requireCupOwnership(); } catch { return false; }
+    if (cupShootoutPendingSave || cupShootoutBusy) return false;
+  }
 
   const home = allCatalogueTeams().find(team =>
     String(team.providerTeamId) === fixture.homeProviderTeamId
@@ -3766,7 +4165,36 @@ initializeLocale(() => {
   syncCompetitionSelector();
   render();
   renderManagerDashboard();
+  renderTournament();
 });
 
 syncCompetitionSelector();
+requestCupOwnership();
 void reloadLiveCatalogue();
+
+// The browser releases Web Locks on document destruction. Release explicitly for
+// bfcache too, and revalidate storage before enabling a restored page.
+window.addEventListener("pagehide", releaseCupOwnership);
+window.addEventListener("pageshow", event => {
+  if (event.persisted) {
+    reloadCupForOwnership();
+    requestCupOwnership();
+    renderTournament();
+  }
+});
+window.addEventListener("beforeunload", event => {
+  if (!cupShootoutPendingSave) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
+window.addEventListener("storage", event => {
+  if (![CUP_STORAGE_KEY, "dado-goal.team-management.v1"].includes(event.key) && event.key !== null) return;
+  if (ownsCupLock() || cupShootoutPendingSave) {
+    // A cooperating tab cannot write the owned Cup. Preserve a pending candidate
+    // if an older client or an external writer bypasses the lock.
+    if (event.key === CUP_STORAGE_KEY || event.key === null) cupShootoutError = "CUP_SHOOTOUT_STALE";
+  } else {
+    reloadCupForOwnership();
+  }
+  renderTournament();
+});

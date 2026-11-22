@@ -1,4 +1,17 @@
-import { createCup, resolveCupTie, validateCupProgression } from "./cup.mjs";
+import {
+  createCup,
+  resolveCupTie,
+  validateCupProgression,
+  advanceCupIfReady,
+} from "./cup.mjs";
+import { rollFace } from "./engine.mjs";
+import {
+  CupShootoutError,
+  createCupShootout,
+  replayCupShootout,
+  applyCupShootoutFace,
+  validateCupShootouts,
+} from "./cup-shootout.mjs";
 
 export const CUP_SCHEMA_VERSION = 1;
 export const CUP_STORAGE_KEY = "dado-goal.cup.v1";
@@ -134,6 +147,7 @@ function validateCupDocument(data) {
     throw new TypeError("invalid cup shootouts");
   }
 
+  validateCupShootouts(data);
   return structuredClone(data);
 }
 
@@ -192,13 +206,22 @@ export function clearCup(storage) {
   storage.removeItem(CUP_STORAGE_KEY);
 }
 
-export function verifyCupDocument(document, matches, shootouts = {}) {
+export function verifyCupDocument(document, matches, shootouts = document?.shootouts ?? {}) {
   const canonical = validateCupDocument(document);
-  validateCupProgression(canonical, matches, shootouts);
+  const results = canonical.shootouts ?? {};
+  if (!shootouts || typeof shootouts !== "object" || Array.isArray(shootouts) ||
+      Object.keys(shootouts).length !== Object.keys(results).length ||
+      Object.entries(results).some(([key, result]) =>
+        !Object.hasOwn(shootouts, key) ||
+        shootouts[key]?.home !== result.home || shootouts[key]?.away !== result.away)) {
+    throw new CupShootoutError("CUP_SHOOTOUT_INVALID_STATE");
+  }
+  validateCupShootouts(canonical, matches);
+  validateCupProgression(canonical, matches, results);
   return canonical;
 }
 
-export function importVerifiedCupJson(source, matches, shootouts = {}) {
+export function importVerifiedCupJson(source, matches, shootouts) {
   return verifyCupDocument(importCupJson(source), matches, shootouts);
 }
 
@@ -284,6 +307,10 @@ export function recordCupShootout(document, matches, round, pair, penalties) {
   const currentRound = Math.max(...cup.fixtures.map(f => f.round));
   const key = `r${round}-p${pair}`;
 
+  if (Object.hasOwn(cup.shootoutSessions ?? {}, key)) {
+    throw new CupShootoutError("CUP_SHOOTOUT_MANUAL_LOCKED");
+  }
+
   if (round !== currentRound ||
       Object.hasOwn(cup.shootouts ?? {}, key)) {
     throw new TypeError("shootout already decided or round inactive");
@@ -315,4 +342,136 @@ export function recordCupShootout(document, matches, round, pair, penalties) {
   };
 
   return verifyCupDocument(next, matches, next.shootouts);
+}
+
+// The caller must hold the Cup's exclusive Web Lock for the editor lifetime.
+// SP-01C supplies ownsLock from that ownership lifecycle, and makes every other
+// Cup writer respect it. Revision checks alone are NOT a cross-tab lock.
+// Keep this instance after a save error: it retains the unsaved prepared shot.
+export function createCupShootoutCoordinator(storage, matches, { ownsLock } = {}) {
+  let pending = null;
+  let busy = false;
+
+  function run(operation) {
+    if (typeof ownsLock !== "function") {
+      throw new CupShootoutError("CUP_SHOOTOUT_LOCK_UNAVAILABLE");
+    }
+    if (ownsLock() !== true) throw new CupShootoutError("CUP_SHOOTOUT_OTHER_TAB");
+    if (busy) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+    busy = true;
+    try { return operation(); } finally { busy = false; }
+  }
+
+  function read(cupId) {
+    let source;
+    try {
+      if (typeof storage?.getItem !== "function" || typeof storage?.setItem !== "function") {
+        throw new TypeError("storage is unavailable");
+      }
+      source = storage.getItem(CUP_STORAGE_KEY);
+    } catch (cause) {
+      throw new CupShootoutError("CUP_SHOOTOUT_STORAGE_UNAVAILABLE", cause);
+    }
+    let cup;
+    try { cup = source === null ? null : importVerifiedCupJson(source, matches); }
+    catch (cause) {
+      if (cause instanceof CupShootoutError) throw cause;
+      throw new CupShootoutError("CUP_SHOOTOUT_INVALID_STATE", cause);
+    }
+    if (!cup || cup.cupId !== cupId) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+    return { cup, source };
+  }
+
+  function accepted(prepared, disposition) {
+    return {
+      cup: structuredClone(prepared.cup),
+      attempt: structuredClone(prepared.attempt),
+      disposition,
+    };
+  }
+
+  function commit() {
+    const prepared = pending;
+    try { saveVerifiedCup(storage, prepared.cup, matches); }
+    catch (cause) { throw new CupShootoutError("CUP_SHOOTOUT_SAVE_FAILED", cause); }
+    pending = null;
+    return accepted(prepared, "committed");
+  }
+
+  return {
+    startCupShootout({ cupId, round, pair } = {}) {
+      return run(() => {
+        if (pending) throw new CupShootoutError("CUP_SHOOTOUT_SAVE_FAILED");
+        const { cup } = read(cupId);
+        const key = `r${round}-p${pair}`;
+        if (Object.hasOwn(cup.shootoutSessions ?? {}, key)) {
+          const session = cup.shootoutSessions[key];
+          if (session.round !== round || session.pair !== pair) {
+            throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+          }
+          if (session.status === "complete") throw new CupShootoutError("CUP_SHOOTOUT_DECIDED");
+          return cup;
+        }
+        const session = createCupShootout(cup, matches, round, pair);
+        cup.shootoutSessions = { ...(cup.shootoutSessions ?? {}), [key]: session };
+        try { saveVerifiedCup(storage, cup, matches); }
+        catch (cause) { throw new CupShootoutError("CUP_SHOOTOUT_SAVE_FAILED", cause); }
+        return cup;
+      });
+    },
+
+    confirmCupShootoutAttempt(command = {}, { random = Math.random } = {}) {
+      return run(() => {
+        if (pending) throw new CupShootoutError("CUP_SHOOTOUT_SAVE_FAILED");
+        const { cupId, shootoutId, attemptId, expectedRevision } = command;
+        const { cup, source } = read(cupId);
+        const session = Object.values(cup.shootoutSessions ?? {})
+          .find(s => s.shootoutId === shootoutId);
+        if (!session || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0 ||
+            expectedRevision >= Number.MAX_SAFE_INTEGER ||
+            attemptId !== JSON.stringify([cupId, `r${session.round}-p${session.pair}`, expectedRevision + 1])) {
+          throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+        }
+        if (expectedRevision < session.attempts.length) {
+          return accepted({ cup, attempt: session.attempts[expectedRevision] }, "already-committed");
+        }
+        if (expectedRevision !== session.attempts.length) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+        if (session.status === "complete") throw new CupShootoutError("CUP_SHOOTOUT_DECIDED");
+
+        let face;
+        try { face = rollFace("penalty", random); }
+        catch (cause) { throw new CupShootoutError("CUP_SHOOTOUT_DRAW_INVALID", cause); }
+        const next = applyCupShootoutFace(session, { attemptId, expectedRevision, face });
+        const key = `r${session.round}-p${session.pair}`;
+        let candidate = structuredClone(cup);
+        if (next.status === "complete") {
+          // Private half-finalized clone: never save or expose it. The manual
+          // API remains closed once any playable session has started.
+          delete candidate.shootoutSessions[key];
+          candidate = recordCupShootout(candidate, matches, next.round, next.pair,
+            replayCupShootout(next).goals);
+          candidate.shootoutSessions[key] = next;
+          candidate = advanceCupIfReady(candidate, matches, candidate.shootouts).cup;
+        } else {
+          candidate.shootoutSessions[key] = next;
+        }
+        pending = { cup: candidate, predecessor: source, attempt: next.attempts.at(-1) };
+        return commit();
+      });
+    },
+
+    retryCupShootoutSave() {
+      return run(() => {
+        if (!pending) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+        const { source } = read(pending.cup.cupId);
+        if (source === JSON.stringify(pending.cup, null, 2)) {
+          const result = accepted(pending, "already-committed");
+          pending = null;
+          return result;
+        }
+        if (source !== pending.predecessor) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+        return commit();
+      });
+    },
+  };
 }
