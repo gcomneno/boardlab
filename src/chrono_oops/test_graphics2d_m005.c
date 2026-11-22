@@ -30,6 +30,12 @@ static void turn(M005Gui *gui)
             before_turn, (int)before_player,
             (int)gui->state.finished, gui->message);
     fflush(stderr);
+    fprintf(stderr,
+            "M005_TURN_EVENT type=%u key_type=%u repeat=%u sym=%d expected_type=%u expected_sym=%d\n",
+            (unsigned)event.type, (unsigned)event.key.type,
+            (unsigned)event.key.repeat, (int)event.key.keysym.sym,
+            (unsigned)SDL_KEYDOWN, (int)SDLK_SPACE);
+    fflush(stderr);
     m005_gui_event(gui, &event);
     fprintf(stderr,
             "M005_TURN_AFTER turn=%u player=%d finished=%d message=%s\n",
