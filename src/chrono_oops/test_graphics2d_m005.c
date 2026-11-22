@@ -394,9 +394,19 @@ static void test_action_availability(void)
         abort();
     }
 
-    for (int i = 0; i < M005_GUI_ACTION_COUNT; ++i)
-        assert(!m005_action_available(&gui.state, i));
+    for (int i = 0; i < M005_GUI_ACTION_COUNT; ++i) {
+        bool available = m005_action_available(&gui.state, i);
+        if (available) {
+            fprintf(stderr,
+                    "M005_FINAL_AVAILABILITY_GATE=FAIL index=%d turn=%u finished=%d\\n",
+                    i, gui.state.turn, (int)gui.state.finished);
+            fflush(stderr);
+            _Exit(1);
+        }
+    }
 
+    fprintf(stderr, "M005_FINAL_AVAILABILITY_GATE=PASS\\n");
+    fflush(stderr);
     puts("M005_ACTION_AVAILABILITY_GATE=PASS");
 }
 
