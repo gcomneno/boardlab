@@ -33,11 +33,17 @@ static const M002GuiAction m002_actions[] = {
 typedef struct {
     ChronoM002State state;
     char message[256];
+    int hovered_action;
+    int focused_action;
+    int focused_bottom;
 } M002Gui;
 
 static void m002_gui_init(M002Gui *gui)
 {
     chrono_m002_init(&gui->state);
+    gui->hovered_action = -1;
+    gui->focused_action = -1;
+    gui->focused_bottom = 0;
     snprintf(gui->message, sizeof(gui->message),
              "M002: riattiva il Cronofono e salda il debito causale.");
 }
@@ -71,6 +77,15 @@ static bool m002_contains(SDL_Rect r, int x, int y)
 {
     return x >= r.x && x < r.x + r.w &&
            y >= r.y && y < r.y + r.h;
+}
+
+static int m002_action_at(int x, int y)
+{
+    for (int i = 0; i < M002_GUI_ACTION_COUNT; ++i) {
+        if (m002_contains(m002_action_rect(i), x, y))
+            return i;
+    }
+    return -1;
 }
 
 static void m002_gui_apply(M002Gui *gui, int index)
@@ -110,12 +125,82 @@ static void m002_gui_end_turn(M002Gui *gui)
     }
 }
 
+static bool m002_action_available(const ChronoM002State *state,
+                                  int index)
+{
+    if (state == NULL || index < 0 || index >= M002_GUI_ACTION_COUNT)
+        return false;
+
+    ChronoM002State probe = *state;
+    return chrono_m002_apply(&probe, m002_actions[index].action) ==
+           CHRONO_M002_OK;
+}
+
+static const char *m002_action_owner(int index)
+{
+    if (index == 0)
+        return "A/B";
+    return m002_actions[index].player == CHRONO_PLAYER_A ? "A" : "B";
+}
+
 static void m002_gui_event(M002Gui *gui, const SDL_Event *event)
 {
+    if (event->type == SDL_MOUSEMOTION) {
+        gui->hovered_action =
+            m002_action_at(event->motion.x, event->motion.y);
+        return;
+    }
+
     if (event->type == SDL_KEYDOWN && event->key.repeat == 0) {
-        if (event->key.keysym.sym == SDLK_r)
+        SDL_Keycode key = event->key.keysym.sym;
+
+        if (key == SDLK_LEFT || key == SDLK_RIGHT) {
+            int column = key == SDLK_RIGHT ? 1 : 0;
+            if (gui->focused_action >= 0) {
+                int row = gui->focused_action % 7;
+                if (column == 1 && row > 5)
+                    row = 5;
+                gui->focused_action = column * 7 + row;
+            } else {
+                gui->focused_bottom = column;
+            }
+            return;
+        }
+
+        if (key == SDLK_UP || key == SDLK_DOWN) {
+            if (gui->focused_action < 0) {
+                int last = gui->focused_bottom == 0 ? 6 : 5;
+                int row = key == SDLK_UP ? last : 0;
+                gui->focused_action = gui->focused_bottom * 7 + row;
+            } else {
+                int column = gui->focused_action / 7;
+                int row = gui->focused_action % 7;
+                int count = column == 0 ? 7 : 6;
+                row += key == SDLK_UP ? -1 : 1;
+
+                if (row < 0 || row >= count) {
+                    gui->focused_action = -1;
+                    gui->focused_bottom = column;
+                } else {
+                    gui->focused_action = column * 7 + row;
+                }
+            }
+            return;
+        }
+
+        if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
+            if (gui->focused_action >= 0)
+                m002_gui_apply(gui, gui->focused_action);
+            else if (gui->focused_bottom == 0)
+                m002_gui_end_turn(gui);
+            else
+                m002_gui_init(gui);
+            return;
+        }
+
+        if (key == SDLK_r)
             m002_gui_init(gui);
-        else if (event->key.keysym.sym == SDLK_SPACE)
+        else if (key == SDLK_SPACE)
             m002_gui_end_turn(gui);
     }
 
@@ -126,16 +211,17 @@ static void m002_gui_event(M002Gui *gui, const SDL_Event *event)
     int x = event->button.x;
     int y = event->button.y;
 
-    if (m002_contains((SDL_Rect){32, 735, 300, 43}, x, y)) {
+    if (m002_contains((SDL_Rect){32, 790, 300, 43}, x, y)) {
+        gui->focused_action = -1;
+        gui->focused_bottom = 0;
         m002_gui_end_turn(gui);
-    } else if (m002_contains((SDL_Rect){345, 735, 220, 43}, x, y)) {
+    } else if (m002_contains((SDL_Rect){345, 790, 220, 43}, x, y)) {
         m002_gui_init(gui);
     } else {
-        for (int i = 0; i < M002_GUI_ACTION_COUNT; ++i) {
-            if (m002_contains(m002_action_rect(i), x, y)) {
-                m002_gui_apply(gui, i);
-                break;
-            }
+        int index = m002_action_at(x, y);
+        if (index >= 0) {
+            gui->focused_action = index;
+            m002_gui_apply(gui, index);
         }
     }
 }
@@ -160,6 +246,18 @@ static void m002_text(SDL_Renderer *renderer, TTF_Font *font,
         SDL_DestroyTexture(texture);
     }
     SDL_FreeSurface(surface);
+}
+
+static void m002_focus_rect(SDL_Renderer *renderer, SDL_Rect rect)
+{
+    SDL_SetRenderDrawColor(renderer, 245, 72, 72, 255);
+    for (int thickness = 0; thickness < 3; ++thickness) {
+        SDL_Rect border = {
+            rect.x + thickness, rect.y + thickness,
+            rect.w - 2 * thickness, rect.h - 2 * thickness
+        };
+        SDL_RenderDrawRect(renderer, &border);
+    }
 }
 
 static void m002_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
@@ -222,31 +320,56 @@ static void m002_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
               line);
 
     m002_text(renderer, font, 32, 323, muted,
-              "AZIONI | Il motore C11 verifica ogni scelta");
+              "AZIONI DISPONIBILI");
 
     for (int i = 0; i < M002_GUI_ACTION_COUNT; ++i) {
         SDL_Rect rect = m002_action_rect(i);
-        bool active = m002_actions[i].action == CHRONO_M002_WAIT ||
-            m002_actions[i].player == s->active_player;
-        SDL_Color color = s->finished
-            ? (SDL_Color){43, 50, 65, 255}
-            : active ? (SDL_Color){35, 90, 135, 255}
-                     : (SDL_Color){39, 49, 65, 255};
+        bool available = m002_action_available(s, i);
+        bool hovered = !s->finished && gui->hovered_action == i;
+        SDL_Color color = available
+            ? hovered ? (SDL_Color){55, 124, 169, 255}
+                      : (SDL_Color){35, 90, 135, 255}
+            : hovered ? (SDL_Color){65, 73, 87, 255}
+                      : (SDL_Color){39, 49, 65, 255};
 
         m002_rect(renderer, rect, color);
+        if (gui->focused_action == i) {
+            m002_focus_rect(renderer, rect);
+        } else if (hovered) {
+            SDL_Color border = available
+                ? (SDL_Color){239, 194, 111, 255}
+                : (SDL_Color){130, 145, 160, 255};
+            SDL_SetRenderDrawColor(renderer,
+                                   border.r, border.g, border.b, 255);
+            SDL_RenderDrawRect(renderer, &rect);
+        }
         m002_text(renderer, font, rect.x + 10, rect.y + 12,
-                  white, m002_actions[i].label);
+                  available ? white : muted, m002_actions[i].label);
+        m002_text(renderer, font, rect.x + rect.w - 48,
+                  rect.y + 12, available ? white : muted,
+                  m002_action_owner(i));
     }
 
-    m002_rect(renderer, (SDL_Rect){32, 735, 300, 43},
+    m002_rect(renderer, (SDL_Rect){32, 704, 1216, 33},
+              (SDL_Color){29, 49, 72, 255});
+    m002_rect(renderer, (SDL_Rect){32, 704, 4, 33},
+              (SDL_Color){245, 167, 87, 255});
+    m002_text(renderer, font, 46, 711,
+              (SDL_Color){245, 167, 87, 255}, "EVENTO");
+    m002_text(renderer, font, 136, 711, white, gui->message);
+
+    m002_rect(renderer, (SDL_Rect){32, 790, 300, 43},
               (SDL_Color){154, 100, 42, 255});
-    m002_text(renderer, font, 47, 746, white, "TERMINA TURNO");
+    m002_text(renderer, font, 47, 801, white, "TERMINA TURNO");
 
-    m002_rect(renderer, (SDL_Rect){345, 735, 220, 43},
+    m002_rect(renderer, (SDL_Rect){345, 790, 220, 43},
               (SDL_Color){88, 65, 105, 255});
-    m002_text(renderer, font, 360, 746, white, "RICOMINCIA");
+    m002_text(renderer, font, 360, 801, white, "RICOMINCIA");
 
-    m002_text(renderer, font, 32, 790, white, gui->message);
-    m002_text(renderer, font, 32, 814, muted,
-              "Mouse: azioni | SPAZIO: turno | R: ricomincia | ESC: menu");
+    if (gui->focused_action < 0) {
+        SDL_Rect focus = gui->focused_bottom == 0
+            ? (SDL_Rect){32, 790, 300, 43}
+            : (SDL_Rect){345, 790, 220, 43};
+        m002_focus_rect(renderer, focus);
+    }
 }

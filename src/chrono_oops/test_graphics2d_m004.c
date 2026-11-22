@@ -1,6 +1,7 @@
 #include "graphics2d_m004.c"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -21,8 +22,19 @@ static void turn(M004Gui *gui)
 {
     SDL_Event event = {0};
     event.type = SDL_KEYDOWN;
+    event.key.type = SDL_KEYDOWN;
+    event.key.repeat = 0;
     event.key.keysym.sym = SDLK_SPACE;
+    unsigned before_turn = gui->state.turn;
+    ChronoPlayer before_player = gui->state.active_player;
     m004_gui_event(gui, &event);
+    if (!gui->state.finished &&
+        (gui->state.turn != before_turn + 1 ||
+         gui->state.active_player == before_player)) {
+        fprintf(stderr, "M004_TURN_TRANSITION_GATE=FAIL\n");
+        fflush(stderr);
+        _Exit(1);
+    }
 }
 
 static void prefix(M004Gui *gui)
@@ -139,8 +151,25 @@ static void test_defeat_and_restart(void)
     M004Gui gui;
     m004_gui_init(&gui);
 
-    while (!gui.state.finished)
+    for (int attempt = 0;
+         attempt < CHRONO_MAX_TURNS && !gui.state.finished;
+         ++attempt) {
+        unsigned int previous_turn = gui.state.turn;
         turn(&gui);
+        if (!gui.state.finished && gui.state.turn == previous_turn) {
+            fprintf(stderr,
+                    "M004_TURN_STALLED: attempt=%d turn=%d finished=%d\n",
+                    attempt, gui.state.turn, (int)gui.state.finished);
+            fflush(stderr);
+            abort();
+        }
+    }
+    if (!gui.state.finished) {
+        fprintf(stderr, "M004_TURN_LIMIT_NOT_REACHED: turn=%d\n",
+                gui.state.turn);
+        fflush(stderr);
+        abort();
+    }
 
     assert(gui.state.turn == CHRONO_MAX_TURNS);
     assert(!gui.state.victory);
@@ -159,12 +188,166 @@ static void test_defeat_and_restart(void)
     puts("M004_SDL_RESTART_GATE=PASS");
 }
 
+static void test_m004_keyboard_and_mouse_focus(void)
+{
+    M004Gui gui;
+    m004_gui_init(&gui);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+
+    SDL_Event event = {0};
+    event.type = SDL_KEYDOWN;
+    event.key.keysym.sym = SDLK_DOWN;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 0);
+
+    event.key.keysym.sym = SDLK_UP;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+
+    event.key.keysym.sym = SDLK_RIGHT;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_bottom == 1);
+
+    event.key.keysym.sym = SDLK_UP;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 14);
+
+    event.key.keysym.sym = SDLK_LEFT;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 6);
+
+    event.key.keysym.sym = SDLK_DOWN;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 7);
+
+    event.key.keysym.sym = SDLK_RIGHT;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == 14);
+
+    event.key.keysym.sym = SDLK_DOWN;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 1);
+
+    event.key.keysym.sym = SDLK_LEFT;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_bottom == 0);
+
+    click(&gui, 3);
+    assert(gui.focused_action == 3);
+
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.x = 0;
+    motion.motion.y = 0;
+    m004_gui_event(&gui, &motion);
+    assert(gui.focused_action == 3);
+
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.button = SDL_BUTTON_LEFT;
+    event.button.x = 100;
+    event.button.y = 806;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+    assert(gui.state.turn == 2);
+
+    event.button.x = 400;
+    m004_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+    assert(gui.state.turn == 1);
+
+    puts("M004_2D_FOCUS_NAVIGATION_GATE=PASS");
+}
+
+static void test_m004_action_availability(void)
+{
+    M004Gui gui;
+    m004_gui_init(&gui);
+
+    ChronoM004State snapshot = gui.state;
+
+    assert(m004_action_available(&gui.state, 0));
+    assert(m004_action_available(&gui.state, 1));
+    assert(!m004_action_available(&gui.state, 2));
+    assert(!m004_action_available(&gui.state, 3));
+    assert(!m004_action_available(&gui.state, 8));
+    assert(strcmp(m004_action_owner(0), "A/B") == 0);
+    assert(strcmp(m004_action_owner(1), "A") == 0);
+    assert(strcmp(m004_action_owner(3), "B") == 0);
+    assert(memcmp(&snapshot, &gui.state, sizeof(snapshot)) == 0);
+
+    click(&gui, 1);
+    assert(m004_action_available(&gui.state, 2));
+    assert(!m004_action_available(&gui.state, 1));
+
+    turn(&gui);
+    assert(m004_action_available(&gui.state, 0));
+    assert(m004_action_available(&gui.state, 3));
+    assert(!m004_action_available(&gui.state, 2));
+
+    for (int attempt = 0;
+         attempt < CHRONO_MAX_TURNS && !gui.state.finished;
+         ++attempt) {
+        unsigned int previous_turn = gui.state.turn;
+        turn(&gui);
+        if (!gui.state.finished && gui.state.turn == previous_turn) {
+            fprintf(stderr,
+                    "M004_TURN_STALLED: attempt=%d turn=%d finished=%d\n",
+                    attempt, gui.state.turn, (int)gui.state.finished);
+            fflush(stderr);
+            abort();
+        }
+    }
+    if (!gui.state.finished) {
+        fprintf(stderr, "M004_TURN_LIMIT_NOT_REACHED: turn=%d\n",
+                gui.state.turn);
+        fflush(stderr);
+        abort();
+    }
+
+    for (int i = 0; i < M004_GUI_ACTION_COUNT; ++i) {
+        assert(!m004_action_available(&gui.state, i));
+    }
+
+    puts("M004_ACTION_AVAILABILITY_UX_GATE=PASS");
+}
+
 int main(void)
 {
+    fprintf(stderr, "M004_TEST=AVAILABILITY_BEFORE\n");
+    fflush(stderr);
+    test_m004_action_availability();
+    fprintf(stderr, "M004_TEST=AVAILABILITY_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=FOCUS_BEFORE\n");
+    fflush(stderr);
+    test_m004_keyboard_and_mouse_focus();
+    fprintf(stderr, "M004_TEST=FOCUS_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=NOMINAL_BEFORE\n");
+    fflush(stderr);
     test_nominal_victory();
+    fprintf(stderr, "M004_TEST=NOMINAL_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=RECOVERY_5_BEFORE\n");
+    fflush(stderr);
     test_recovery(5, CHRONO_M004_CONFIG_BEACON);
+    fprintf(stderr, "M004_TEST=RECOVERY_5_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=RECOVERY_6_BEFORE\n");
+    fflush(stderr);
     test_recovery(6, CHRONO_M004_CONFIG_REGISTER);
+    fprintf(stderr, "M004_TEST=RECOVERY_6_AFTER\n");
+    fflush(stderr);
+
+    fprintf(stderr, "M004_TEST=DEFEAT_BEFORE\n");
+    fflush(stderr);
     test_defeat_and_restart();
+    fprintf(stderr, "M004_TEST=DEFEAT_AFTER\n");
+    fflush(stderr);
     puts("CHRONOOOPS_M004_SDL_EVENTS_GATE=PASS");
     return 0;
 }

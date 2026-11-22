@@ -35,6 +35,8 @@ typedef struct {
     ChronoM005State state;
     char message[256];
     int hovered_action;
+    int focused_action;
+    int focused_bottom;
     SDL_Rect click_rect;
     Uint32 click_started_ms;
     bool click_active;
@@ -63,6 +65,8 @@ static void m005_gui_init(M005Gui *gui)
 {
     chrono_m005_init(&gui->state);
     gui->hovered_action = -1;
+    gui->focused_action = -1;
+    gui->focused_bottom = 0;
     gui->click_active = false;
     gui->click_rect = (SDL_Rect){0, 0, 0, 0};
     gui->click_started_ms = 0;
@@ -168,6 +172,34 @@ static int m005_scene_action_index(const ChronoM005State *s,
     return -1;
 }
 
+static int m005_action_at(const ChronoM005State *state, int x, int y)
+{
+    for (int i = 0; i < M005_GUI_ACTION_COUNT; ++i)
+        if (m005_contains(m005_action_rect(i, state->active_player), x, y))
+            return i;
+    return -1;
+}
+
+static int m005_action_in_cell(ChronoPlayer player, int column, int row)
+{
+    for (int i = 0; i < M005_GUI_ACTION_COUNT; ++i) {
+        SDL_Rect r = m005_action_rect(i, player);
+        if (r.w > 0 && (r.x - 32) / 620 == column &&
+            (r.y - 485) / 46 == row)
+            return i;
+    }
+    return -1;
+}
+
+static int m005_last_row(ChronoPlayer player, int column)
+{
+    int last = -1;
+    for (int row = 0; row < 5; ++row)
+        if (m005_action_in_cell(player, column, row) >= 0)
+            last = row;
+    return last;
+}
+
 static void m005_gui_event(M005Gui *gui, const SDL_Event *event)
 {
     if (event->type == SDL_MOUSEMOTION) {
@@ -178,10 +210,74 @@ static void m005_gui_event(M005Gui *gui, const SDL_Event *event)
     }
 
     if (event->type == SDL_KEYDOWN && event->key.repeat == 0) {
-        if (event->key.keysym.sym == SDLK_r)
+        SDL_Keycode key = event->key.keysym.sym;
+
+        if (key == SDLK_LEFT || key == SDLK_RIGHT) {
+            int column = key == SDLK_RIGHT ? 1 : 0;
+            if (gui->focused_action < 0) {
+                gui->focused_bottom = column;
+            } else {
+                SDL_Rect current = m005_action_rect(
+                    gui->focused_action, gui->state.active_player);
+                int row = (current.y - 485) / 46;
+                int last = m005_last_row(gui->state.active_player, column);
+                if (last >= 0) {
+                    int next = m005_action_in_cell(
+                        gui->state.active_player, column,
+                        row < last ? row : last);
+                    if (next >= 0)
+                        gui->focused_action = next;
+                }
+            }
+            return;
+        }
+
+        if (key == SDLK_UP || key == SDLK_DOWN) {
+            int column = gui->focused_bottom;
+            int row;
+            if (gui->focused_action < 0) {
+                int last = m005_last_row(gui->state.active_player, column);
+                row = key == SDLK_UP ? last : 0;
+            } else {
+                SDL_Rect current = m005_action_rect(
+                    gui->focused_action, gui->state.active_player);
+                column = (current.x - 32) / 620;
+                row = (current.y - 485) / 46;
+                row += key == SDLK_UP ? -1 : 1;
+            }
+            int next = m005_action_in_cell(
+                gui->state.active_player, column, row);
+            if (next >= 0) {
+                gui->focused_action = next;
+            } else {
+                gui->focused_action = -1;
+                gui->focused_bottom = column;
+            }
+            return;
+        }
+
+        if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
+            if (gui->focused_action >= 0) {
+                gui->click_rect = m005_action_rect(
+                    gui->focused_action, gui->state.active_player);
+                m005_gui_apply(gui, gui->focused_action);
+            } else if (gui->focused_bottom == 0) {
+                m005_gui_end_turn(gui);
+                gui->focused_action = -1;
+                gui->click_active = false;
+            } else {
+                m005_gui_init(gui);
+            }
+            return;
+        }
+
+        if (key == SDLK_r)
             m005_gui_init(gui);
-        else if (event->key.keysym.sym == SDLK_SPACE)
+        else if (key == SDLK_SPACE) {
             m005_gui_end_turn(gui);
+            gui->focused_action = -1;
+            gui->click_active = false;
+        }
     }
 
     if (event->type != SDL_MOUSEBUTTONDOWN ||
@@ -191,25 +287,29 @@ static void m005_gui_event(M005Gui *gui, const SDL_Event *event)
     int x = event->button.x;
     int y = event->button.y;
 
-    if (m005_contains((SDL_Rect){32, 735, 300, 43}, x, y)) {
+    if (m005_contains((SDL_Rect){32, 790, 300, 43}, x, y)) {
+        gui->focused_action = -1;
+        gui->focused_bottom = 0;
+        gui->click_active = false;
         m005_gui_end_turn(gui);
-    } else if (m005_contains((SDL_Rect){345, 735, 220, 43}, x, y)) {
+    } else if (m005_contains((SDL_Rect){345, 790, 220, 43}, x, y)) {
         m005_gui_init(gui);
     } else {
-        int scene_action = m005_scene_action_index(&gui->state, x, y);
-        if (scene_action >= 0) {
+        int index = m005_scene_action_index(&gui->state, x, y);
+        if (index >= 0) {
+            gui->focused_action = m005_action_visible(
+                index, gui->state.active_player) ? index : -1;
             gui->click_rect = (SDL_Rect){x - 12, y - 12, 24, 24};
-            m005_gui_apply(gui, scene_action);
+            m005_gui_apply(gui, index);
             return;
         }
-        for (int i = 0; i < M005_GUI_ACTION_COUNT; ++i) {
-            if (m005_contains(
-                    m005_action_rect(i, gui->state.active_player), x, y)) {
-                gui->click_rect =
-                    m005_action_rect(i, gui->state.active_player);
-                m005_gui_apply(gui, i);
-                break;
-            }
+
+        index = m005_action_at(&gui->state, x, y);
+        if (index >= 0) {
+            gui->focused_action = index;
+            gui->click_rect = m005_action_rect(
+                index, gui->state.active_player);
+            m005_gui_apply(gui, index);
         }
     }
 }
@@ -437,6 +537,30 @@ static void m005_draw_causal_scene(SDL_Renderer *r, TTF_Font *font,
               "Testimonianza: DISPONIBILE" : "Testimonianza: ASSENTE");
 }
 
+static bool m005_action_available(const ChronoM005State *state,
+                                  int index)
+{
+    if (state == NULL || index < 0 || index >= M005_GUI_ACTION_COUNT ||
+        !m005_action_visible(index, state->active_player))
+        return false;
+
+    ChronoM005State probe = *state;
+    return chrono_m005_apply(&probe, m005_actions[index].action) ==
+           CHRONO_M005_OK;
+}
+
+static void m005_focus_rect(SDL_Renderer *renderer, SDL_Rect rect)
+{
+    SDL_SetRenderDrawColor(renderer, 245, 72, 72, 255);
+    for (int thickness = 0; thickness < 3; ++thickness) {
+        SDL_Rect border = {
+            rect.x + thickness, rect.y + thickness,
+            rect.w - 2 * thickness, rect.h - 2 * thickness
+        };
+        SDL_RenderDrawRect(renderer, &border);
+    }
+}
+
 static void m005_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
                           const M005Gui *gui)
 {
@@ -535,13 +659,16 @@ static void m005_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
             continue;
 
         SDL_Rect rect = m005_action_rect(i, s->active_player);
-        SDL_Color color = s->finished
-            ? (SDL_Color){43, 50, 65, 255}
-            : (SDL_Color){35, 90, 135, 255};
+        bool available = m005_action_available(s, i);
+        SDL_Color color = available
+            ? (SDL_Color){35, 90, 135, 255}
+            : (SDL_Color){39, 49, 65, 255};
 
         m005_rect(renderer, rect, color);
+        if (gui->focused_action == i)
+            m005_focus_rect(renderer, rect);
         m005_text(renderer, font, rect.x + 10, rect.y + 10,
-                  white, m005_actions[i].label);
+                  available ? white : muted, m005_actions[i].label);
     }
 
     /* Non-blocking 200 ms feedback, drawn over the clicked target. */
@@ -565,15 +692,25 @@ static void m005_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
         }
     }
 
-    m005_rect(renderer, (SDL_Rect){32, 735, 300, 43},
+    m005_rect(renderer, (SDL_Rect){32, 735, 1216, 33},
+              (SDL_Color){29, 49, 72, 255});
+    m005_rect(renderer, (SDL_Rect){32, 735, 4, 33},
+              (SDL_Color){245, 167, 87, 255});
+    m005_text(renderer, font, 46, 742, warning, "EVENTO");
+    m005_text(renderer, font, 136, 742, white, gui->message);
+
+    m005_rect(renderer, (SDL_Rect){32, 790, 300, 43},
               (SDL_Color){154, 100, 42, 255});
-    m005_text(renderer, font, 47, 746, white, "TERMINA TURNO");
+    m005_text(renderer, font, 47, 801, white, "TERMINA TURNO");
 
-    m005_rect(renderer, (SDL_Rect){345, 735, 220, 43},
+    m005_rect(renderer, (SDL_Rect){345, 790, 220, 43},
               (SDL_Color){88, 65, 105, 255});
-    m005_text(renderer, font, 360, 746, white, "RICOMINCIA");
+    m005_text(renderer, font, 360, 801, white, "RICOMINCIA");
 
-    m005_text(renderer, font, 32, 790, white, gui->message);
-    m005_text(renderer, font, 32, 814, muted,
-              "Mouse: azioni | SPAZIO: turno | R: ricomincia | ESC: menu");
+    if (gui->focused_action < 0) {
+        SDL_Rect focus = gui->focused_bottom == 0
+            ? (SDL_Rect){32, 790, 300, 43}
+            : (SDL_Rect){345, 790, 220, 43};
+        m005_focus_rect(renderer, focus);
+    }
 }

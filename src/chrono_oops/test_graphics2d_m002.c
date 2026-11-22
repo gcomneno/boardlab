@@ -24,7 +24,7 @@ static void turn(M002Gui *gui)
     event.type = SDL_MOUSEBUTTONDOWN;
     event.button.button = SDL_BUTTON_LEFT;
     event.button.x = 50;
-    event.button.y = 750;
+    event.button.y = 806;
     m002_gui_event(gui, &event);
 }
 
@@ -107,8 +107,118 @@ static void test_defeat_and_restart(void)
     puts("M002_SDL_RESTART_GATE=PASS");
 }
 
+static void test_m002_hover_routing(void)
+{
+    M002Gui gui;
+    m002_gui_init(&gui);
+    assert(gui.hovered_action == -1);
+
+    for (int i = 0; i < M002_GUI_ACTION_COUNT; ++i) {
+        SDL_Rect rect = m002_action_rect(i);
+        SDL_Event event = {0};
+        event.type = SDL_MOUSEMOTION;
+        event.motion.x = rect.x + rect.w / 2;
+        event.motion.y = rect.y + rect.h / 2;
+
+        assert(m002_action_at(event.motion.x,
+                              event.motion.y) == i);
+        m002_gui_event(&gui, &event);
+        assert(gui.hovered_action == i);
+        assert(gui.state.turn == 1);
+    }
+
+    SDL_Event outside = {0};
+    outside.type = SDL_MOUSEMOTION;
+    outside.motion.x = 0;
+    outside.motion.y = 0;
+    m002_gui_event(&gui, &outside);
+    assert(gui.hovered_action == -1);
+
+    SDL_Event restart = {0};
+    restart.type = SDL_KEYDOWN;
+    restart.key.keysym.sym = SDLK_r;
+    m002_gui_event(&gui, &restart);
+    assert(gui.hovered_action == -1);
+
+    puts("M002_HOVER_ROUTING_GATE=PASS");
+}
+
+static void test_m002_focus_and_availability(void)
+{
+    M002Gui gui;
+    m002_gui_init(&gui);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+
+    ChronoM002State original = gui.state;
+    assert(m002_action_available(&gui.state, 0));
+    assert(m002_action_available(&gui.state, 1));
+    assert(!m002_action_available(&gui.state, 2));
+    assert(!m002_action_available(&gui.state, 3));
+    assert(memcmp(&original, &gui.state, sizeof(original)) == 0);
+    assert(strcmp(m002_action_owner(0), "A/B") == 0);
+    assert(strcmp(m002_action_owner(3), "B") == 0);
+
+    SDL_Event event = {0};
+    event.type = SDL_KEYDOWN;
+    event.key.keysym.sym = SDLK_DOWN;
+    m002_gui_event(&gui, &event);
+    assert(gui.focused_action == 0);
+
+    event.key.keysym.sym = SDLK_RIGHT;
+    m002_gui_event(&gui, &event);
+    assert(gui.focused_action == 7);
+
+    event.key.keysym.sym = SDLK_UP;
+    m002_gui_event(&gui, &event);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 1);
+
+    event.key.keysym.sym = SDLK_UP;
+    m002_gui_event(&gui, &event);
+    assert(gui.focused_action == 12);
+
+    event.key.keysym.sym = SDLK_LEFT;
+    m002_gui_event(&gui, &event);
+    assert(gui.focused_action == 5);
+
+    event.key.keysym.sym = SDLK_DOWN;
+    m002_gui_event(&gui, &event);
+    assert(gui.focused_action == 6);
+
+    event.key.keysym.sym = SDLK_RIGHT;
+    m002_gui_event(&gui, &event);
+    assert(gui.focused_action == 12);
+
+    click(&gui, 1);
+    assert(gui.focused_action == 1);
+    assert(m002_action_available(&gui.state, 2));
+
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.x = 0;
+    motion.motion.y = 0;
+    m002_gui_event(&gui, &motion);
+    assert(gui.focused_action == 1);
+
+    event.type = SDL_MOUSEBUTTONDOWN;
+    event.button.button = SDL_BUTTON_LEFT;
+    event.button.x = 50;
+    event.button.y = 806;
+    m002_gui_event(&gui, &event);
+    assert(gui.state.turn == 2);
+    assert(gui.focused_action == -1 && gui.focused_bottom == 0);
+
+    event.button.x = 400;
+    m002_gui_event(&gui, &event);
+    assert(gui.state.turn == 1);
+    assert(gui.focused_action == -1);
+
+    puts("M002_FOCUS_AVAILABILITY_GATE=PASS");
+}
+
 int main(void)
 {
+    test_m002_focus_and_availability();
+    test_m002_hover_routing();
     test_victory_and_paradox();
     test_defeat_and_restart();
     puts("CHRONOOOPS_M002_SDL_EVENTS_GATE=PASS");
