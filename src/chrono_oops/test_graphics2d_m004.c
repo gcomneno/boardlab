@@ -22,6 +22,8 @@ static void turn(M004Gui *gui)
 {
     SDL_Event event = {0};
     event.type = SDL_KEYDOWN;
+    event.key.type = SDL_KEYDOWN;
+    event.key.repeat = 0;
     event.key.keysym.sym = SDLK_SPACE;
     unsigned before_turn = gui->state.turn;
     ChronoPlayer before_player = gui->state.active_player;
