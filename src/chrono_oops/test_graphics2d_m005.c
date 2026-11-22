@@ -412,13 +412,41 @@ static void test_action_availability(void)
 
 int main(void)
 {
+    fprintf(stderr, "M005_TEST_BEGIN=test_action_availability\n");
+    fflush(stderr);
     test_action_availability();
+    fprintf(stderr, "M005_TEST_END=test_action_availability\n");
+    fflush(stderr);
+    fprintf(stderr, "M005_TEST_BEGIN=test_keyboard_focus\n");
+    fflush(stderr);
     test_keyboard_focus();
+    fprintf(stderr, "M005_TEST_END=test_keyboard_focus\n");
+    fflush(stderr);
+    fprintf(stderr, "M005_TEST_BEGIN=test_hover_feedback\n");
+    fflush(stderr);
     test_hover_feedback();
+    fprintf(stderr, "M005_TEST_END=test_hover_feedback\n");
+    fflush(stderr);
+    fprintf(stderr, "M005_TEST_BEGIN=test_scene_interaction\n");
+    fflush(stderr);
     test_scene_interaction();
+    fprintf(stderr, "M005_TEST_END=test_scene_interaction\n");
+    fflush(stderr);
+    fprintf(stderr, "M005_TEST_BEGIN=test_nominal\n");
+    fflush(stderr);
     test_nominal();
+    fprintf(stderr, "M005_TEST_END=test_nominal\n");
+    fflush(stderr);
+    fprintf(stderr, "M005_TEST_BEGIN=test_superficial_recovery\n");
+    fflush(stderr);
     test_superficial_recovery();
+    fprintf(stderr, "M005_TEST_END=test_superficial_recovery\n");
+    fflush(stderr);
+    fprintf(stderr, "M005_TEST_BEGIN=test_defeat_and_restart\n");
+    fflush(stderr);
     test_defeat_and_restart();
+    fprintf(stderr, "M005_TEST_END=test_defeat_and_restart\n");
+    fflush(stderr);
     puts("CHRONOOOPS_M005_SDL_EVENTS_GATE=PASS");
     return 0;
 }
