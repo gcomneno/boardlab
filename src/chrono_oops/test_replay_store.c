@@ -12,10 +12,25 @@
 
 int main(void)
 {
+#ifdef _WIN32
+    const char *temp_root = getenv("TEMP");
+    if (temp_root == NULL || *temp_root == '\0')
+        temp_root = getenv("TMP");
+    assert(temp_root != NULL && *temp_root != '\0');
+
+    char directory[4096];
+    int temp_length = snprintf(
+        directory, sizeof(directory),
+        "%s/chrono-replay-test-XXXXXX", temp_root
+    );
+    assert(temp_length > 0 &&
+           (size_t)temp_length < sizeof(directory));
+#else
     char directory[] = "/tmp/chrono-replay-test-XXXXXX";
+#endif
     assert(mkdtemp(directory) != NULL);
 
-    char path[256];
+    char path[4096];
     int n = snprintf(path, sizeof(path),
                      "%s/progress.v1", directory);
     assert(n > 0 && (size_t)n < sizeof(path));
