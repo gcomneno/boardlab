@@ -1,3 +1,5 @@
+import { GLOBAL_SAVE_TRANSACTION_KEY, GLOBAL_SAVE_TRANSACTION_KEYS } from "./global-save-transaction.mjs";
+import { localizedError } from "./error-i18n.mjs";
 import {
   autoAllowsTeam,
   autoQuotaReached,
@@ -110,31 +112,69 @@ import {
   translate,
 } from "./i18n.mjs";
 import { socialColors } from "./team-colors.mjs";
+import { projectPortableGlobalSave } from "./global-save-export.mjs";
+import {
+  executePortableGlobalSaveImport,
+  CommittedImportNeedsReload,
+} from "./global-save-import.mjs";
+
+import {
+  createGlobalSaveCoordinator,
+} from "./global-save-coordinator.mjs";
 
 const byId = (id) => document.getElementById(id);
 
 
-const DADO_GOAL_LOCAL_STORAGE_KEYS = Object.freeze([
-  "dado-goal.tournament.v1",
-  "dado-goal.tournament-recovery.v1",
-  "dado-goal.manager.v1",
-  "dado-goal.team-management.v1",
-  "dado-goal.multiplayer-seat.v1",
-]);
+let globalResetBusy = false;
 
-function resetLocalData() {
+async function resetLocalData() {
+  if (globalResetBusy) return;
+
   const confirmed = window.confirm(
-    "Azzera tutti i dati locali di Dado Goal? " +
-    "Torneo, manager, gestione squadra e recovery saranno eliminati."
+    "Azzerare tutti i dati single-player di Dado GOAL!? " +
+    "Manager, storico, campionato, Coppa, archivio e recovery saranno eliminati. " +
+    "I dati multiplayer resteranno invariati."
   );
-
   if (!confirmed) return;
 
-  for (const key of DADO_GOAL_LOCAL_STORAGE_KEYS) {
-    window.localStorage.removeItem(key);
-  }
+  globalResetBusy = true;
+  try {
+    const options = cupOwnershipOptions();
+    const expected = await globalSaveCoordinator.read(undefined, options);
+    const changes = Object.fromEntries(
+      GLOBAL_SAVE_TRANSACTION_KEYS
+        .filter(key => key !== "dado-goal.global-save-generation.v1")
+        .map(key => [key, null]),
+    );
 
-  window.location.reload();
+    const outcome = await globalSaveCoordinator.transact(
+      expected,
+      {
+        transactionId: crypto.randomUUID(),
+        operation: "reset",
+        expectedGeneration: expected.generation,
+        changes,
+      },
+      options,
+    );
+
+    if (outcome.status !== "committed" && outcome.status !== "noop") {
+      throw new Error("GLOBAL_RESET_NOT_CONFIRMED");
+    }
+
+    // A committed decision remains authoritative even when journal
+    // cleanup is pending. Startup recovery will complete that cleanup.
+    window.location.reload();
+  } catch (failure) {
+    console.error("Global reset failed:", failure);
+    window.alert(
+      "Reset non completato. I dati non sono stati azzerati " +
+      "oppure è necessario recuperare una transazione interrotta. " +
+      "Riprova dopo aver verificato eventuali Coppe aperte in altre schede."
+    );
+  } finally {
+    globalResetBusy = false;
+  }
 }
 
 const phaseNames = {
@@ -602,6 +642,7 @@ let cupLock = null;
 let cupLockRequest = null;
 let cupCoordinator = null;
 let cupShootoutBusy = false;
+let cupRecoveryBusy = false;
 let cupShootoutPendingSave = false;
 let cupShootoutError = null;
 let cupShootoutNotice = null;
@@ -609,6 +650,21 @@ let activeTournamentFixtureId = null;
 let tournamentViewedMatchday = null;
 let managerPlayerSorting = null;
 let matchRecorded = false;
+
+// Recover an interrupted multi-key transaction before loading persistent domains.
+// Writer fencing and portable Cup import/export are integrated separately in SP-02E2B.
+const globalSaveCoordinator = createGlobalSaveCoordinator({
+  locks: navigator.locks,
+  storage: window.localStorage,
+  hasPendingAttempt: () => cupShootoutPendingSave,
+});
+
+if (typeof navigator.locks?.request === "function") {
+  await globalSaveCoordinator.recover();
+} else if (window.localStorage.getItem(GLOBAL_SAVE_TRANSACTION_KEY) !== null) {
+  // Never hydrate interrupted multi-key state without exclusive recovery.
+  throw new Error("GLOBAL_RECOVERY_REQUIRES_WEB_LOCKS");
+}
 
 try {
   managementState = loadManagement(window.localStorage);
@@ -634,101 +690,152 @@ try {
   cupLoadError = failure.code ?? "CUP_SHOOTOUT_INVALID_STATE";
 }
 
-// Cup recovery writes run only after acquiring the active Cup's Web Lock.
-function reconcileCupRecovery() {
+// Cup recovery runs inside the held Cup lifetime lock and global gate.
+async function reconcileCupRecovery() {
   requireCupOwnership();
-  const recovery = loadCupRecovery(window.localStorage);
+  const ownership = cupLock.ownership;
+  const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+  const initialRecovery = loadCupRecovery(window.localStorage);
+  if (!initialRecovery) return;
 
-  if (recovery) {
-    const canonicalMatch = managementState.matches.find(
-      match => match.matchId === recovery.matchId
-    );
-    const sameCup = cupState?.cupId === recovery.cupId;
-    const fixture = sameCup
-      ? cupState.fixtures.find(
-          candidate => candidate.fixtureId === recovery.fixtureId
-        )
-      : null;
+  const result = await globalSaveCoordinator.write(
+    expected,
+    ({ storage }) => {
+      const management = loadManagement(storage);
+      const latest = loadVerifiedCup(storage, management.matches);
+      const recovery = loadCupRecovery(storage);
 
-    if (canonicalMatch && fixture?.matchId === null) {
-      const homeMatches =
-        String(canonicalMatch.home.providerTeamId) ===
-        String(fixture.homeProviderTeamId);
-      const awayMatches =
-        String(canonicalMatch.away.providerTeamId) ===
-        String(fixture.awayProviderTeamId);
+      if (!recovery ||
+          JSON.stringify(recovery) !== JSON.stringify(initialRecovery)) {
+        throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+      }
 
-      if (homeMatches && awayMatches) {
-        const reconciled = completeCupFixture(
-          cupState, recovery.fixtureId, recovery.matchId,
+      const canonicalMatch = management.matches.find(
+        match => match.matchId === recovery.matchId
+      );
+      const sameCup = latest?.cupId === recovery.cupId;
+      const fixture = sameCup
+        ? latest.fixtures.find(
+            candidate => candidate.fixtureId === recovery.fixtureId
+          )
+        : null;
+
+      if (canonicalMatch && fixture?.matchId === null) {
+        const homeMatches =
+          String(canonicalMatch.home.providerTeamId) ===
+          String(fixture.homeProviderTeamId);
+        const awayMatches =
+          String(canonicalMatch.away.providerTeamId) ===
+          String(fixture.awayProviderTeamId);
+
+        if (!homeMatches || !awayMatches) {
+          throw new CupShootoutError("CUP_SHOOTOUT_INVALID_STATE");
+        }
+
+        const completed = completeCupFixture(
+          latest, recovery.fixtureId, recovery.matchId,
         );
         const advancement = advanceCupIfReady(
-          reconciled,
-          managementState.matches,
-          reconciled.shootouts ?? {},
+          completed, management.matches, completed.shootouts ?? {},
         );
-        saveVerifiedCup(
-          window.localStorage, advancement.cup, managementState.matches,
-        );
-        cupState = advancement.cup;
-        clearCupRecovery(window.localStorage);
-        if (activeTournamentFixtureId === recovery.fixtureId) activeTournamentFixtureId = null;
-      } else {
-        throw new CupShootoutError("CUP_SHOOTOUT_INVALID_STATE");
+        saveVerifiedCup(storage, advancement.cup, management.matches);
+        clearCupRecovery(storage);
+        return { cup: advancement.cup, fixtureId: recovery.fixtureId };
       }
-    } else if (
-      canonicalMatch &&
-      fixture?.matchId === recovery.matchId
-    ) {
-      clearCupRecovery(window.localStorage);
-      if (activeTournamentFixtureId === recovery.fixtureId) activeTournamentFixtureId = null;
-    } else if (!canonicalMatch || !sameCup) {
-      clearCupRecovery(window.localStorage);
-    } else {
-      // Do not enable new Cup writes over an unresolved canonical association.
+
+      if (canonicalMatch && fixture?.matchId === recovery.matchId) {
+        clearCupRecovery(storage);
+        return { cup: latest, fixtureId: recovery.fixtureId };
+      }
+
+      if (!canonicalMatch || !sameCup) {
+        clearCupRecovery(storage);
+        return { cup: latest, fixtureId: null };
+      }
+
       throw new CupShootoutError("CUP_SHOOTOUT_INVALID_STATE");
-    }
+    },
+    { ownership },
+  );
+
+  cupState = result.value.cup;
+  if (activeTournamentFixtureId === result.value.fixtureId) {
+    activeTournamentFixtureId = null;
   }
 }
 
-try {
-  const recovery = loadTournamentRecovery(window.localStorage);
 
-  if (recovery) {
-    const canonicalMatchExists = managementState.matches.some(
-      match => match.matchId === recovery.matchId
-    );
-    const sameChampionship =
-      tournamentState?.championshipId === recovery.championshipId;
-    const fixture = sameChampionship
-      ? tournamentState.fixtures.find(
-          candidate => candidate.fixtureId === recovery.fixtureId
-        )
-      : null;
+async function reconcileStartupTournamentRecovery() {
+  const options = cupOwnershipOptions();
+  const expected = await globalSaveCoordinator.read(undefined, options);
+  if (expected.images["dado-goal.tournament-recovery.v1"] === null) return;
 
-    if (canonicalMatchExists && fixture?.matchId === null) {
-      const reconciled = completeFixture(
-        tournamentState,
-        recovery.fixtureId,
-        recovery.matchId,
+  const outcome = await globalSaveCoordinator.write(
+    expected,
+    ({ storage }) => {
+      const recovery = loadTournamentRecovery(storage);
+      if (!recovery) return { status: "none" };
+
+      const management = loadManagement(storage);
+      const tournament = loadTournament(storage);
+      const canonicalMatchExists = management.matches.some(
+        match => match.matchId === recovery.matchId,
       );
-      saveTournament(window.localStorage, reconciled);
-      tournamentState = reconciled;
-      clearTournamentRecovery(window.localStorage);
-    } else if (
-      canonicalMatchExists &&
-      fixture?.matchId === recovery.matchId
-    ) {
-      clearTournamentRecovery(window.localStorage);
-    } else if (!canonicalMatchExists || !sameChampionship) {
-      clearTournamentRecovery(window.localStorage);
-    }
+      const sameChampionship =
+        tournament?.championshipId === recovery.championshipId;
+      const fixture = sameChampionship
+        ? tournament.fixtures.find(
+            candidate => candidate.fixtureId === recovery.fixtureId,
+          )
+        : null;
+
+      if (canonicalMatchExists && fixture?.matchId === null) {
+        const reconciled = completeFixture(
+          tournament, recovery.fixtureId, recovery.matchId,
+        );
+
+        // Never clear the recovery evidence before persisting the fixture.
+        saveTournament(storage, reconciled);
+        try {
+          clearTournamentRecovery(storage);
+        } catch {
+          // The fixture is durable. Retry journal cleanup on the next load.
+        }
+        return { status: "reconciled", tournament: reconciled };
+      }
+
+      if (canonicalMatchExists && fixture?.matchId === recovery.matchId) {
+        clearTournamentRecovery(storage);
+        return { status: "already-associated" };
+      }
+
+      if (!canonicalMatchExists || !sameChampionship) {
+        // Preserve the previous behavior for definitively orphaned intent.
+        clearTournamentRecovery(storage);
+        return { status: "orphaned" };
+      }
+
+      // A conflicting fixture association is not safe to discard or rewrite.
+      throw new Error("TOURNAMENT_RECOVERY_CONFLICT");
+    },
+    options,
+  );
+
+  if (outcome.value.status === "reconciled") {
+    tournamentState = outcome.value.tournament;
+    markGlobalSaveDirty();
   }
-} catch {
-  // Keep recoverable persisted state untouched for a later reload.
 }
 
-function recordCompletedMatch() {
+if (typeof navigator.locks?.request === "function") {
+  try {
+    await reconcileStartupTournamentRecovery();
+  } catch {
+    // Retain recoverable evidence; a later reload may retry safely.
+  }
+}
+
+async function recordCompletedMatch() {
   if (matchRecorded || state.phase !== "finished") return;
 
   const completedTournamentFixture =
@@ -798,25 +905,247 @@ function recordCompletedMatch() {
   // is unavailable. Generic and Manager saves remain independent.
   matchRecorded = true;
 
+  // SP-02: standalone matches use the global persistence gate.
+  // Competition and Manager association protocols remain separate.
+  if (
+    !cupState &&
+    !tournamentState &&
+    !managerState &&
+    !activeTournamentFixtureId
+  ) {
+    try {
+      const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+      const result = await globalSaveCoordinator.write(
+        expected,
+        ({ storage }) => {
+          const persistedManagement = loadManagement(storage);
+
+          // Never append to an obsolete local history.
+          if (
+            JSON.stringify(persistedManagement) !==
+            JSON.stringify(managementState)
+          ) {
+            return false;
+          }
+
+          saveManagement(storage, nextState);
+          return true;
+        },
+        cupOwnershipOptions(),
+      );
+
+      if (result.value === true) {
+        managementState = nextState;
+        markGlobalSaveDirty();
+      }
+    } catch {
+      // The sporting result remains final; reject unsafe persistence.
+    }
+
+    renderTournament();
+    renderManagerDashboard();
+    return;
+  }
+
   let canonicalMatchPersisted = false;
   let tournamentRecoveryPrepared = false;
-  let cupRecoveryPrepared = false;
+  let cupWriterHandled = false;
+  let championshipWriterHandled = false;
+  let championshipFixturePersisted = false;
 
-  if (cupState && !tournamentState && activeTournamentFixtureId) {
+  if (tournamentState && activeTournamentFixtureId) {
+    championshipWriterHandled = true;
+    const previousManagement = managementState;
+    const previousTournament = tournamentState;
+    const fixtureId = activeTournamentFixtureId;
+
     try {
-      requireCupOwnership();
-      saveCupRecovery(window.localStorage, {
-        cupId: cupState.cupId,
-        fixtureId: activeTournamentFixtureId,
-        matchId: record.matchId,
-      });
-      cupRecoveryPrepared = true;
+      const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+      const outcome = await globalSaveCoordinator.write(
+        expected,
+        ({ storage }) => {
+          const persistedManagement = loadManagement(storage);
+          const persistedTournament = loadTournament(storage);
+
+          if (
+            JSON.stringify(persistedManagement) !==
+              JSON.stringify(previousManagement) ||
+            JSON.stringify(persistedTournament) !==
+              JSON.stringify(previousTournament)
+          ) {
+            return { status: "stale" };
+          }
+
+          const currentFixture = persistedTournament?.fixtures.find(
+            candidate => candidate.fixtureId === fixtureId,
+          );
+
+          if (!currentFixture || currentFixture.matchId !== null) {
+            return { status: "stale" };
+          }
+
+          const nextTournament = completeFixture(
+            previousTournament, fixtureId, record.matchId,
+          );
+
+          try {
+            saveTournamentRecovery(storage, {
+              championshipId: previousTournament.championshipId,
+              fixtureId,
+              matchId: record.matchId,
+            });
+          } catch {
+            return { status: "blocked" };
+          }
+
+          try {
+            saveManagement(storage, nextState);
+          } catch {
+            try {
+              clearTournamentRecovery(storage);
+            } catch {
+              // Keep recoverable evidence if cleanup fails.
+            }
+            return { status: "blocked" };
+          }
+
+          try {
+            saveTournament(storage, nextTournament);
+          } catch {
+            // The canonical match and recovery intent remain durable.
+            return { status: "canonical", nextTournament };
+          }
+
+          try {
+            clearTournamentRecovery(storage);
+          } catch {
+            // Reload can remove an already reconciled journal.
+          }
+
+          return { status: "complete", nextTournament };
+        },
+        cupOwnershipOptions(),
+      );
+
+      const result = outcome.value;
+      if (
+        result.status === "complete" ||
+        result.status === "canonical"
+      ) {
+        managementState = nextState;
+        tournamentState = result.nextTournament;
+        canonicalMatchPersisted = true;
+        markGlobalSaveDirty();
+
+        if (result.status === "complete") {
+          championshipFixturePersisted = true;
+          activeTournamentFixtureId = null;
+        }
+      }
     } catch {
-      // Never associate a cup fixture without durable recovery intent.
+      // Fail closed: do not fall through to uncoordinated writes.
     }
   }
 
-  if (tournamentState && activeTournamentFixtureId) {
+  if (cupState && !tournamentState && activeTournamentFixtureId) {
+    cupWriterHandled = true;
+    const previousManagement = managementState;
+    const previousCup = cupState;
+    const fixtureId = activeTournamentFixtureId;
+
+    try {
+      requireCupOwnership();
+      const ownership = cupLock.ownership;
+      const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+
+      const outcome = await globalSaveCoordinator.write(
+        expected,
+        ({ storage }) => {
+          const persistedManagement = loadManagement(storage);
+          const persistedCup = loadVerifiedCup(
+            storage, persistedManagement.matches,
+          );
+
+          if (
+            JSON.stringify(persistedManagement) !==
+              JSON.stringify(previousManagement) ||
+            JSON.stringify(persistedCup) !==
+              JSON.stringify(previousCup)
+          ) {
+            return { status: "stale" };
+          }
+
+          const fixture = persistedCup?.fixtures.find(
+            candidate => candidate.fixtureId === fixtureId,
+          );
+
+          if (!fixture || fixture.matchId !== null) {
+            return { status: "stale" };
+          }
+
+          if (
+            String(record.home.providerTeamId) !==
+              String(fixture.homeProviderTeamId) ||
+            String(record.away.providerTeamId) !==
+              String(fixture.awayProviderTeamId)
+          ) {
+            return { status: "stale" };
+          }
+
+          // An interrupted ordinary write remains recoverable from this
+          // journal and the canonical match, without duplicating the match.
+          saveCupRecovery(storage, {
+            cupId: persistedCup.cupId,
+            fixtureId,
+            matchId: record.matchId,
+          });
+
+          saveManagement(storage, nextState);
+
+          const completed = completeCupFixture(
+            persistedCup, fixtureId, record.matchId,
+          );
+          const advancement = advanceCupIfReady(
+            completed, nextState.matches, completed.shootouts ?? {},
+          );
+          saveVerifiedCup(storage, advancement.cup, nextState.matches);
+
+          // The journal is retired only after the fixture is durable.
+          clearCupRecovery(storage);
+
+          return {
+            status: "complete",
+            cup: advancement.cup,
+            advancementStatus: advancement.status,
+          };
+        },
+        { ownership },
+      );
+
+      if (outcome.value.status !== "complete") {
+        throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+      }
+
+      managementState = nextState;
+      cupState = outcome.value.cup;
+      canonicalMatchPersisted = true;
+      activeTournamentFixtureId = null;
+      cupLoadError = null;
+      markGlobalSaveDirty();
+
+      if (outcome.value.advancementStatus === "advanced") {
+        tournamentViewedMatchday = Math.max(
+          ...cupState.fixtures.map(fixture => fixture.round),
+        );
+      }
+    } catch (failure) {
+      // The journal and canonical record may already be durable. Never
+      // fall through to uncoordinated writes or enable another Cup edit.
+      cupLoadError = failure.code ?? "CUP_SHOOTOUT_STORAGE_UNAVAILABLE";
+    }
+  }
+
+  if (!championshipWriterHandled && tournamentState && activeTournamentFixtureId) {
     try {
       saveTournamentRecovery(window.localStorage, {
         championshipId: tournamentState.championshipId,
@@ -829,25 +1158,45 @@ function recordCompletedMatch() {
     }
   }
 
-  const cupPersistenceReady =
-    !cupState || !activeTournamentFixtureId || cupRecoveryPrepared;
-
-  if (cupPersistenceReady) {
+  if (!championshipWriterHandled && !cupWriterHandled) {
     try {
-      saveManagement(window.localStorage, nextState);
-      managementState = nextState;
-      canonicalMatchPersisted = true;
-      markGlobalSaveDirty();
-    } catch {
-      // Local persistence failure must never affect gameplay.
-    }
-  }
+      const previousManagement = managementState;
+      const expected = await globalSaveCoordinator.read(
+        undefined, cupOwnershipOptions(),
+      );
+      const outcome = await globalSaveCoordinator.write(
+        expected,
+        ({ storage }) => {
+          const persistedManagement = loadManagement(storage);
 
-  if (!canonicalMatchPersisted && cupRecoveryPrepared) {
-    try {
-      clearCupRecovery(window.localStorage);
+          // Never overwrite history advanced by another tab.
+          if (
+            JSON.stringify(persistedManagement) !==
+            JSON.stringify(previousManagement)
+          ) {
+            return false;
+          }
+
+          // A completed match may enter canonical history only once.
+          if (persistedManagement.matches.some(
+            match => match.matchId === record.matchId,
+          )) {
+            return false;
+          }
+
+          saveManagement(storage, nextState);
+          return true;
+        },
+        cupOwnershipOptions(),
+      );
+
+      if (outcome.value === true) {
+        managementState = nextState;
+        canonicalMatchPersisted = true;
+        markGlobalSaveDirty();
+      }
     } catch {
-      // Reload discards a journal without a canonical match.
+      // The sporting result remains valid; unsafe persistence is rejected.
     }
   }
 
@@ -859,7 +1208,8 @@ function recordCompletedMatch() {
     }
   }
 
-  if (canonicalMatchPersisted &&
+  if (!championshipWriterHandled &&
+      canonicalMatchPersisted &&
       tournamentState &&
       activeTournamentFixtureId) {
     try {
@@ -880,42 +1230,9 @@ function recordCompletedMatch() {
     }
   }
 
-  if (canonicalMatchPersisted &&
-      cupState &&
-      !tournamentState &&
-      activeTournamentFixtureId &&
-      cupRecoveryPrepared) {
-    try {
-      requireCupOwnership();
-      const completedCup = completeCupFixture(
-        cupState, activeTournamentFixtureId, record.matchId,
-      );
-      const advancement = advanceCupIfReady(
-        completedCup,
-        managementState.matches,
-        completedCup.shootouts ?? {},
-      );
-      const nextCup = advancement.cup;
-      saveVerifiedCup(
-        window.localStorage, nextCup, managementState.matches,
-      );
-      cupState = nextCup;
-      if (advancement.status === "advanced") {
-        tournamentViewedMatchday = Math.max(
-          ...nextCup.fixtures.map(fixture => fixture.round),
-        );
-      }
-      activeTournamentFixtureId = null;
-      clearCupRecovery(window.localStorage);
-    } catch (failure) {
-      // Offer the same lock-protected recovery without requiring a page reload.
-      // The canonical match and its journal remain authoritative.
-      cupLoadError = failure.code ?? "CUP_SHOOTOUT_STORAGE_UNAVAILABLE";
-    }
-  }
-
   if (
     canonicalMatchPersisted &&
+    (!championshipWriterHandled || championshipFixturePersisted) &&
     completedManagerMatchday !== null &&
     tournamentState
   ) {
@@ -927,30 +1244,66 @@ function recordCompletedMatch() {
     );
 
     for (const fixture of remainingMatchdayFixtures) {
-      if (!simulateTournamentFixture(fixture)) break;
+      if (!await simulateTournamentFixture(fixture)) break;
     }
 
     tournamentViewedMatchday = completedManagerMatchday;
   }
 
-  if (managerState &&
+  if (canonicalMatchPersisted &&
+      (!championshipWriterHandled || championshipFixturePersisted) &&
+      managerState &&
       selectedMatchTeams.some(team =>
         team &&
         String(team.providerTeamId) ===
           String(managerState.club.providerTeamId)
       )) {
+    const previousManager = managerState;
+
     try {
-      managerState = createManagerDocument({
-        club: managerState.club,
+      const nextManager = createManagerDocument({
+        club: previousManager.club,
         management: createManagementDocument({
-          ratings: managerState.management.ratings,
-          matches: [...managerState.management.matches, record],
+          ratings: previousManager.management.ratings,
+          matches: [...previousManager.management.matches, record],
         }),
         nextMatch: null,
       });
-      saveManager(window.localStorage, managerState);
+
+      const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+      const outcome = await globalSaveCoordinator.write(
+        expected,
+        ({ storage }) => {
+          const persistedManager = loadManager(storage);
+
+          // A stale tab must not replace a newer career document.
+          if (
+            JSON.stringify(persistedManager) !==
+            JSON.stringify(previousManager)
+          ) {
+            return false;
+          }
+
+          // Never register the same canonical match twice in a career.
+          if (persistedManager.management.matches.some(
+            match => match.matchId === record.matchId,
+          )) {
+            return false;
+          }
+
+          saveManager(storage, nextManager);
+          return true;
+        },
+        cupOwnershipOptions(),
+      );
+
+      if (outcome.value === true) {
+        managerState = nextManager;
+        markGlobalSaveDirty();
+      }
     } catch {
-      // Manager persistence failure must never affect gameplay.
+      // Preserve the previous in-memory career on persistence failure.
+      // The sporting result is unaffected.
     }
   }
 
@@ -1372,15 +1725,9 @@ function renderManagerDashboard() {
   }
 }
 
-function persistManagerState() {
-  if (!managerState) return;
-  saveManager(window.localStorage, managerState);
-  markGlobalSaveDirty();
-  renderManagerDashboard();
-}
-
 function editManagerSelection() {
-  const club = managerState?.club ?? null;
+  const previousManager = managerState;
+  const club = previousManager?.club ?? null;
   if (!club) return;
 
   const currentLineup = new Set(club.lineup.map(String));
@@ -1522,7 +1869,9 @@ function editManagerSelection() {
   const save = document.createElement("button");
   save.type = "button";
   save.textContent = "Salva rosa e formazione";
-  save.addEventListener("click", () => {
+  save.addEventListener("click", async () => {
+    if (save.disabled) return;
+    save.disabled = true;
     const lineup = [];
     const bench = [];
 
@@ -1555,12 +1904,43 @@ function editManagerSelection() {
         { lineup, bench }
       );
 
-      managerState = createManagerDocument({
+      const nextManager = createManagerDocument({
         club: nextClub,
-        management: managerState.management,
-        nextMatch: managerState.nextMatch,
+        management: previousManager.management,
+        nextMatch: previousManager.nextMatch,
       });
-      persistManagerState();
+
+      if (managerState !== previousManager) {
+        throw new Error("La carriera Manager è cambiata: riapri l'editor.");
+      }
+
+      const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+      const outcome = await globalSaveCoordinator.write(
+        expected,
+        ({ storage }) => {
+          if (managerState !== previousManager) return false;
+
+          const persistedManager = loadManager(storage);
+          if (
+            JSON.stringify(persistedManager) !==
+            JSON.stringify(previousManager)
+          ) {
+            return false;
+          }
+
+          saveManager(storage, nextManager);
+          return true;
+        },
+        cupOwnershipOptions(),
+      );
+
+      if (outcome.value !== true) {
+        throw new Error("La carriera Manager è cambiata: riapri l'editor.");
+      }
+
+      managerState = nextManager;
+      markGlobalSaveDirty();
+      renderManagerDashboard();
       dialog.close();
     } catch (caught) {
       const message = caught instanceof Error
@@ -1579,6 +1959,8 @@ function editManagerSelection() {
       error.textContent = document.documentElement.lang === "it"
         ? (italianErrors[message] ?? message)
         : message;
+    } finally {
+      save.disabled = false;
     }
   });
 
@@ -1606,24 +1988,53 @@ function syncNewManagerControls() {
   }
 }
 
-function newManagerCareer(seat) {
+let managerCareerMutationBusy = false;
+
+async function newManagerCareer(seat) {
+  if (managerCareerMutationBusy || managerState) return;
+
   const team = catalogueTeam(`team-${seat}`);
   if (!team) return;
 
-  clearManager(window.localStorage);
-
-  managerState = createManagerDocument({
+  const candidate = createManagerDocument({
     club: createManagerClub(team),
     management: createManagementDocument(),
   });
 
-  persistManagerState();
-  setManagerPanelExpanded(true);
-  renderManagerDashboard();
+  managerCareerMutationBusy = true;
+  try {
+    const options = ownsCupLock()
+      ? { ownership: cupLock.ownership }
+      : {};
+    const expected = await globalSaveCoordinator.read(undefined, options);
+    const outcome = await globalSaveCoordinator.write(
+      expected,
+      ({ storage }) => {
+        // Do not replace a career created by another tab.
+        if (loadManager(storage) !== null) return false;
+
+        saveManager(storage, candidate);
+        return true;
+      },
+      options,
+    );
+
+    if (outcome.value !== true) return;
+
+    managerState = candidate;
+    markGlobalSaveDirty();
+    setManagerPanelExpanded(true);
+    renderManagerDashboard();
+  } catch (failure) {
+    console.error("Manager career creation failed:", failure);
+  } finally {
+    managerCareerMutationBusy = false;
+  }
 }
 
-function closeManagerCareer() {
-  if (!managerState ||
+async function closeManagerCareer() {
+  if (managerCareerMutationBusy ||
+      !managerState ||
       (matchStarted && state.phase !== "finished")) return;
 
   if (!window.confirm(
@@ -1632,29 +2043,67 @@ function closeManagerCareer() {
     return;
   }
 
-  clearManager(window.localStorage);
-  managerState = null;
-  setManagerPanelExpanded(false);
-  renderManagerDashboard();
-  renderTournament();
+  const previous = managerState;
+  managerCareerMutationBusy = true;
+
+  try {
+    const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+    const outcome = await globalSaveCoordinator.write(
+      expected,
+      ({ storage }) => {
+        const persisted = loadManager(storage);
+
+        if (
+          JSON.stringify(persisted) !==
+          JSON.stringify(previous)
+        ) {
+          return false;
+        }
+
+        clearManager(storage);
+        return true;
+      },
+      cupOwnershipOptions(),
+    );
+
+    if (outcome.value !== true) return;
+
+    managerState = null;
+    markGlobalSaveDirty();
+    setManagerPanelExpanded(false);
+    renderManagerDashboard();
+    renderTournament();
+  } catch (failure) {
+    console.error("Manager career closure failed:", failure);
+  } finally {
+    managerCareerMutationBusy = false;
+  }
 }
 
 const GLOBAL_SAVE_SCHEMA_VERSION = 1;
 
 let globalSaveDirty = false;
+let globalSaveRevision = 0;
 
 function syncGlobalSaveDirtyUi() {
   byId("game-export").disabled = !globalSaveDirty;
 }
 
 function markGlobalSaveDirty() {
+  globalSaveRevision += 1;
   globalSaveDirty = true;
   syncGlobalSaveDirtyUi();
 }
 
 function markGlobalSaveClean() {
+  globalSaveRevision += 1;
   globalSaveDirty = false;
   syncGlobalSaveDirtyUi();
+}
+
+function globalSaveDraftFingerprint(draft = globalSaveDocument()) {
+  const { savedAt, ...content } = draft;
+  return JSON.stringify(content);
 }
 
 function serializedRefereeStates() {
@@ -1850,26 +2299,79 @@ function globalSaveFilename(save, now = new Date()) {
   return `${parts.join("-")}.json`;
 }
 
-function exportGlobalSave() {
+async function exportGlobalSave() {
   if (isRolling) {
     byId("game-save-status").textContent =
       "Attendi la conclusione del lancio prima di salvare.";
     return;
   }
 
-  const save = globalSaveDocument();
-  const source = JSON.stringify(save, null, 2);
-  const blob = new Blob([source], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const button = byId("game-export");
+  button.disabled = true;
+  let downloadDispatched = false;
 
-  link.href = url;
-  link.download = globalSaveFilename(save);
-  link.click();
+  try {
+    const options = cupOwnershipOptions();
 
-  URL.revokeObjectURL(url);
-  markGlobalSaveClean();
-  byId("game-save-status").textContent = "Salvataggio creato.";
+    // Capture the runtime draft and physical images under the SAME shared gate.
+    const captured = await globalSaveCoordinator.read(snapshot => {
+      const draft = globalSaveDocument();
+      return {
+        save: projectPortableGlobalSave(snapshot, draft),
+        revision: globalSaveRevision,
+        fingerprint: globalSaveDraftFingerprint(draft),
+        images: JSON.stringify(snapshot.images),
+      };
+    }, options);
+
+    const source = JSON.stringify(captured.save, null, 2);
+    const blob = new Blob([source], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    try {
+      link.href = url;
+      link.download = globalSaveFilename(captured.save);
+      link.click();
+      downloadDispatched = true;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+
+    // Revalidate the persistent predecessor under the coordinator gate.
+    // A mutation while the gate is queued cannot mark this export clean.
+    const currentImages = await globalSaveCoordinator.read(
+      snapshot => JSON.stringify(snapshot.images),
+      cupOwnershipOptions(),
+    );
+
+    const unchanged =
+      captured.revision === globalSaveRevision &&
+      captured.fingerprint === globalSaveDraftFingerprint() &&
+      captured.images === currentImages;
+
+    if (unchanged) {
+      markGlobalSaveClean();
+      byId("game-save-status").textContent = "Salvataggio creato.";
+    } else {
+      markGlobalSaveDirty();
+      byId("game-save-status").textContent =
+        "Salvataggio creato; sono presenti modifiche successive.";
+    }
+  } catch (failure) {
+    console.error("Global Save export failed:", failure);
+    if (downloadDispatched) {
+      markGlobalSaveDirty();
+      byId("game-save-status").textContent =
+        "Salvataggio creato; impossibile verificare lo stato aggiornato.";
+    } else {
+      byId("game-save-status").textContent =
+        "Esportazione non completata.";
+      window.alert(localizedError(failure, "save"));
+    }
+  } finally {
+    syncGlobalSaveDirtyUi();
+  }
 }
 
 function restoreControlValue(id, value) {
@@ -1878,31 +2380,13 @@ function restoreControlValue(id, value) {
   element.value = String(value);
 }
 
-function restoreGlobalRuntime(validated) {
+function hydrateGlobalRuntime(validated) {
   const { document, management, manager, tournament } = validated;
   const { configuration, runtime } = document;
 
   managementState = management;
   managerState = manager;
   tournamentState = tournament;
-
-  saveManagement(window.localStorage, managementState);
-
-  if (managerState) {
-    saveManager(window.localStorage, managerState);
-  } else {
-    clearManager(window.localStorage);
-  }
-
-  if (tournamentState) {
-    saveTournament(window.localStorage, tournamentState);
-  } else {
-    clearTournament(window.localStorage);
-  }
-
-  // A recovery journal is an internal crash-consistency artifact.
-  // A portable save contains the canonical tournament + runtime directly.
-  clearTournamentRecovery(window.localStorage);
 
   if (typeof document.locale === "string") {
     setLocale(document.locale);
@@ -2041,53 +2525,85 @@ function restoreGlobalRuntime(validated) {
   syncNewManagerControls();
 }
 
+function blockGlobalSaveUiAfterCommittedFailure(message) {
+  byId("game-save-status").textContent = message;
+  // An unverified committed image must never be edited through stale
+  // in-memory state. A full reload is the explicit recovery path.
+  for (const control of document.querySelectorAll(
+    "button, input, select, textarea",
+  )) {
+    control.disabled = true;
+  }
+}
+
 async function importGlobalSave(file) {
   if (!file) return;
 
-  if (isRolling) {
-    throw new Error(
-      "Attendi la conclusione del lancio prima di caricare."
-    );
+  if (isRolling || autoRunning) {
+    throw new Error("Attendi la conclusione della partita automatica o del lancio.");
+  }
+  if (cupShootoutPendingSave || cupShootoutBusy ||
+      cupRecoveryBusy || cupArchiveBusy ||
+      (cupLockRequest && !ownsCupLock())) {
+    throw new Error("Attendi la conclusione delle operazioni Coppa.");
   }
 
-  if (cupGlobalImportBlocked()) throw new CupShootoutError("CUP_GLOBAL_IMPORT_BLOCKED");
-  const validated = validateGlobalSave(await file.text());
-  // Recheck after file I/O: another tab may have stored a Cup meanwhile.
-  if (cupGlobalImportBlocked()) throw new CupShootoutError("CUP_GLOBAL_IMPORT_BLOCKED");
+  const source = await file.text();
 
-  // Validate first, mutate only after the whole document is accepted.
-  const keys = [
-    "dado-goal.tournament.v1",
-    "dado-goal.tournament-recovery.v1",
-    "dado-goal.manager.v1",
-    "dado-goal.team-management.v1",
-  ];
+  // Recheck after asynchronous file I/O, before admitting the transaction.
+  if (isRolling || autoRunning || cupShootoutPendingSave ||
+      cupShootoutBusy || cupRecoveryBusy || cupArchiveBusy ||
+      (cupLockRequest && !ownsCupLock())) {
+    throw new Error("Operazione in corso: importazione non avviata.");
+  }
 
-  const previous = new Map(
-    keys.map(key => [key, window.localStorage.getItem(key)])
+  const options = ownsCupLock()
+    ? { ownership: cupLock.ownership }
+    : {};
+
+  const result = await executePortableGlobalSaveImport(
+    globalSaveCoordinator,
+    source,
+    window.crypto.randomUUID(),
+    options,
   );
 
+  // From here onward the imported image is already committed.
+  // Never attempt localStorage rollback if UI hydration fails.
   try {
-    restoreGlobalRuntime(validated);
-  } catch (error) {
-    for (const [key, value] of previous) {
-      if (value === null) {
-        window.localStorage.removeItem(key);
-      } else {
-        window.localStorage.setItem(key, value);
-      }
-    }
-    throw error;
-  }
+    releaseCupOwnership();
+    cupState = result.prepared.cup
+      ? structuredClone(result.prepared.cup)
+      : null;
+    cupCoordinator = null;
+    cupLoadError = null;
+    cupShootoutError = null;
+    cupShootoutNotice = null;
 
-  markGlobalSaveClean();
-  byId("game-save-status").textContent =
-    "Salvataggio caricato.";
+    hydrateGlobalRuntime(result.prepared);
+    requestCupOwnership();
+    renderTournament();
+    markGlobalSaveClean();
+    byId("game-save-status").textContent = "Salvataggio caricato.";
+  } catch (cause) {
+    throw new CommittedImportNeedsReload(cause);
+  }
 }
 
 function initializeGlobalSaveUi() {
-  markGlobalSaveClean();
+  // Reloading a page is not evidence that its persistent image was exported.
+  markGlobalSaveDirty();
   byId("game-export").addEventListener("click", exportGlobalSave);
+
+  const configurationControl =
+    /^(competition|hands|random-hands|team-[01]|color-[01](-enabled|-secondary)?|auto-mode|auto-hand-limit|auto-roll-delay|auto-hand-delay)$/;
+  const invalidateConfiguration = event => {
+    if (configurationControl.test(event.target?.id ?? "")) {
+      markGlobalSaveDirty();
+    }
+  };
+  document.addEventListener("input", invalidateConfiguration, true);
+  document.addEventListener("change", invalidateConfiguration, true);
 
   byId("game-import").addEventListener("click", () => {
     byId("game-import-file").click();
@@ -2099,13 +2615,17 @@ function initializeGlobalSaveUi() {
       try {
         await importGlobalSave(event.target.files?.[0]);
       } catch (caught) {
-        window.alert(
-          caught instanceof CupShootoutError
-            ? cupMessage(caught.code)
-            : caught instanceof Error
-              ? caught.message
-              : "Salvataggio Dado Goal non valido."
-        );
+        console.error(caught);
+        if (caught instanceof CommittedImportNeedsReload) {
+          const message = "Il salvataggio potrebbe essere già stato importato. " +
+            "Lo stato corrente non è utilizzabile: ricarica la pagina per " +
+            "completare il recupero prima di continuare.";
+          blockGlobalSaveUiAfterCommittedFailure(message);
+          window.alert(message);
+        } else {
+          window.alert(caught instanceof CupShootoutError
+            ? cupMessage(caught.code) : localizedError(caught, "save"));
+        }
       } finally {
         event.target.value = "";
       }
@@ -2439,6 +2959,10 @@ function ownsCupLock() {
   return Boolean(cupState && cupLock?.cupId === cupState.cupId);
 }
 
+function cupOwnershipOptions() {
+  return ownsCupLock() ? { ownership: cupLock.ownership } : {};
+}
+
 function requireCupOwnership() {
   if (cupLoadError) throw new CupShootoutError(cupLoadError);
   if (!window.navigator?.locks?.request) throw new CupShootoutError("CUP_SHOOTOUT_LOCK_UNAVAILABLE");
@@ -2460,19 +2984,37 @@ function reloadCupForOwnership() {
   }
 }
 
-function refreshOwnedCup() {
-  reloadCupForOwnership();
-  if (!ownsCupLock() || cupLoadError || cupShootoutPendingSave) return;
-  try {
-    reconcileCupRecovery();
-    cupCoordinator = createCupShootoutCoordinator(window.localStorage, managementState.matches, {
+async function createBoundCupShootoutCoordinator(matches) {
+  requireCupOwnership();
+  const snapshot = await globalSaveCoordinator.read(
+    undefined, cupOwnershipOptions(),
+  );
+  const write = globalSaveCoordinator.bindWriter(storage =>
+    createCupShootoutCoordinator(storage, matches, {
       ownsLock: ownsCupLock,
-    });
+    }),
+  );
+  return { write, snapshot };
+}
+
+async function refreshOwnedCup() {
+  if (cupRecoveryBusy || cupShootoutPendingSave) return;
+  cupRecoveryBusy = true;
+  try {
+    reloadCupForOwnership();
+    if (!ownsCupLock() || cupLoadError) return;
+    await reconcileCupRecovery();
+    if (!ownsCupLock()) return;
+    cupCoordinator = await createBoundCupShootoutCoordinator(
+      managementState.matches,
+    );
     cupShootoutNotice = Object.values(cupState.shootoutSessions ?? {})
       .some(session => session.status !== "complete") ? "resumed" : null;
   } catch (failure) {
-    // Retain the journal and block new writes until recovery can finish.
+    // Keep editing blocked until recovery succeeds.
     cupLoadError = failure.code ?? "CUP_SHOOTOUT_STORAGE_UNAVAILABLE";
+  } finally {
+    cupRecoveryBusy = false;
   }
 }
 
@@ -2499,16 +3041,18 @@ function requestCupOwnership() {
       cupShootoutError = "CUP_SHOOTOUT_OTHER_TAB";
       return;
     }
-    let release;
-    const held = new Promise(resolve => { release = resolve; });
-    cupLock = { cupId, release };
-    try {
-      refreshOwnedCup();
-      renderTournament();
-      await held;
-    } finally {
-      if (cupLock?.release === release) cupLock = null;
-    }
+    await globalSaveCoordinator.withCupOwnership(lock, async ownership => {
+      let release;
+      const held = new Promise(resolve => { release = resolve; });
+      cupLock = { cupId, release, ownership };
+      try {
+        await refreshOwnedCup();
+        renderTournament();
+        await held;
+      } finally {
+        if (cupLock?.release === release) cupLock = null;
+      }
+    });
   }).catch(() => {
     cupShootoutError = "CUP_SHOOTOUT_LOCK_UNAVAILABLE";
   }).finally(() => {
@@ -2541,7 +3085,7 @@ function renderCupStorageStatus() {
   retry.disabled = cupShootoutBusy || cupShootoutPendingSave;
   retry.textContent = cupText("Ricarica dati / acquisisci Coppa", "Reload data / acquire Cup");
   byId("cup-global-omission").textContent = cupText(
-    "Il salvataggio globale non include la Coppa.", "The global save does not include the Cup.",
+    "Il salvataggio globale include la Coppa e il suo archivio.", "The global save includes the Cup and its archive.",
   );
 }
 
@@ -2590,8 +3134,8 @@ function renderCupShootout(cup, teamName) {
     die.src = `data:image/svg+xml,${encodeURIComponent(PENALTY_DICE_ART[FACES.penalty.indexOf(lastAttempt.face)])}`;
     die.alt = cupText("Dado verde: ", "Green die: ") + cupAttemptOutcome(lastAttempt);
   }
-  const editable = ownsCupLock() && !cupLoadError && !cupShootoutBusy &&
-    !cupShootoutPendingSave && !tournamentState;
+  const editable = ownsCupLock() && !cupLoadError && !cupRecoveryBusy &&
+    !cupShootoutBusy && !cupShootoutPendingSave && !tournamentState;
   const blocked = ["CUP_SHOOTOUT_STORAGE_UNAVAILABLE", "CUP_SHOOTOUT_STALE", "CUP_SHOOTOUT_INVALID_STATE",
     "CUP_SHOOTOUT_UNSUPPORTED_VERSION"].includes(cupShootoutError);
   const start = byId("cup-shootout-start");
@@ -2673,7 +3217,7 @@ function renderCupShootout(cup, teamName) {
 }
 
 async function runCupShootoutAction(action, command) {
-  if (cupShootoutBusy || (cupShootoutPendingSave && action !== "retry")) return;
+  if (cupRecoveryBusy || cupShootoutBusy || (cupShootoutPendingSave && action !== "retry")) return;
   cupShootoutBusy = true;
   cupShootoutError = null;
   cupShootoutNotice = null;
@@ -2684,16 +3228,37 @@ async function runCupShootoutAction(action, command) {
     // Match completion replaces the matches array. Start a coordinator with that
     // canonical input; never replace one retaining a prepared attempt.
     if (action === "start") {
-      cupCoordinator = createCupShootoutCoordinator(window.localStorage, managementState.matches, { ownsLock: ownsCupLock });
+      cupCoordinator = await createBoundCupShootoutCoordinator(
+        managementState.matches,
+      );
     }
     if (!cupCoordinator) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
-    const result = action === "start" ? { cup: cupCoordinator.startCupShootout(command) }
-      : action === "retry" ? cupCoordinator.retryCupShootoutSave()
-      : cupCoordinator.confirmCupShootoutAttempt(command);
-    // Commit has succeeded. Presentation below cannot turn it into a failed save.
+
+    // A prepared failed shot must retain its original snapshot. Never read
+    // again, replace the component or draw another face during retry.
+    if (action !== "start" && action !== "retry") {
+      cupCoordinator.snapshot = await globalSaveCoordinator.read(
+        undefined, cupOwnershipOptions(),
+      );
+    }
+
+    const outcome = await cupCoordinator.write(
+      cupCoordinator.snapshot,
+      ({ component }) => action === "start"
+        ? { cup: component.startCupShootout(command) }
+        : action === "retry"
+          ? component.retryCupShootoutSave()
+          : component.confirmCupShootoutAttempt(command),
+      cupOwnershipOptions(),
+    );
+
+    // Replace the predecessor only after the gated write succeeds.
+    cupCoordinator.snapshot = outcome.snapshot;
+    const result = outcome.value;
     cupState = result.cup;
     cupShootoutPendingSave = false;
     accepted = true;
+    markGlobalSaveDirty();
     cupShootoutNotice = result.attempt
       ? { key: JSON.parse(result.attempt.attemptId)[1], attemptId: result.attempt.attemptId }
       : "resumed";
@@ -2710,7 +3275,7 @@ async function runCupShootoutAction(action, command) {
   catch (failure) {
     if (!accepted) throw failure;
     // A committed result remains authoritative even if its first render fails.
-    refreshOwnedCup();
+    await refreshOwnedCup();
     renderTournament();
   }
   if (accepted) {
@@ -2727,7 +3292,8 @@ function renderCupBracket() {
   const cup = cupState;
   byId("tournament-close").textContent = cupText("Archivia Coppa", "Archive Cup");
   byId("tournament-close").disabled =
-    !ownsCupLock() || cupLoadError !== null || cupShootoutPendingSave || cupShootoutBusy ||
+    !ownsCupLock() || cupLoadError !== null || cupRecoveryBusy ||
+    cupShootoutPendingSave || cupShootoutBusy ||
     cup.championProviderTeamId === undefined ||
     (matchStarted && state.phase !== "finished");
   const rounds = Math.log2(cup.participants.length);
@@ -2783,7 +3349,8 @@ function renderCupBracket() {
   byId("tournament-matchday-prev").disabled = viewedRound <= 1;
   byId("tournament-matchday-next").disabled = viewedRound >= currentRound;
   byId("tournament-play-next").disabled =
-    !ownsCupLock() || cupLoadError !== null || cupShootoutPendingSave || cupShootoutBusy ||
+    !ownsCupLock() || cupLoadError !== null || cupRecoveryBusy ||
+    cupShootoutPendingSave || cupShootoutBusy ||
     activeTournamentFixtureId !== null ||
     !next || (matchStarted && state.phase !== "finished");
 
@@ -2850,8 +3417,9 @@ function renderCupBracket() {
   byId("tournament-pending-empty").hidden = pending.length !== 0;
 }
 
-function confirmCupShootout() {
-  if (!cupState || tournamentState || cupShootoutBusy || cupShootoutPendingSave) return;
+async function confirmCupShootout() {
+  if (!cupState || tournamentState || cupRecoveryBusy || cupShootoutBusy ||
+      cupShootoutPendingSave || cupArchiveBusy) return;
   const panel = byId("cup-shootout");
   if (panel.hidden) return;
   cupShootoutNotice = null;
@@ -2868,28 +3436,49 @@ function confirmCupShootout() {
     renderTournament();
     return;
   }
+
   let accepted = false;
+  cupShootoutBusy = true;
   try {
     requireCupOwnership();
-    const latest = loadVerifiedCup(window.localStorage, managementState.matches);
-    if (latest?.cupId !== cupState.cupId) throw new CupShootoutError("CUP_SHOOTOUT_STALE");
-    const decided = recordCupShootout(
-      latest, managementState.matches, round, pair, { home, away },
+    const originalCup = cupState;
+    const ownership = cupLock.ownership;
+    const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+
+    const result = await globalSaveCoordinator.write(
+      expected,
+      ({ storage }) => {
+        const latest = loadVerifiedCup(storage, managementState.matches);
+        if (latest?.cupId !== originalCup.cupId ||
+            JSON.stringify(latest) !== JSON.stringify(originalCup)) {
+          throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+        }
+        const decided = recordCupShootout(
+          latest, managementState.matches, round, pair, { home, away },
+        );
+        const advancement = advanceCupIfReady(
+          decided, managementState.matches, decided.shootouts ?? {},
+        );
+        saveVerifiedCup(storage, advancement.cup, managementState.matches);
+        return advancement.cup;
+      },
+      { ownership },
     );
-    const advancement = advanceCupIfReady(
-      decided, managementState.matches, decided.shootouts ?? {},
-    );
-    saveVerifiedCup(window.localStorage, advancement.cup, managementState.matches);
-    cupState = advancement.cup;
+
+    cupState = result.value;
     accepted = true;
     cupShootoutError = null;
     cupShootoutNotice = { manualKey: `r${round}-p${pair}` };
     tournamentViewedMatchday = Math.max(...cupState.fixtures.map(f => f.round));
     byId("cup-penalties-home").value = "";
     byId("cup-penalties-away").value = "";
+    markGlobalSaveDirty();
   } catch (failure) {
     cupShootoutError = failure.code ?? "CUP_SHOOTOUT_SAVE_FAILED";
+  } finally {
+    cupShootoutBusy = false;
   }
+
   renderTournament();
   if (accepted) {
     const target = ["cup-shootout-start", "tournament-play-next"]
@@ -2900,9 +3489,9 @@ function confirmCupShootout() {
 }
 
 byId("cup-shootout-confirm").addEventListener("click", confirmCupShootout);
-byId("cup-storage-retry").addEventListener("click", () => {
+byId("cup-storage-retry").addEventListener("click", async () => {
   if (cupShootoutPendingSave) return;
-  if (ownsCupLock()) refreshOwnedCup();
+  if (ownsCupLock()) await refreshOwnedCup();
   else {
     reloadCupForOwnership();
     requestCupOwnership();
@@ -3233,8 +3822,10 @@ function renderTournament() {
     (matchStarted && state.phase !== "finished");
 }
 
-function closeTournament() {
-  if (matchStarted && state.phase !== "finished") return;
+let cupArchiveBusy = false;
+
+async function closeTournament() {
+  if (cupArchiveBusy || cupRecoveryBusy || (matchStarted && state.phase !== "finished")) return;
 
   if (cupState && !tournamentState) {
     if (!ownsCupLock() || cupLoadError || cupShootoutPendingSave || cupShootoutBusy ||
@@ -3244,22 +3835,35 @@ function closeTournament() {
         "Archive this completed Cup? Its results will be retained.")
     )) return;
 
+    cupArchiveBusy = true;
     try {
       requireCupOwnership();
-      archiveCompletedCup(
-        window.localStorage, cupState, managementState.matches,
+
+      const cupToArchive = cupState;
+      const ownership = cupLock.ownership;
+      const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+
+      await globalSaveCoordinator.archive(
+        expected,
+        {
+          cupJson: JSON.stringify(cupToArchive),
+          transactionId: crypto.randomUUID(),
+        },
+        { ownership },
       );
-      clearCup(window.localStorage);
-      clearCupRecovery(window.localStorage);
+
       cupState = null;
       releaseCupOwnership();
       activeTournamentFixtureId = null;
       tournamentViewedMatchday = null;
+      markGlobalSaveDirty();
       renderTournament();
       renderManagerDashboard();
     } catch (failure) {
       window.alert(cupText("Archiviazione Coppa non completata. ", "Cup archive did not complete. ") +
         cupMessage(failure.code ?? "CUP_SHOOTOUT_SAVE_FAILED"));
+    } finally {
+      cupArchiveBusy = false;
     }
     return;
   }
@@ -3271,13 +3875,43 @@ function closeTournament() {
     return;
   }
 
-  clearTournament(window.localStorage);
-  clearTournamentRecovery(window.localStorage);
-  tournamentState = null;
-  activeTournamentFixtureId = null;
-  tournamentViewedMatchday = null;
-  renderTournament();
-  renderManagerDashboard();
+  const previousTournament = tournamentState;
+
+  try {
+    const options = cupOwnershipOptions();
+    const expected = await globalSaveCoordinator.read(undefined, options);
+    const outcome = await globalSaveCoordinator.write(
+      expected,
+      ({ storage }) => {
+        const persistedTournament = loadTournament(storage);
+        if (
+          !persistedTournament ||
+          JSON.stringify(persistedTournament) !==
+            JSON.stringify(previousTournament) ||
+          storage.getItem(CUP_STORAGE_KEY) !== null ||
+          loadTournamentRecovery(storage) !== null
+        ) {
+          throw new Error("CHAMPIONSHIP_ABANDON_STALE");
+        }
+
+        clearTournament(storage);
+        return true;
+      },
+      options,
+    );
+
+    if (outcome.value !== true) return;
+    tournamentState = null;
+    activeTournamentFixtureId = null;
+    tournamentViewedMatchday = null;
+    markGlobalSaveDirty();
+    renderTournament();
+    renderManagerDashboard();
+  } catch (failure) {
+    console.error("Championship abandonment failed:", failure);
+    byId("tournament-error").textContent =
+      "Impossibile abbandonare il campionato: dati modificati o salvataggio non disponibile.";
+  }
 }
 
 async function createTournamentFromSelection() {
@@ -3302,17 +3936,31 @@ async function createTournamentFromSelection() {
         legs: Number(byId("cup-legs").value),
         name: byId("tournament-name").value.trim() || "Coppa personalizzata",
       });
-      if (!window.navigator?.locks?.request) throw new CupShootoutError("CUP_SHOOTOUT_LOCK_UNAVAILABLE");
-      // Serialize creation too: independent new Cup IDs cannot protect one key.
-      await window.navigator.locks.request("dado-goal.cup.create", { mode: "exclusive" }, () => {
-        if (window.localStorage.getItem(CUP_STORAGE_KEY) !== null) {
-          throw new CupShootoutError("CUP_SHOOTOUT_STALE");
-        }
-        saveVerifiedCup(window.localStorage, document, managementState.matches);
-      });
-      cupState = document;
+      const previousManagement = managementState;
+      const expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+      const outcome = await globalSaveCoordinator.write(
+        expected,
+        ({ storage }) => {
+          const persistedManagement = loadManagement(storage);
+          if (
+            JSON.stringify(persistedManagement) !==
+              JSON.stringify(previousManagement) ||
+            storage.getItem(CUP_STORAGE_KEY) !== null
+          ) {
+            throw new CupShootoutError("CUP_SHOOTOUT_STALE");
+          }
+
+          saveVerifiedCup(
+            storage, document, persistedManagement.matches,
+          );
+          return document;
+        },
+        { ...cupOwnershipOptions(), cupIds: [document.cupId] },
+      );
+      cupState = outcome.value;
       activeTournamentFixtureId = null;
       requestCupOwnership();
+      markGlobalSaveDirty();
       renderTournament();
       return;
     }
@@ -3322,10 +3970,34 @@ async function createTournamentFromSelection() {
       participants,
       name: byId("tournament-name").value.trim() || "Torneo personalizzato",
     });
-    saveTournament(window.localStorage, document);
-    tournamentState = document;
+    const previousManagement = managementState;
+    const expected = await globalSaveCoordinator.read(
+      undefined, cupOwnershipOptions(),
+    );
+    const outcome = await globalSaveCoordinator.write(
+      expected,
+      ({ storage }) => {
+        const persistedManagement = loadManagement(storage);
+        if (
+          JSON.stringify(persistedManagement) !==
+            JSON.stringify(previousManagement) ||
+          storage.getItem(CUP_STORAGE_KEY) !== null ||
+          loadTournament(storage) !== null ||
+          loadTournamentRecovery(storage) !== null
+        ) {
+          throw new Error("CHAMPIONSHIP_CREATION_STALE");
+        }
+
+        saveTournament(storage, document);
+        return document;
+      },
+      cupOwnershipOptions(),
+    );
+
+    tournamentState = outcome.value;
     activeTournamentFixtureId = null;
     tournamentViewedMatchday = null;
+    markGlobalSaveDirty();
     byId("tournament-error").textContent = "";
     renderTournament();
   } catch (error) {
@@ -3334,7 +4006,7 @@ async function createTournamentFromSelection() {
   }
 }
 
-function simulateTournamentFixture(fixture) {
+async function simulateTournamentFixture(fixture) {
   if (!fixture || fixture.matchId !== null) return false;
 
   const home = allCatalogueTeams().find(
@@ -3358,6 +4030,14 @@ function simulateTournamentFixture(fixture) {
     handsPerTeam > 1000
   ) {
     showMessage("invalidHands");
+    return false;
+  }
+
+  // Capture a coherent predecessor before consuming simulation randomness.
+  let expected;
+  try {
+    expected = await globalSaveCoordinator.read(undefined, cupOwnershipOptions());
+  } catch {
     return false;
   }
 
@@ -3391,55 +4071,96 @@ function simulateTournamentFixture(fixture) {
     record.matchId,
   );
 
-  try {
-    saveTournamentRecovery(window.localStorage, {
-      championshipId: tournamentState.championshipId,
-      fixtureId: fixture.fixtureId,
-      matchId: record.matchId,
-    });
-  } catch {
-    // A background simulation must not start without durable recovery intent.
-    return false;
-  }
+  let managementSaved = false;
+  let tournamentSaved = false;
 
   try {
-    saveManagement(window.localStorage, nextManagement);
-    managementState = nextManagement;
-    markGlobalSaveDirty();
+    const outcome = await globalSaveCoordinator.write(
+      expected,
+      ({ storage }) => {
+        // Reject an obsolete local view before the first persistent mutation.
+        const currentManagement = loadManagement(storage);
+        const currentTournament = loadTournament(storage);
+
+        if (
+          JSON.stringify(currentManagement) !== JSON.stringify(managementState) ||
+          JSON.stringify(currentTournament) !== JSON.stringify(tournamentState)
+        ) {
+          return false;
+        }
+
+        const currentFixture = currentTournament?.fixtures.find(
+          candidate => candidate.fixtureId === fixture.fixtureId
+        );
+
+        if (!currentFixture || currentFixture.matchId !== null) {
+          return false;
+        }
+
+        try {
+          saveTournamentRecovery(storage, {
+            championshipId: currentTournament.championshipId,
+            fixtureId: fixture.fixtureId,
+            matchId: record.matchId,
+          });
+        } catch {
+          return false;
+        }
+
+        try {
+          saveManagement(storage, nextManagement);
+          managementSaved = true;
+        } catch {
+          try {
+            clearTournamentRecovery(storage);
+          } catch {
+            // Recovery remains authoritative if cleanup cannot complete.
+          }
+          return false;
+        }
+
+        try {
+          saveTournament(storage, nextTournament);
+          tournamentSaved = true;
+        } catch {
+          // Preserve the canonical record and recovery journal.
+          return false;
+        }
+
+        try {
+          clearTournamentRecovery(storage);
+        } catch {
+          // An already associated fixture is reconciled on reload.
+        }
+
+        return true;
+      },
+      cupOwnershipOptions(),
+    );
+
+    return outcome.value;
   } catch {
-    try {
-      clearTournamentRecovery(window.localStorage);
-    } catch {
-      // Reload discards a journal whose canonical match does not exist.
+    return false;
+  } finally {
+    if (managementSaved) {
+      managementState = nextManagement;
+      markGlobalSaveDirty();
+
+      // Prevent another simulation of the same fixture in this page even
+      // when the tournament write failed after canonical persistence.
+      tournamentState = nextTournament;
+    } else if (tournamentSaved) {
+      tournamentState = nextTournament;
     }
-    return false;
   }
 
-  try {
-    saveTournament(window.localStorage, nextTournament);
-    tournamentState = nextTournament;
-  } catch {
-    // The canonical match is already durable. Advance only the in-memory
-    // tournament state so this fixture cannot be simulated twice before reload.
-    // Keep the journal: reload will persist the same association.
-    tournamentState = nextTournament;
-    return false;
-  }
-
-  try {
-    clearTournamentRecovery(window.localStorage);
-  } catch {
-    // Reload clears an already reconciled journal idempotently.
-  }
-
-  return true;
 }
 
 function playTournamentFixture(fixture) {
   if (!fixture) return;
   if (cupState && !tournamentState) {
     try { requireCupOwnership(); } catch { return false; }
-    if (cupShootoutPendingSave || cupShootoutBusy) return false;
+    if (cupRecoveryBusy || cupShootoutPendingSave || cupShootoutBusy) return false;
   }
 
   const home = allCatalogueTeams().find(team =>
@@ -3471,7 +4192,7 @@ function playTournamentFixture(fixture) {
   return true;
 }
 
-function playNextTournamentFixture() {
+async function playNextTournamentFixture() {
   if (matchStarted && state.phase !== "finished") return;
 
   if (cupState && !tournamentState) {
@@ -3517,7 +4238,7 @@ function playNextTournamentFixture() {
       fixture.matchId === null &&
       fixture.matchday === currentMatchday
   )) {
-    if (!simulateTournamentFixture(fixture)) break;
+    if (!await simulateTournamentFixture(fixture)) break;
   }
 
   renderTournament();
@@ -3771,13 +4492,9 @@ function start(activate = true) {
         String(managerState.club.providerTeamId)
     );
 
-    if (selectedManagedTeam) {
-      try {
-        saveManager(window.localStorage, managerState);
-      } catch {
-        // Manager persistence failure must never affect gameplay.
-      }
-    }
+    // The Manager document is already persistent. Starting a match
+    // must not rewrite it outside the global persistence coordinator.
+    void selectedManagedTeam;
   }
 
   selectedMatchTeams = selectedTeams.map(team => {
@@ -3964,7 +4681,7 @@ async function roll() {
   }
 
   if (state.phase === "finished") {
-    recordCompletedMatch();
+    await recordCompletedMatch();
     const [a, b] = state.goals;
     if (a === b) {
       showMessage("draw", { a, b });
@@ -3980,6 +4697,7 @@ async function roll() {
     autoRunning = false;
     autoConfig = null;
   }
+  markGlobalSaveDirty();
   render();
 
   if (handEnded &&
@@ -4177,6 +4895,7 @@ void reloadLiveCatalogue();
 window.addEventListener("pagehide", releaseCupOwnership);
 window.addEventListener("pageshow", event => {
   if (event.persisted) {
+    markGlobalSaveDirty();
     reloadCupForOwnership();
     requestCupOwnership();
     renderTournament();
@@ -4188,6 +4907,11 @@ window.addEventListener("beforeunload", event => {
   event.returnValue = "";
 });
 window.addEventListener("storage", event => {
+  if (event.key === null ||
+      event.key === GLOBAL_SAVE_TRANSACTION_KEY ||
+      GLOBAL_SAVE_TRANSACTION_KEYS.includes(event.key)) {
+    markGlobalSaveDirty();
+  }
   if (![CUP_STORAGE_KEY, "dado-goal.team-management.v1"].includes(event.key) && event.key !== null) return;
   if (ownsCupLock() || cupShootoutPendingSave) {
     // A cooperating tab cannot write the owned Cup. Preserve a pending candidate

@@ -57,6 +57,7 @@
         "docs/games/dado-goal/cup-shootout-contract.md",
         "docs/games/dado-goal/extended-event-statistics-contract.md",
         "docs/games/dado-goal/extended-rules-v1.md",
+        "docs/games/dado-goal/global-save-cup-contract.md",
         "docs/games/dado-goal/gui-parity-contract.md",
         "docs/games/dado-goal/issue-29-team-management-contract.md",
         "docs/games/dado-goal/m034-v2-local-road-test.md",

@@ -377,6 +377,93 @@ test("Cup sudden death waits for equal kicks, resumes a half-pair and allows rep
   expect((await ordinaryState(page)).storage).toEqual(ordinary.storage);
 });
 
+test("Cup reconciles a canonical fixture after a failed Cup write", async ({ page }) => {
+  const initial = await createCup(page);
+  const fixture = initial.fixtures[0];
+
+  // Preserve the canonical match and recovery intent, but reject the first
+  // attempt to associate the match with its Cup fixture.
+  await page.evaluate(key => {
+    const original = Storage.prototype.setItem;
+    let injected = false;
+    Storage.prototype.setItem = function(name, value) {
+      if (name === key && !injected) {
+        injected = true;
+        throw new DOMException(
+          "injected Cup fixture persistence failure",
+          "QuotaExceededError",
+        );
+      }
+      return original.call(this, name, value);
+    };
+  }, CUP_KEY);
+
+  await page.locator("#tournament-play-next").click();
+  await expect(page.locator("#team-0")).toHaveValue(fixture.homeProviderTeamId);
+  await expect(page.locator("#team-1")).toHaveValue(fixture.awayProviderTeamId);
+  await openDisclosure(page, "#match-disclosure");
+
+  await regularRoll(page, INTERCEPTED);
+  await regularRoll(page, INTERCEPTED);
+
+  const pending = await expect.poll(async () => page.evaluate(
+    ({ cupKey, managementKey, fixtureId }) => {
+      const cup = JSON.parse(localStorage.getItem(cupKey));
+      const managementRaw = localStorage.getItem(managementKey);
+      const matches = managementRaw === null
+        ? []
+        : JSON.parse(managementRaw).matches;
+      const recoveryRaw = localStorage.getItem("dado-goal.cup-recovery.v1");
+      const recovery = recoveryRaw === null ? null : JSON.parse(recoveryRaw);
+      const linked = cup.fixtures.find(item => item.fixtureId === fixtureId);
+      return {
+        matchCount: matches.length,
+        pendingMatchId: recovery?.matchId ?? null,
+        fixtureMatchId: linked?.matchId ?? null,
+      };
+    },
+    { cupKey: CUP_KEY, managementKey: MANAGEMENT_KEY, fixtureId: fixture.fixtureId },
+  )).toMatchObject({
+    matchCount: 1,
+    fixtureMatchId: null,
+  });
+
+  const before = await page.evaluate(() => ({
+    recovery: JSON.parse(localStorage.getItem("dado-goal.cup-recovery.v1")),
+    matches: JSON.parse(localStorage.getItem("dado-goal.team-management.v1")).matches,
+  }));
+  expect(before.recovery?.fixtureId).toBe(fixture.fixtureId);
+  expect(before.matches).toHaveLength(1);
+  expect(before.matches[0].matchId).toBe(before.recovery.matchId);
+
+  await page.reload();
+  await openCup(page);
+
+  await expect.poll(async () => {
+    const cup = await readCup(page);
+    return cup.fixtures.find(item => item.fixtureId === fixture.fixtureId)?.matchId;
+  }).toBe(before.recovery.matchId);
+
+  await expect.poll(async () => page.evaluate(() =>
+    localStorage.getItem("dado-goal.cup-recovery.v1"),
+  )).toBeNull();
+
+  const recovered = await readCup(page);
+  expect(recovered.fixtures.find(item =>
+    item.fixtureId === fixture.fixtureId).matchId).toBe(before.recovery.matchId);
+  await expect(page.locator("#tournament-play-next")).toBeEnabled();
+
+  await page.reload();
+  await openCup(page);
+  expect(await readCup(page)).toEqual(recovered);
+  const after = await page.evaluate(() => ({
+    recovery: localStorage.getItem("dado-goal.cup-recovery.v1"),
+    matches: JSON.parse(localStorage.getItem("dado-goal.team-management.v1")).matches,
+  }));
+  expect(after.recovery).toBeNull();
+  expect(after.matches).toEqual(before.matches);
+});
+
 test("Cup reload preserves the empty session and exact initial-series history", async ({ page }) => {
   await reachTiedRound(page);
   await startShootout(page, "r1-p1");
@@ -431,6 +518,77 @@ test("Cup admits each winner once, creates one final and crowns one champion acr
     expect(await cupSource(page)).toBe(completedSource);
     await expect(page.locator("#cup-shootout-sequence li")).toHaveCount(6);
   }
+
+  // Fail the first archive-image write, after the transaction has started.
+  // Reload must reconcile the transaction without losing or duplicating Cup.
+  await page.evaluate(() => {
+    const original = Storage.prototype.setItem;
+    let injected = false;
+    Storage.prototype.setItem = function(key, value) {
+      if (key === "dado-goal.cup-archive.v1" && !injected) {
+        injected = true;
+        throw new DOMException(
+          "injected cup archive persistence failure",
+          "QuotaExceededError",
+        );
+      }
+      return original.call(this, key, value);
+    };
+  });
+
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator("#tournament-close").click();
+
+  await expect.poll(async () => page.evaluate(() =>
+    localStorage.getItem("dado-goal.cup.v1") !== null,
+  )).toBe(true);
+
+  // Reload restores the pre-commit images and clears transaction evidence.
+  await page.reload();
+  await openCup(page);
+  await expect(page.locator("#tournament-close")).toBeEnabled();
+  expect(await readCup(page)).toEqual(completed);
+
+  const afterRecovery = await page.evaluate(() => ({
+    active: localStorage.getItem("dado-goal.cup.v1"),
+    recovery: localStorage.getItem("dado-goal.cup-recovery.v1"),
+    archive: localStorage.getItem("dado-goal.cup-archive.v1"),
+  }));
+  expect(afterRecovery.active).not.toBeNull();
+  expect(afterRecovery.recovery).toBeNull();
+  expect(afterRecovery.archive).toBeNull();
+
+  // The storage fault was one-shot and the reload restored native methods.
+  page.once("dialog", dialog => dialog.accept());
+  await page.locator("#tournament-close").click();
+
+  const archived = async () => page.evaluate(() => ({
+    active: localStorage.getItem("dado-goal.cup.v1"),
+    recovery: localStorage.getItem("dado-goal.cup-recovery.v1"),
+    archive: localStorage.getItem("dado-goal.cup-archive.v1"),
+  }));
+
+  await expect.poll(async () => {
+    const state = await archived();
+    if (state.active !== null || state.recovery !== null ||
+        state.archive === null) return false;
+    const cups = JSON.parse(state.archive);
+    return cups.length === 1 &&
+      cups[0].cupId === completed.cupId;
+  }).toBe(true);
+
+  const committed = await archived();
+  const archive = JSON.parse(committed.archive);
+  expect(archive).toHaveLength(1);
+  expect(archive[0]).toEqual(completed);
+
+  await page.reload();
+  await openCup(page);
+
+  const restored = await archived();
+  expect(restored).toEqual(committed);
+  expect(JSON.parse(restored.archive)).toHaveLength(1);
+  await expect(page.locator("#cup-archive")).toBeVisible();
 });
 
 test("Cup uses a real exclusive Web Lock across two tabs and resumes after owner handover", async ({ page, context }) => {
@@ -531,8 +689,8 @@ for (const locale of ["it", "en"]) {
     await expect(page.locator("#cup-shootout-turn")).toHaveAttribute("aria-atomic", "true");
     await expect(page.locator("#cup-shootout-error")).toHaveAttribute("role", "alert");
     await expect(page.locator("#cup-global-omission")).toHaveText(english
-      ? "The global save does not include the Cup."
-      : "Il salvataggio globale non include la Coppa.");
+      ? "The global save includes the Cup and its archive."
+      : "Il salvataggio globale include la Coppa e il suo archivio.");
     await startShootout(page, "r1-p1", "Enter");
     await expect(page.locator("#cup-shootout-kick")).toBeFocused();
     await expect(page.locator("#cup-shootout-turn"))
@@ -790,4 +948,374 @@ test("Cup preserves saved data and disables editing when Web Locks are unavailab
   await expect(page.locator("#cup-storage-status"))
     .toHaveText("This browser does not support exclusive Cup access. Editing is unavailable.");
   expect(await cupSource(page)).toBe(source);
+});
+
+
+test("SP-02 Global Save blocks startup with a pending journal and unavailable Web Locks", async ({ context }) => {
+  const probe = await context.newPage();
+  const journalKey = "dado-goal.global-save-transaction.v1";
+  const marker = "SP02_PENDING_RECOVERY_PROBE";
+  const errors = [];
+
+  try {
+    await probe.addInitScript(({ key, value }) => {
+      Object.defineProperty(navigator, "locks", {
+        configurable: true,
+        value: undefined,
+      });
+      localStorage.setItem(key, value);
+    }, { key: journalKey, value: marker });
+
+    probe.on("pageerror", error => errors.push(error.message));
+
+    await probe.goto(GAME_URL);
+
+    await expect.poll(
+      () => errors.some(message =>
+        message.includes("GLOBAL_RECOVERY_REQUIRES_WEB_LOCKS")),
+      { timeout: 10000 },
+    ).toBe(true);
+
+    expect(await probe.evaluate(key => localStorage.getItem(key), journalKey))
+      .toBe(marker);
+
+    expect(await probe.evaluate(() =>
+      localStorage.getItem("dado-goal.global-save-generation.v1")))
+      .toBeNull();
+  } finally {
+    await probe.close();
+  }
+});
+
+test("SP-02 Global Save exports current Cup and archive", async ({ page }) => {
+  const cup = await createCup(page);
+
+  const exportButton = page.locator("#game-export");
+  await expect(exportButton).toBeEnabled();
+
+  const downloadPromise = page.waitForEvent("download");
+  await exportButton.evaluate(button => button.click());
+  const download = await downloadPromise;
+
+  expect(download.suggestedFilename()).toMatch(/^dado-goal-.*\.json$/);
+
+  const { readFile } = await import("node:fs/promises");
+  const exported = JSON.parse(
+    await readFile(await download.path(), "utf8"),
+  );
+
+  const persisted = await page.evaluate(() => ({
+    cup: JSON.parse(localStorage.getItem("dado-goal.cup.v1")),
+    management: JSON.parse(
+      localStorage.getItem("dado-goal.team-management.v1"),
+    ),
+  }));
+
+  expect(exported.schemaVersion).toBe(1);
+  expect(exported.persistent.cup).toEqual(cup);
+  expect(exported.persistent.cup).toEqual(persisted.cup);
+  expect(exported.persistent.cupArchive).toEqual([]);
+  expect(exported.persistent.management).toEqual(
+    persisted.management ?? {
+      schemaVersion: 1,
+      matches: [],
+      ratings: [],
+    },
+  );
+  expect(exported.persistent.tournament).toBeNull();
+  expect(exported.runtime).toHaveProperty("competitionRef");
+  await expect(page.locator("#game-save-status"))
+    .toHaveText("Salvataggio creato.");
+});
+
+
+test("SP-02 Global Save round-trips an active Cup through the UI", async ({ page }) => {
+  const originalCup = await createCup(page);
+
+  // Cup creation persists before its asynchronous exclusive Web Lock
+  // has necessarily been acquired. Wait for the real editable state.
+  await expect(page.locator("#tournament-play-next")).toBeEnabled();
+
+  const exportButton = page.locator("#game-export");
+  await expect(exportButton).toBeEnabled();
+
+  const downloadPromise = page.waitForEvent("download");
+  await exportButton.evaluate(button => button.click());
+  const download = await downloadPromise;
+
+  const { readFile } = await import("node:fs/promises");
+  const bytes = await readFile(await download.path());
+  const portable = JSON.parse(bytes.toString("utf8"));
+
+  expect(portable.persistent.cup).toEqual(originalCup);
+  expect(portable.persistent.cupArchive).toEqual([]);
+
+  const importDiagnostics = [];
+  page.on("dialog", async dialog => {
+    importDiagnostics.push(`DIALOG ${dialog.type()}: ${dialog.message()}`);
+    await dialog.dismiss();
+  });
+  page.on("pageerror", error => {
+    importDiagnostics.push(`PAGEERROR: ${error.message}`);
+  });
+  page.on("console", message => {
+    if (message.type() === "error") {
+      importDiagnostics.push(`CONSOLE ERROR: ${message.text()}`);
+    }
+  });
+
+  await page.locator("#game-import-file").setInputFiles({
+    name: "dado-goal-round-trip.json",
+    mimeType: "application/json",
+    buffer: bytes,
+  });
+
+  try {
+    await expect(page.locator("#game-save-status"))
+      .toHaveText("Salvataggio caricato.", { timeout: 5000 });
+  } catch (error) {
+    console.log("===== IMPORT DIAGNOSTICS =====");
+    console.log(importDiagnostics.length
+      ? importDiagnostics.join("\\n")
+      : "NO_DIALOG_OR_BROWSER_ERROR_CAPTURED");
+    console.log("===== END IMPORT DIAGNOSTICS =====");
+    throw error;
+  }
+
+  const persisted = await page.evaluate(() => ({
+    cup: JSON.parse(localStorage.getItem("dado-goal.cup.v1")),
+    archive: JSON.parse(localStorage.getItem("dado-goal.cup-archive.v1")),
+    journal: localStorage.getItem("dado-goal.global-save-transaction.v1"),
+    generation: localStorage.getItem("dado-goal.global-save-generation.v1"),
+  }));
+
+  expect(persisted.cup).toEqual(originalCup);
+  expect(persisted.archive).toEqual([]);
+  expect(persisted.journal).toBeNull();
+  expect(Number(persisted.generation)).toBeGreaterThan(0);
+
+  await page.reload();
+  await expect.poll(async () => page.evaluate(() =>
+    JSON.parse(localStorage.getItem("dado-goal.cup.v1")),
+  )).toEqual(originalCup);
+  expect(await readCup(page)).toEqual(originalCup);
+});
+
+
+test("SP-02 Global Save replaces a different active Cup", async ({ browser }) => {
+  const sourceContext = await browser.newContext({ acceptDownloads: true });
+  const destinationContext = await browser.newContext({ acceptDownloads: true });
+
+  try {
+    const sourcePage = await sourceContext.newPage();
+    const cupA = await createCup(sourcePage);
+    await expect(sourcePage.locator("#tournament-play-next")).toBeEnabled();
+
+    const downloadPromise = sourcePage.waitForEvent("download");
+    await sourcePage.locator("#game-export").evaluate(button => button.click());
+    const download = await downloadPromise;
+    const { readFile } = await import("node:fs/promises");
+    const bytes = await readFile(await download.path());
+    const portable = JSON.parse(bytes.toString("utf8"));
+    expect(portable.persistent.cup).toEqual(cupA);
+
+    const destinationPage = await destinationContext.newPage();
+    const cupB = await createCup(destinationPage);
+    await expect(destinationPage.locator("#tournament-play-next")).toBeEnabled();
+    expect(cupB.cupId).not.toBe(cupA.cupId);
+
+    const errors = [];
+    destinationPage.on("dialog", async dialog => {
+      errors.push(dialog.message());
+      await dialog.dismiss();
+    });
+    destinationPage.on("pageerror", error => errors.push(error.message));
+
+    await destinationPage.locator("#game-import-file").setInputFiles({
+      name: "cup-a-global-save.json",
+      mimeType: "application/json",
+      buffer: bytes,
+    });
+
+    await expect(destinationPage.locator("#game-save-status"))
+      .toHaveText("Salvataggio caricato.", { timeout: 10000 });
+    expect(errors).toEqual([]);
+
+    const stored = await destinationPage.evaluate(() => ({
+      cup: JSON.parse(localStorage.getItem("dado-goal.cup.v1")),
+      archive: JSON.parse(localStorage.getItem("dado-goal.cup-archive.v1")),
+      journal: localStorage.getItem("dado-goal.global-save-transaction.v1"),
+    }));
+
+    expect(stored.cup).toEqual(cupA);
+    expect(stored.cup.cupId).not.toBe(cupB.cupId);
+    expect(stored.archive).toEqual([]);
+    expect(stored.journal).toBeNull();
+
+    await destinationPage.reload();
+    expect(await readCup(destinationPage)).toEqual(cupA);
+  } finally {
+    await destinationContext.close();
+    await sourceContext.close();
+  }
+});
+
+
+test("SP-02 Global Save resumes an in-progress Cup match", async ({ page }) => {
+  const cup = await createCup(page);
+  const fixture = cup.fixtures.find(item => item.matchId === null);
+  expect(fixture).toBeTruthy();
+
+  await page.locator("#tournament-play-next").click();
+  await expect(page.locator("#team-0"))
+    .toHaveValue(fixture.homeProviderTeamId);
+  await expect(page.locator("#team-1"))
+    .toHaveValue(fixture.awayProviderTeamId);
+  await openDisclosure(page, "#match-disclosure");
+
+  await regularRoll(page, GOAL);
+  await expect(page.locator("#roll")).toBeEnabled();
+
+  const { readFile } = await import("node:fs/promises");
+  const exportDocument = async () => {
+    const pending = page.waitForEvent("download");
+    await page.locator("#game-export").evaluate(button => button.click());
+    const download = await pending;
+    const bytes = await readFile(await download.path());
+    return { bytes, document: JSON.parse(bytes.toString("utf8")) };
+  };
+  const displayedMatch = async () => page.evaluate(() =>
+    Object.fromEntries([
+      "goals-0", "goals-1", "hands-0", "hands-1",
+      "roll", "result", "commentary-text", "match-events-list",
+    ].map(id => [id, document.getElementById(id).textContent])),
+  );
+
+  const before = await exportDocument();
+  expect(before.document.runtime.matchStarted).toBe(true);
+  expect(before.document.runtime.activeTournamentFixtureId)
+    .toBe(fixture.fixtureId);
+  expect(before.document.runtime.rollEvents.length).toBeGreaterThan(0);
+  expect(before.document.runtime.state.phase).not.toBe("finished");
+  const beforeDisplay = await displayedMatch();
+
+  const errors = [];
+  page.on("dialog", async dialog => {
+    errors.push(`DIALOG ${dialog.type()}: ${dialog.message()}`);
+    await dialog.dismiss();
+  });
+  page.on("pageerror", error => errors.push(`PAGEERROR: ${error.message}`));
+  page.on("console", message => {
+    if (message.type() === "error") {
+      errors.push(`CONSOLE: ${message.text()}`);
+    }
+  });
+
+  await page.locator("#game-import-file").setInputFiles({
+    name: "cup-mid-match.json",
+    mimeType: "application/json",
+    buffer: before.bytes,
+  });
+
+  try {
+    await expect(page.locator("#game-save-status"))
+      .toHaveText("Salvataggio caricato.", { timeout: 10000 });
+  } catch (error) {
+    console.log("MID_MATCH_IMPORT_DIAGNOSTICS=",
+      errors.length ? errors.join("\n") : "NONE");
+    throw error;
+  }
+
+  expect(errors).toEqual([]);
+  expect(await displayedMatch()).toEqual(beforeDisplay);
+  await expect(page.locator("#roll")).toBeEnabled();
+
+  // A successfully imported save is clean: exporting it again without
+  // changes is deliberately disabled by the application.
+  await expect(page.locator("#game-export")).toBeDisabled();
+  expect(await readCup(page)).toEqual(cup);
+
+  // Continue the imported match, without page reload or a new kickoff.
+  await regularRoll(page, 3 / 12);
+  await expect(page.locator("#roll")).toBeEnabled();
+  await expect(page.locator("#game-export")).toBeEnabled();
+
+  const continued = await exportDocument();
+  expect(continued.document.runtime.rollEvents.length)
+    .toBeGreaterThan(before.document.runtime.rollEvents.length);
+  expect(continued.document.runtime.rollEvents.slice(
+    0, before.document.runtime.rollEvents.length,
+  )).toEqual(before.document.runtime.rollEvents);
+  expect(continued.document.runtime.activeTournamentFixtureId)
+    .toBe(fixture.fixtureId);
+  expect(continued.document.persistent).toEqual(before.document.persistent);
+});
+
+
+test("SP-02 Global Save rejects import while another tab owns the Cup", async ({ page, context }) => {
+  const cup = await createCup(page);
+  const lockName = `dado-goal.cup:${cup.cupId}`;
+
+  const heldLocks = () => page.evaluate(async name =>
+    (await navigator.locks.query()).held
+      .filter(lock => lock.name === name),
+  lockName);
+
+  await expect.poll(async () => (await heldLocks()).length).toBe(1);
+  const initialLocks = await heldLocks();
+  expect(initialLocks[0].mode).toBe("exclusive");
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.locator("#game-export").evaluate(button => button.click());
+  const download = await downloadPromise;
+  const { readFile } = await import("node:fs/promises");
+  const bytes = await readFile(await download.path());
+  expect(JSON.parse(bytes.toString("utf8")).persistent.cup).toEqual(cup);
+
+  const reader = await context.newPage();
+  try {
+    await reader.goto(GAME_URL);
+    await openCup(reader);
+    await expect(reader.locator("#cup-storage-status"))
+      .toHaveText("Coppa aperta in un'altra scheda. Questa vista è in sola lettura.");
+
+    const storageImage = () => reader.evaluate(() =>
+      Object.fromEntries(
+        Array.from({ length: localStorage.length }, (_, index) => {
+          const key = localStorage.key(index);
+          return [key, localStorage.getItem(key)];
+        }).sort(([left], [right]) => left.localeCompare(right)),
+      ),
+    );
+
+    const before = await storageImage();
+    const dialogs = [];
+    reader.on("dialog", async dialog => {
+      dialogs.push({ type: dialog.type(), message: dialog.message() });
+      await dialog.dismiss();
+    });
+
+    await reader.locator("#game-import-file").setInputFiles({
+      name: "cup-owned-in-other-tab.json",
+      mimeType: "application/json",
+      buffer: bytes,
+    });
+
+    await expect.poll(() => dialogs.length, { timeout: 10000 }).toBe(1);
+    expect(dialogs[0].type).toBe("alert");
+    expect(dialogs[0].message).toBeTruthy();
+
+    await expect(reader.locator("#game-save-status"))
+      .not.toHaveText("Salvataggio caricato.");
+
+    expect(await storageImage()).toEqual(before);
+    expect(await readCup(page)).toEqual(cup);
+    expect(await readCup(reader)).toEqual(cup);
+    expect(await heldLocks()).toEqual(initialLocks);
+
+    await expect(reader.locator("#tournament-play-next")).toBeDisabled();
+    await expect(page.locator("#tournament-play-next")).toBeEnabled();
+  } finally {
+    await reader.close();
+  }
 });
