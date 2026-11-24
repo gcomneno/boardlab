@@ -13,8 +13,7 @@ def insert_match(db, match_id, rules_version=None):
         match_id, revision, status, state_json,
         created_at, updated_at, expires_at
     """
-    values = [match_id, 0, "waiting", '{"schemaVersion":1}',
-              100, 100, 200]
+    values = [match_id, 0, "waiting", '{"schemaVersion":1}', 100, 100, 200]
 
     if rules_version is not None:
         columns += ", rules_version"
@@ -22,8 +21,7 @@ def insert_match(db, match_id, rules_version=None):
 
     placeholders = ", ".join("?" for _ in values)
     db.execute(
-        f"INSERT INTO lifecycle_matches ({columns}) "
-        f"VALUES ({placeholders})",
+        f"INSERT INTO lifecycle_matches ({columns}) VALUES ({placeholders})",
         values,
     )
 
@@ -59,15 +57,13 @@ class RulesVersionMigrationTests(unittest.TestCase):
 
     def test_invalid_versions_are_rejected(self):
         for invalid in (0, 3, -1):
-            with self.subTest(version=invalid):
-                with self.assertRaises(sqlite3.IntegrityError):
-                    insert_match(self.db, f"bad-{invalid}", invalid)
+            with self.subTest(version=invalid), self.assertRaises(sqlite3.IntegrityError):
+                insert_match(self.db, f"bad-{invalid}", invalid)
 
     def test_null_version_is_rejected(self):
         with self.assertRaises(sqlite3.IntegrityError):
             self.db.execute(
-                "UPDATE lifecycle_matches SET rules_version = NULL "
-                "WHERE match_id = 'historical'"
+                "UPDATE lifecycle_matches SET rules_version = NULL WHERE match_id = 'historical'"
             )
 
     def test_historical_state_is_not_rewritten(self):
@@ -75,9 +71,7 @@ class RulesVersionMigrationTests(unittest.TestCase):
             SELECT revision, status, state_json
             FROM lifecycle_matches WHERE match_id = 'historical'
         """).fetchone()
-        self.assertEqual(
-            row, (0, "waiting", '{"schemaVersion":1}')
-        )
+        self.assertEqual(row, (0, "waiting", '{"schemaVersion":1}'))
 
     def install_immutability(self):
         self.db.executescript(IMMUTABILITY.read_text(encoding="utf-8"))
@@ -85,8 +79,7 @@ class RulesVersionMigrationTests(unittest.TestCase):
 
     def revision_and_version(self, match_id):
         return self.db.execute(
-            "SELECT revision, rules_version FROM lifecycle_matches "
-            "WHERE match_id = ?",
+            "SELECT revision, rules_version FROM lifecycle_matches WHERE match_id = ?",
             (match_id,),
         ).fetchone()
 
