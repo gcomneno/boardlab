@@ -56,6 +56,7 @@
         "docs/games/dado-goal/browser-session-recovery.md",
         "docs/games/dado-goal/extended-event-statistics-contract.md",
         "docs/games/dado-goal/extended-rules-v1.md",
+        "docs/games/dado-goal/global-save-cup-contract.md",
         "docs/games/dado-goal/gui-parity-contract.md",
         "docs/games/dado-goal/issue-29-team-management-contract.md",
         "docs/games/dado-goal/multiplayer-durable-authority.md",
