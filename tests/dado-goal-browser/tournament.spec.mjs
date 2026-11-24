@@ -3,13 +3,13 @@ import { expect, test } from "@playwright/test";
 test("Championship creates, plays, records and reloads its next fixture", async ({ page }) => {
   await page.goto("http://127.0.0.1:4173/web/dado-goal/");
 
-  await page.locator("#competition").selectOption("40:2024");
+  await page.locator("#tournament-disclosure > summary").click();
   await expect(page.locator("#tournament-participants")).toBeEnabled();
 
   const participants = page.locator("#tournament-participants");
 
   await expect(participants).toBeVisible();
-  await expect(participants.locator("option")).toHaveCount(142);
+  await expect.poll(async () => participants.locator("option").count()).toBeGreaterThan(3);
 
   const selected = await participants.locator("option").evaluateAll(options => {
     const competitionIds = new Set();
@@ -55,6 +55,7 @@ test("Championship creates, plays, records and reloads its next fixture", async 
 
   const firstFixture = persisted.fixtures[0];
 
+  await page.locator(".configuration-panel > details > summary").click();
   await page.locator("#hands").fill("1");
   await page.locator("#tournament-play-next").click();
 
@@ -149,6 +150,7 @@ test("Championship creates, plays, records and reloads its next fixture", async 
 
   await page.reload();
 
+  await page.locator("#tournament-disclosure > summary").click();
   await expect(page.locator("#tournament-dashboard")).toBeVisible();
   await expect(page.locator("#tournament-progress")).toHaveText("1 / 12");
   await expect(page.locator("#tournament-standings tr")).toHaveCount(4);

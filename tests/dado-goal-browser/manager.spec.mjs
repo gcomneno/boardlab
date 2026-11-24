@@ -120,7 +120,10 @@ test("Manager launches its next canonical tournament fixture", async ({ page }) 
   await page.goto(GAME_URL);
 
   await openTournament(page);
-  await page.locator("#competition").selectOption("40:2024");
+  await page.locator("#tournament-country").selectOption("Italy");
+  await expect.poll(async () =>
+    page.locator("#tournament-participants option").count()
+  ).toBeGreaterThan(3);
 
   const participants = page.locator("#tournament-participants");
   await expect(participants).toBeEnabled();
@@ -373,7 +376,10 @@ test("ending Manager career preserves the current tournament", async ({ page }) 
   await page.goto(GAME_URL);
 
   await openTournament(page);
-  await page.locator("#competition").selectOption("40:2024");
+  await page.locator("#tournament-country").selectOption("Italy");
+  await expect.poll(async () =>
+    page.locator("#tournament-participants option").count()
+  ).toBeGreaterThan(3);
 
   const participants = page.locator("#tournament-participants");
   const selected = await participants.locator("option").evaluateAll(options =>
@@ -409,7 +415,10 @@ test("abandoning tournament preserves the Manager career", async ({ page }) => {
   await page.goto(GAME_URL);
 
   await openTournament(page);
-  await page.locator("#competition").selectOption("40:2024");
+  await page.locator("#tournament-country").selectOption("Italy");
+  await expect.poll(async () =>
+    page.locator("#tournament-participants option").count()
+  ).toBeGreaterThan(3);
 
   const participants = page.locator("#tournament-participants");
   const selected = await participants.locator("option").evaluateAll(options =>
@@ -455,7 +464,10 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
   await page.goto(GAME_URL);
 
   await openTournament(page);
-  await page.locator("#competition").selectOption("40:2024");
+  await page.locator("#tournament-country").selectOption("Italy");
+  await expect.poll(async () =>
+    page.locator("#tournament-participants option").count()
+  ).toBeGreaterThan(3);
 
   const participants = page.locator("#tournament-participants");
   const selected = await participants.locator("option").evaluateAll(
@@ -579,7 +591,10 @@ test("simulated tournament fixture recovers after tournament persistence failure
   await page.goto(GAME_URL);
 
   await openTournament(page);
-  await page.locator("#competition").selectOption("40:2024");
+  await page.locator("#tournament-country").selectOption("Italy");
+  await expect.poll(async () =>
+    page.locator("#tournament-participants option").count()
+  ).toBeGreaterThan(3);
 
   const participants = page.locator("#tournament-participants");
   const selected = await participants.locator("option").evaluateAll(options =>
