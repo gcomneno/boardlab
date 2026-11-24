@@ -519,6 +519,10 @@ test("Global save restores tournament and Manager together", async ({ page }) =>
   await openManagement(page);
   await page.locator("#game-export").click();
 
+  await expect.poll(() =>
+    page.evaluate(() => window.__dadoGoalSaveBlob !== null)
+  ).toBe(true);
+
   const exported = await page.evaluate(async () => ({
     filename: window.__dadoGoalSaveFilename,
     source: await window.__dadoGoalSaveBlob.text(),
@@ -720,6 +724,12 @@ test("simulated tournament fixture recovers after tournament persistence failure
   const matchCountBeforeReload = interrupted.management.matches.length;
 
   await page.reload();
+
+  await expect.poll(() =>
+    page.evaluate(() =>
+      localStorage.getItem("dado-goal.tournament-recovery.v1")
+    )
+  ).toBeNull();
 
   const recovered = await page.evaluate(() => ({
     recovery: localStorage.getItem("dado-goal.tournament-recovery.v1"),
