@@ -9,6 +9,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef _WIN32
+#include <io.h>
+#include <windows.h>
+#endif
+
 #define STORE_HEADER "CHRONO_REPLAY_V1\n"
 
 static unsigned allowed_bits(unsigned mission)
@@ -178,12 +183,24 @@ ChronoStoreResult chrono_store_save(
 
     if (ok)
         ok = fflush(stream) == 0;
-    if (ok)
+    if (ok) {
+#ifdef _WIN32
+        ok = _commit(_fileno(stream)) == 0;
+#else
         ok = fsync(fileno(stream)) == 0;
+#endif
+    }
     if (fclose(stream) != 0)
         ok = false;
-    if (ok)
+    if (ok) {
+#ifdef _WIN32
+        ok = MoveFileExA(temporary, path,
+                         MOVEFILE_REPLACE_EXISTING |
+                         MOVEFILE_WRITE_THROUGH) != 0;
+#else
         ok = rename(temporary, path) == 0;
+#endif
+    }
 
     if (!ok)
         unlink(temporary);
