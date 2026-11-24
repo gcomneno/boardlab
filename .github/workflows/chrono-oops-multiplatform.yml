@@ -183,3 +183,75 @@ jobs:
           path: dist/chrono-oops-${{ matrix.platform }}.zip
           if-no-files-found: error
           retention-days: 7
+
+  gui-linux:
+    name: SDL2 GUI / linux-x64
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SDL2 development dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev
+
+      - name: Configure Release
+        run: >
+          cmake -S src/chrono_oops
+          -B build/chrono-oops-gui
+          -DCMAKE_BUILD_TYPE=Release
+
+      - name: Require and build the GUI executable
+        run: >
+          cmake --build build/chrono-oops-gui
+          --config Release
+          --target chrono-oops-2d
+          --parallel 2
+
+      - name: Build GUI and regression tests
+        run: >
+          cmake --build build/chrono-oops-gui
+          --config Release
+          --parallel 2
+
+      - name: Run all C11 and GUI regressions
+        run: >
+          ctest --test-dir build/chrono-oops-gui
+          --build-config Release
+          --output-on-failure
+
+      - name: Package Linux GUI
+        shell: bash
+        run: |
+          stage="dist/chrono-oops-gui-linux-x64"
+          mkdir -p "$stage"
+          cp build/chrono-oops-gui/chrono-oops-2d "$stage/"
+          cp src/chrono_oops/README.md "$stage/"
+          cp src/chrono_oops/README.it.md "$stage/"
+          cat > "$stage/RUN.txt" <<'EOF'
+          ChronoOops! v1.3.0 — Linux GUI (x64)
+
+          Extract the ZIP before running.
+          SDL2 and SDL2_ttf runtime libraries are required.
+          They are not bundled in this archive.
+
+          Launch from the extracted directory:
+            ./chrono-oops-2d
+
+          Progress is saved in:
+            ~/.local/share/chrono-oops/progress.v1
+          EOF
+          cd dist
+          cmake -E tar cf chrono-oops-gui-linux-x64.zip --format=zip chrono-oops-gui-linux-x64
+          test -s chrono-oops-gui-linux-x64.zip
+
+      - name: Store Linux GUI ZIP as CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrono-oops-gui-linux-x64
+          path: dist/chrono-oops-gui-linux-x64.zip
+          if-no-files-found: error
+          retention-days: 7

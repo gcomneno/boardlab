@@ -68,6 +68,20 @@ leggibile; `CHRONO_FONT_PATH` consente di specificare un file font.
 La distribuzione include la licenza MIT. I binari macOS non vengono
 automaticamente firmati o notarizzati.
 
+### Versione 1.3.0 — Replay e feedback delle azioni
+
+La campagna grafica aggiunge feedback per mouse e tastiera, una schermata
+di risultato e il registro dei tentativi completati con persistenza
+locale. Nella Missione 001 colori e icone allineate a destra distinguono
+azioni disponibili, completate, bloccate e dell'altro giocatore.
+
+Tentativi conclusi e vittorie vengono salvati in
+`$XDG_DATA_HOME/chrono-oops/progress.v1` quando XDG_DATA_HOME
+è impostata; altrimenti il percorso predefinito è
+`$HOME/.local/share/chrono-oops/progress.v1`.
+Conservare questo file durante gli aggiornamenti.
+
+
 
 ## Campagna CLI — Missioni 001–005
 
@@ -382,7 +396,7 @@ Implementato e verificato:
 
 Non implementato in questo prototipo:
 
-- Interfaccia grafica o sistemi RPG completi.
+- Sistemi RPG completi.
 - Multiplayer di rete.
 - Compagno cooperativo controllato dall'IA.
 - Inventario generale o griglia geografica.

@@ -1,3 +1,9 @@
+#include "replay_store.h"
+#include <errno.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+
+#include "replay_progress.h"
 #include "chrono.h"
 
 #ifdef CHRONO_WITH_M002
@@ -48,6 +54,7 @@ static const GuiAction actions[ACTION_COUNT] = {
     { CHRONO_ACTION_ENTER_TOWER, "Entra nella torre" },
     { CHRONO_ACTION_RECOVER_CAPSULE, "Recupera capsula" }
 };
+
 
 static const char *locations[] = {
     "Municipio", "Archivio", "Riva Ovest", "Ponte",
@@ -266,6 +273,183 @@ static void m001_focus_rect(SDL_Renderer *renderer, SDL_Rect rect)
     }
 }
 
+/* UX-02: M001 mouse action feedback, independent from keyboard focus. */
+/* UX-02 v2: transient feedback, hover and keyboard focus remain separate. */
+static int m001_mouse_feedback_action = -1;
+static bool m001_mouse_feedback_accepted = false;
+/* UX-03: bottom button hover, 0=end turn, 1=restart. */
+static int m001_hovered_control = -1;
+static Uint32 m001_mouse_feedback_until = 0;
+
+static bool m001_feedback_visible(void)
+{
+    return m001_mouse_feedback_action >= 0 &&
+           !SDL_TICKS_PASSED(SDL_GetTicks(), m001_mouse_feedback_until);
+}
+
+static void m001_reset_mouse_feedback(void)
+{
+    m001_mouse_feedback_action = -1;
+    m001_mouse_feedback_accepted = false;
+    m001_mouse_feedback_until = 0;
+    m001_hovered_control = -1;
+}
+
+
+/* UX-03: observational classification; never mutate the live state. */
+typedef enum {
+    M001_ACTION_AVAILABLE,
+    M001_ACTION_DONE,
+    M001_ACTION_BLOCKED,
+    M001_ACTION_OTHER_PLAYER
+} M001ActionStatus;
+
+static bool m001_action_done(const ChronoState *s, ChronoAction action)
+{
+    switch (action) {
+    case CHRONO_ACTION_MOVE_ARCHIVE:
+        return s->location_a == CHRONO_LOCATION_ARCHIVE;
+    case CHRONO_ACTION_READ_PLANS:
+        return s->plans_read;
+    case CHRONO_ACTION_INSPECT_RUINS:
+        return s->ruins_inspected;
+    case CHRONO_ACTION_IDENTIFY_DEFECT:
+        return s->defect_known;
+    case CHRONO_ACTION_MEASURE_RIVER:
+        return s->river_measured;
+    case CHRONO_ACTION_SELECT_BRIDGE:
+        return s->plan_selected &&
+               s->selected_plan == CHRONO_PLAN_BRIDGE;
+    case CHRONO_ACTION_APPROVE_BRIDGE:
+        return s->plan_approved &&
+               s->selected_plan == CHRONO_PLAN_BRIDGE;
+    case CHRONO_ACTION_SELECT_DUCK:
+        return s->plan_selected &&
+               s->selected_plan == CHRONO_PLAN_DUCK;
+    case CHRONO_ACTION_APPROVE_DUCK:
+        return s->plan_approved &&
+               s->selected_plan == CHRONO_PLAN_DUCK;
+    case CHRONO_ACTION_CROSS_BRIDGE:
+        return s->bridge_crossed;
+    case CHRONO_ACTION_REACH_TOWER:
+        return s->tower_reached;
+    case CHRONO_ACTION_VERIFY_PLAN:
+        return s->project_verified;
+    case CHRONO_ACTION_INSPECT_DUCK:
+        return s->duck_inspected;
+    case CHRONO_ACTION_PREPARE_DUCK:
+        return s->world.duck_prepared;
+    case CHRONO_ACTION_READ_MANUAL:
+        return s->manual_read;
+    case CHRONO_ACTION_CALIBRATE_DUCK:
+        return s->world.duck_calibrated ||
+               s->calibration_pending;
+    case CHRONO_ACTION_START_DUCK:
+        return s->world.duck_running;
+    case CHRONO_ACTION_CROSS_RIVER:
+        return s->river_crossed;
+    case CHRONO_ACTION_VERIFY_INTERVENTION:
+        return s->intervention_verified;
+    case CHRONO_ACTION_ENTER_TOWER:
+        return s->tower_entered;
+    case CHRONO_ACTION_RECOVER_CAPSULE:
+        return s->world.capsule_recovered;
+    case CHRONO_ACTION_WAIT:
+    default:
+        return false;
+    }
+}
+
+static M001ActionStatus m001_action_status(
+    const ChronoState *s, ChronoAction action
+)
+{
+    if (!action_for_player(action, s->active_player))
+        return M001_ACTION_OTHER_PLAYER;
+
+    if (m001_action_done(s, action))
+        return M001_ACTION_DONE;
+
+    if (s->finished || s->action_points == 0)
+        return M001_ACTION_BLOCKED;
+
+    ChronoState probe = *s;
+    return chrono_apply(&probe, action) == CHRONO_OK
+        ? M001_ACTION_AVAILABLE : M001_ACTION_BLOCKED;
+}
+
+/* UX-03: compact status glyphs, right-aligned inside each action. */
+static void m001_draw_action_icon(
+    SDL_Renderer *renderer, SDL_Rect rect, M001ActionStatus status
+)
+{
+    int x = rect.x + rect.w - 23;
+    int y = rect.y + rect.h / 2;
+    SDL_SetRenderDrawColor(renderer, 235, 241, 250, 255);
+
+    switch (status) {
+    case M001_ACTION_AVAILABLE: {
+        SDL_Point triangle[] = {
+            {x - 5, y - 7}, {x + 6, y},
+            {x - 5, y + 7}, {x - 5, y - 7}
+        };
+        SDL_RenderDrawLines(renderer, triangle, 4);
+        break;
+    }
+    case M001_ACTION_DONE:
+        SDL_RenderDrawLine(renderer, x - 7, y,
+                          x - 2, y + 5);
+        SDL_RenderDrawLine(renderer, x - 2, y + 5,
+                          x + 8, y - 6);
+        break;
+
+    case M001_ACTION_OTHER_PLAYER:
+        /* Two people, not a text label. */
+        SDL_RenderDrawRect(renderer,
+                           &(SDL_Rect){x - 7, y - 7, 5, 5});
+        SDL_RenderDrawRect(renderer,
+                           &(SDL_Rect){x + 2, y - 7, 5, 5});
+        SDL_RenderFillRect(renderer,
+                           &(SDL_Rect){x - 9, y, 9, 7});
+        SDL_RenderFillRect(renderer,
+                           &(SDL_Rect){x + 1, y, 9, 7});
+        break;
+
+    case M001_ACTION_BLOCKED:
+        /* Lock body and shackle. */
+        SDL_RenderDrawRect(renderer,
+                           &(SDL_Rect){x - 7, y - 1, 14, 10});
+        SDL_RenderDrawLine(renderer, x - 4, y - 1,
+                          x - 4, y - 6);
+        SDL_RenderDrawLine(renderer, x + 4, y - 1,
+                          x + 4, y - 6);
+        SDL_RenderDrawLine(renderer, x - 4, y - 6,
+                          x + 4, y - 6);
+        break;
+    }
+}
+
+static const char *m001_action_hint(
+    const ChronoState *s, ChronoAction action, M001ActionStatus status
+)
+{
+    if (status == M001_ACTION_OTHER_PLAYER)
+        return "Azione dell'altra epoca: cambia turno.";
+    if (status == M001_ACTION_DONE)
+        return "Obiettivo gia' raggiunto: ripetere puo' consumare PA.";
+    if (s->action_points == 0)
+        return "PA esauriti: premi TERMINA TURNO (SPAZIO).";
+    if (status == M001_ACTION_AVAILABLE)
+        return "Azione disponibile: clicca per eseguirla.";
+    if (action == CHRONO_ACTION_READ_PLANS &&
+        s->location_a != CHRONO_LOCATION_ARCHIVE)
+        return "Devi prima raggiungere l'archivio.";
+    if (action == CHRONO_ACTION_IDENTIFY_DEFECT &&
+        !s->ruins_inspected)
+        return "Devi prima esaminare i resti del ponte.";
+    return "Azione bloccata: manca un prerequisito.";
+}
+
 static void draw(SDL_Renderer *renderer, TTF_Font *font,
                  const ChronoState *state, const char *message)
 {
@@ -284,34 +468,123 @@ static void draw(SDL_Renderer *renderer, TTF_Font *font,
     label(renderer, font, 32, 28, white, header);
 
     draw_world(renderer, font, state);
-    label(renderer, font, 32, 309, muted, "AZIONI DISPONIBILI");
+    if (state->action_points == 0 && !state->finished) {
+        label(renderer, font, 32, 309,
+              (SDL_Color){255, 185, 110, 255},
+              "PA ESAURITI | Premi TERMINA TURNO (SPAZIO)");
+    } else if (m001_focus.hovered_action >= 0 && !state->finished) {
+        ChronoAction hovered = actions[m001_focus.hovered_action].id;
+        M001ActionStatus status = m001_action_status(state, hovered);
+        label(renderer, font, 32, 309, muted,
+              m001_action_hint(state, hovered, status));
+    } else {
+        label(renderer, font, 32, 309, muted,
+              "AZIONI | 2 PA per turno | A (1985) e B (2025) alternati");
+    }
 
     for (int i = 0; i < ACTION_COUNT; ++i) {
         SDL_Rect rect = action_rect(i);
-        bool available = m001_action_available(state, i);
-        bool hovered = !state->finished && m001_focus.hovered_action == i;
-        SDL_Color background = available
-            ? hovered ? (SDL_Color){55, 124, 169, 255}
-                      : (SDL_Color){35, 90, 135, 255}
-            : hovered ? (SDL_Color){65, 73, 87, 255}
-                      : (SDL_Color){39, 49, 65, 255};
+        M001ActionStatus status =
+            m001_action_status(state, actions[i].id);
+
+        SDL_Color background;
+        if (state->finished)
+            background = (SDL_Color){43, 50, 65, 255};
+        else if (status == M001_ACTION_AVAILABLE)
+            background = (SDL_Color){35, 90, 135, 255};
+        else if (status == M001_ACTION_DONE)
+            background = (SDL_Color){35, 88, 76, 255};
+        else if (status == M001_ACTION_OTHER_PLAYER)
+            background = (SDL_Color){33, 41, 54, 255};
+        else
+            background = (SDL_Color){45, 52, 64, 255};
+
+        if (!state->finished && m001_focus.hovered_action == i &&
+            status == M001_ACTION_AVAILABLE)
+            background = (SDL_Color){53, 118, 170, 255};
 
         rectangle(renderer, rect, background);
-        if (m001_focus.focused_action == i) {
-            m001_focus_rect(renderer, rect);
-        } else if (hovered) {
-            SDL_Color border = available
-                ? (SDL_Color){239, 194, 111, 255}
-                : (SDL_Color){130, 145, 160, 255};
-            SDL_SetRenderDrawColor(renderer,
-                                   border.r, border.g, border.b, 255);
-            SDL_RenderDrawRect(renderer, &rect);
-        }
 
         label(renderer, font, rect.x + 10, rect.y + 5,
-              available ? white : muted, actions[i].label);
-        label(renderer, font, rect.x + rect.w - 48, rect.y + 5,
-              available ? white : muted, m001_action_owner(i));
+              status == M001_ACTION_OTHER_PLAYER ? muted : white,
+              actions[i].label);
+        m001_draw_action_icon(renderer, rect, status);
+        if (m001_focus.focused_action == i)
+            m001_focus_rect(renderer, rect);
+        else if (!state->finished &&
+                 m001_focus.hovered_action == i) {
+            SDL_SetRenderDrawColor(renderer, 239, 194, 111, 255);
+            SDL_RenderDrawRect(renderer, &rect);
+        }
+    }
+
+
+    if (m001_feedback_visible() && !state->finished) {
+        SDL_Rect selected = action_rect(m001_mouse_feedback_action);
+
+        if (m001_mouse_feedback_accepted)
+            SDL_SetRenderDrawColor(renderer, 105, 230, 156, 255);
+        else
+            SDL_SetRenderDrawColor(renderer, 255, 159, 72, 255);
+
+        for (int border = 0; border < 3; ++border) {
+            SDL_Rect outline = {
+                selected.x + border,
+                selected.y + border,
+                selected.w - 2 * border,
+                selected.h - 2 * border
+            };
+            SDL_RenderDrawRect(renderer, &outline);
+        }
+    }
+
+    /* REPLAY-01A: M001 mission result overlay */
+    if (state->finished) {
+        SDL_Color gold = {255, 220, 80, 255};
+        SDL_Color white_result = {235, 241, 250, 255};
+        SDL_Color detail = {175, 202, 227, 255};
+        char result[180];
+
+        rectangle(renderer, (SDL_Rect){120, 365, 1040, 290},
+                  (SDL_Color){21, 40, 60, 255});
+
+        label(renderer, font, 155, 390, gold,
+              state->victory ? "MISSIONE COMPLETATA" :
+                               "MISSIONE NON COMPLETATA");
+
+        snprintf(result, sizeof(result),
+                 "Turni impiegati: %u / %u",
+                 state->turn, CHRONO_MAX_TURNS);
+        label(renderer, font, 155, 430, white_result, result);
+
+        const char *strategy =
+            state->selected_plan == CHRONO_PLAN_BRIDGE
+                ? "Ponte riparato" :
+            state->selected_plan == CHRONO_PLAN_DUCK
+                ? "Papera a Pendolo" : "Nessuna strategia completata";
+
+        snprintf(result, sizeof(result),
+                 "Strategia: %s", strategy);
+        label(renderer, font, 155, 466, white_result, result);
+
+        snprintf(result, sizeof(result),
+                 "Capsula: %s | Registro delle Maree: %s",
+                 state->world.capsule_recovered ? "RECUPERATA" : "MANCANTE",
+                 state->world.tide_register_acquired ? "OTTENUTO" : "MANCANTE");
+        label(renderer, font, 155, 502, white_result, result);
+
+        if (state->victory) {
+            label(renderer, font, 155, 548, detail,
+                  state->world.tide_register_acquired
+                      ? "Bonus acquisito! Prova anche il percorso piu' rapido."
+                      : "Obiettivo raggiunto! Scopri il Registro delle Maree.");
+        } else {
+            label(renderer, font, 155, 548, detail,
+                  "Riprova: ogni scelta modifica il futuro.");
+        }
+
+        label(renderer, font, 155, 607, detail,
+              "R: rigioca la missione | ESC: selezione missioni");
     }
 
     rectangle(renderer, (SDL_Rect){32, 725, 1216, 33},
@@ -323,11 +596,15 @@ static void draw(SDL_Renderer *renderer, TTF_Font *font,
     label(renderer, font, 136, 732, white, message);
 
     rectangle(renderer, (SDL_Rect){32, 790, 300, 43},
-              (SDL_Color){154, 100, 42, 255});
+              m001_hovered_control == 0
+                   ? (SDL_Color){207, 139, 58, 255}
+                   : (SDL_Color){154, 100, 42, 255});
     label(renderer, font, 47, 801, white, "TERMINA TURNO");
 
     rectangle(renderer, (SDL_Rect){345, 790, 220, 43},
-              (SDL_Color){88, 65, 105, 255});
+              m001_hovered_control == 1
+                   ? (SDL_Color){132, 91, 158, 255}
+                   : (SDL_Color){88, 65, 105, 255});
     label(renderer, font, 360, 801, white, "RICOMINCIA");
 
     if (m001_focus.focused_action < 0) {
@@ -396,10 +673,20 @@ static void handle_event(const SDL_Event *event, ChronoState *state,
     bool restart = false;
     bool end_turn = false;
     int clicked = -1;
+    bool mouse_clicked_action = false;
 
     if (event->type == SDL_MOUSEMOTION) {
-        m001_focus.hovered_action =
-            m001_action_at(event->motion.x, event->motion.y);
+        int x = event->motion.x;
+        int y = event->motion.y;
+
+        m001_hovered_control = -1;
+        if (contains((SDL_Rect){32, 790, 300, 43}, x, y))
+            m001_hovered_control = 0;
+        else if (contains((SDL_Rect){345, 790, 220, 43}, x, y))
+            m001_hovered_control = 1;
+
+        m001_focus.hovered_action = state->finished
+            ? -1 : m001_action_at(x, y);
         return;
     }
 
@@ -457,8 +744,10 @@ static void handle_event(const SDL_Event *event, ChronoState *state,
         end_turn = contains((SDL_Rect){32, 790, 300, 43}, x, y);
 
         clicked = m001_action_at(x, y);
-        if (clicked >= 0)
+        if (clicked >= 0) {
             m001_focus.focused_action = clicked;
+            mouse_clicked_action = true;
+        }
         else if (end_turn) {
             m001_focus.focused_action = -1;
             m001_focus.focused_bottom = 0;
@@ -468,10 +757,18 @@ static void handle_event(const SDL_Event *event, ChronoState *state,
     if (restart) {
         chrono_init(state);
         m001_focus_reset();
+        m001_reset_mouse_feedback();
         snprintf(message, capacity, "Nuova partita M001.");
     } else if (end_turn) {
+        m001_reset_mouse_feedback();
         ChronoTrace trace;
         ChronoResult result = chrono_end_turn(state, &trace);
+
+        if (m001_focus.focused_action >= 0 &&
+            !action_for_player(
+                actions[m001_focus.focused_action].id,
+                state->active_player))
+            m001_focus.focused_action = -1;
 
         if (result != CHRONO_OK) {
             snprintf(message, capacity, "%s", result_label(result));
@@ -503,8 +800,18 @@ static void handle_event(const SDL_Event *event, ChronoState *state,
         }
     } else if (clicked >= 0) {
         ChronoResult result = chrono_apply(state, actions[clicked].id);
-        snprintf(message, capacity, "%s: %s",
-                 actions[clicked].label, result_label(result));
+        if (mouse_clicked_action) {
+            m001_mouse_feedback_action = clicked;
+            m001_mouse_feedback_accepted = result == CHRONO_OK;
+            m001_mouse_feedback_until = SDL_GetTicks() + 700u;
+        }
+
+        if (result == CHRONO_NO_ACTION_POINTS)
+            snprintf(message, capacity,
+                     "PA esauriti: premi TERMINA TURNO (SPAZIO).");
+        else
+            snprintf(message, capacity, "%s: %s",
+                     actions[clicked].label, result_label(result));
 
         if (state->finished && state->victory)
             snprintf(message, capacity,
@@ -647,6 +954,115 @@ static void draw_mission_menu(SDL_Renderer *renderer, TTF_Font *font)
 }
 #endif
 
+
+#ifdef CHRONO_WITH_M002
+
+/* REPLAY-02C GUI persistence: XDG data directory, no game-state writes. */
+static bool replay_ensure_directory(const char *path)
+{
+    struct stat info;
+    if (mkdir(path, 0700) != 0 && errno != EEXIST)
+        return false;
+    return stat(path, &info) == 0 && S_ISDIR(info.st_mode);
+}
+
+static bool replay_prepare_save_path(char *path, size_t capacity)
+{
+    char base[4096];
+    char directory[4096];
+    const char *xdg = getenv("XDG_DATA_HOME");
+    const char *home = getenv("HOME");
+    int count;
+
+    if (xdg != NULL && *xdg == '/') {
+        count = snprintf(base, sizeof(base), "%s", xdg);
+        if (count < 0 || (size_t)count >= sizeof(base))
+            return false;
+    } else {
+        if (home == NULL || *home != '/')
+            return false;
+
+        count = snprintf(base, sizeof(base), "%s/.local", home);
+        if (count < 0 || (size_t)count >= sizeof(base))
+            return false;
+        if (!replay_ensure_directory(base))
+            return false;
+
+        count = snprintf(base, sizeof(base),
+                         "%s/.local/share", home);
+        if (count < 0 || (size_t)count >= sizeof(base))
+            return false;
+    }
+
+    if (!replay_ensure_directory(base))
+        return false;
+
+    count = snprintf(directory, sizeof(directory),
+                     "%s/chrono-oops", base);
+    if (count < 0 || (size_t)count >= sizeof(directory))
+        return false;
+    if (!replay_ensure_directory(directory))
+        return false;
+
+    count = snprintf(path, capacity,
+                     "%s/progress.v1", directory);
+    return count >= 0 && (size_t)count < capacity;
+}
+
+static void replay_save_if_changed(
+    const ChronoReplayProgress *progress,
+    const char *path, bool *enabled, bool changed
+)
+{
+    if (!changed || !*enabled)
+        return;
+
+    ChronoStoreResult result = chrono_store_save(path, progress);
+    if (result != CHRONO_STORE_OK) {
+        fprintf(stderr,
+                "ChronoOops: salvataggio non riuscito (%d); "
+                "progressi precedenti preservati.\n", (int)result);
+        *enabled = false;
+    }
+}
+
+/* REPLAY-02B GUI integration: observation only, no causal mutations. */
+static bool replay_restart_event(const SDL_Event *event, int mission)
+{
+    if (event->type == SDL_KEYDOWN)
+        return event->key.repeat == 0 &&
+               event->key.keysym.sym == SDLK_r;
+
+    if (event->type != SDL_MOUSEBUTTONDOWN ||
+        event->button.button != SDL_BUTTON_LEFT)
+        return false;
+
+    SDL_Rect rect = {345, mission == 1 ? 730 : 735, 220, 43};
+    return contains(rect, event->button.x, event->button.y);
+}
+
+static bool replay_observe(ChronoReplayProgress *progress,
+                           unsigned mission, uint64_t run_id,
+                           bool *recorded, bool finished,
+                           bool victory, unsigned turns,
+                           unsigned achievements)
+{
+    if (!finished || *recorded || run_id == 0)
+        return false;
+
+    ChronoReplayResult result = chrono_replay_record(
+        progress, mission, run_id, victory, turns,
+        victory ? achievements : 0
+    );
+
+    if (result == CHRONO_REPLAY_RECORDED ||
+        result == CHRONO_REPLAY_DUPLICATE)
+        *recorded = true;
+
+    return result == CHRONO_REPLAY_RECORDED;
+}
+#endif
+
 int main(void)
 {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -698,6 +1114,35 @@ int main(void)
     m004_gui_init(&m004);
     m005_gui_init(&m005);
     int selected_mission = 0;
+    ChronoReplayProgress replay_progress;
+    chrono_replay_init(&replay_progress);
+
+    char replay_save_path[4096] = {0};
+    bool replay_store_enabled =
+        replay_prepare_save_path(replay_save_path,
+                                 sizeof(replay_save_path));
+
+    if (replay_store_enabled) {
+        ChronoStoreResult loaded =
+            chrono_store_load(replay_save_path, &replay_progress);
+        if (loaded != CHRONO_STORE_OK &&
+            loaded != CHRONO_STORE_NOT_FOUND) {
+            fprintf(stderr,
+                    "ChronoOops: progressi non caricabili (%d); "
+                    "salvataggio disabilitato per questa sessione.\n",
+                    (int)loaded);
+            replay_store_enabled = false;
+        }
+    } else {
+        fprintf(stderr,
+                "ChronoOops: directory dati non disponibile; "
+                "salvataggio disabilitato.\n");
+    }
+
+    uint64_t replay_next_run_id = 0;
+    uint64_t replay_run_ids[5] = {0};
+    bool replay_recorded[5] = {false};
+    bool replay_m004_exclusive = false;
 #endif
 
 
@@ -737,9 +1182,17 @@ int main(void)
                     int x = event.button.x, y = event.button.y;
                     choice = mission_menu_pick(x, y);
                 }
+                if (choice >= 1 && choice <= 5) {
+                    unsigned index = (unsigned)(choice - 1);
+                    replay_run_ids[index] = chrono_replay_next_run_id(&replay_progress, &replay_next_run_id);
+                    replay_recorded[index] = false;
+                    if (choice == 4)
+                        replay_m004_exclusive = false;
+                }
                 if (choice == 1) {
                     chrono_init(&state);
                     m001_focus_reset();
+                    m001_reset_mouse_feedback();
                     snprintf(message, sizeof(message),
                              "Missione 001 iniziata: recupera la capsula.");
                     selected_mission = 1;
@@ -764,23 +1217,96 @@ int main(void)
                 continue;
             }
             if (selected_mission == 2) {
+                if (replay_restart_event(&event, 2)) {
+                    replay_run_ids[1] = chrono_replay_next_run_id(&replay_progress, &replay_next_run_id);
+                    replay_recorded[1] = false;
+                }
                 m002_gui_event(&m002, &event);
+                bool replay_changed = replay_observe(&replay_progress,
+                    2, replay_run_ids[1],
+                    &replay_recorded[1],
+                    m002.state.finished,
+                    m002.state.victory,
+                    m002.state.turn, 0);
+                replay_save_if_changed(
+                    &replay_progress, replay_save_path,
+                    &replay_store_enabled, replay_changed);
                 continue;
             }
             if (selected_mission == 3) {
+                if (replay_restart_event(&event, 3)) {
+                    replay_run_ids[2] = chrono_replay_next_run_id(&replay_progress, &replay_next_run_id);
+                    replay_recorded[2] = false;
+                }
                 m003_gui_event(&m003, &event);
+                bool replay_changed = replay_observe(&replay_progress,
+                    3, replay_run_ids[2],
+                    &replay_recorded[2],
+                    m003.state.finished,
+                    m003.state.victory,
+                    m003.state.turn, 0);
+                replay_save_if_changed(
+                    &replay_progress, replay_save_path,
+                    &replay_store_enabled, replay_changed);
                 continue;
             }
             if (selected_mission == 4) {
+                if (replay_restart_event(&event, 4)) {
+                    replay_run_ids[3] = chrono_replay_next_run_id(&replay_progress, &replay_next_run_id);
+                    replay_recorded[3] = false;
+                }
+                if (replay_restart_event(&event, 4))
+                    replay_m004_exclusive = false;
                 m004_gui_event(&m004, &event);
+                if (m004.state.beacon_active !=
+                    m004.state.register_active)
+                    replay_m004_exclusive = true;
+                bool replay_changed = replay_observe(&replay_progress,
+                    4, replay_run_ids[3],
+                    &replay_recorded[3],
+                    m004.state.finished,
+                    m004.state.victory,
+                    m004.state.turn, (replay_m004_exclusive ? CHRONO_REPLAY_RECONFIGURED : 0));
+                replay_save_if_changed(
+                    &replay_progress, replay_save_path,
+                    &replay_store_enabled, replay_changed);
                 continue;
             }
             if (selected_mission == 5) {
+                if (replay_restart_event(&event, 5)) {
+                    replay_run_ids[4] = chrono_replay_next_run_id(&replay_progress, &replay_next_run_id);
+                    replay_recorded[4] = false;
+                }
                 m005_gui_event(&m005, &event);
+                bool replay_changed = replay_observe(&replay_progress,
+                    5, replay_run_ids[4],
+                    &replay_recorded[4],
+                    m005.state.finished,
+                    m005.state.victory,
+                    m005.state.turn, (m005.state.insufficiency_recognized ? CHRONO_REPLAY_CORRECTION_RECOVERED : 0));
+                replay_save_if_changed(
+                    &replay_progress, replay_save_path,
+                    &replay_store_enabled, replay_changed);
                 continue;
             }
 #endif
+#ifdef CHRONO_WITH_M002
+            if (replay_restart_event(&event, 1)) {
+                replay_run_ids[0] = chrono_replay_next_run_id(&replay_progress, &replay_next_run_id);
+                replay_recorded[0] = false;
+            }
+#endif
             handle_event(&event, &state, message, sizeof(message), &running);
+#ifdef CHRONO_WITH_M002
+            bool replay_changed = replay_observe(&replay_progress, 1, replay_run_ids[0],
+                           &replay_recorded[0], state.finished,
+                           state.victory, state.turn,
+                           state.world.tide_register_acquired
+                               ? CHRONO_REPLAY_TIDE_REGISTER : 0);
+            replay_save_if_changed(
+                &replay_progress, replay_save_path,
+                &replay_store_enabled, replay_changed);
+#endif
         }
 
 #ifdef CHRONO_WITH_M002

@@ -129,6 +129,22 @@ static void m003_gui_end_turn(M003Gui *gui)
     }
 }
 
+static void m003_move_focus(M003Gui *gui, int direction)
+{
+    int position = gui->focused_action;
+    if (position < 0)
+        position = direction > 0 ? -1 : 0;
+
+    for (int step = 0; step < M003_GUI_ACTION_COUNT; ++step) {
+        position = (position + direction + M003_GUI_ACTION_COUNT)
+                   % M003_GUI_ACTION_COUNT;
+        if (m003_actions[position].player == gui->state.active_player) {
+            gui->focused_action = position;
+            return;
+        }
+    }
+}
+
 static void m003_gui_event(M003Gui *gui, const SDL_Event *event)
 {
     if (event->type == SDL_MOUSEMOTION) {
@@ -187,8 +203,23 @@ static void m003_gui_event(M003Gui *gui, const SDL_Event *event)
 
         if (event->key.keysym.sym == SDLK_r)
             m003_gui_init(gui);
-        else if (event->key.keysym.sym == SDLK_SPACE)
+        else if (event->key.keysym.sym == SDLK_SPACE) {
             m003_gui_end_turn(gui);
+            if (gui->focused_action >= 0 &&
+                m003_actions[gui->focused_action].player !=
+                    gui->state.active_player)
+                m003_move_focus(gui, 1);
+        } else if (event->key.keysym.sym == SDLK_DOWN ||
+                   event->key.keysym.sym == SDLK_RIGHT)
+            m003_move_focus(gui, 1);
+        else if (event->key.keysym.sym == SDLK_UP ||
+                 event->key.keysym.sym == SDLK_LEFT)
+            m003_move_focus(gui, -1);
+        else if (event->key.keysym.sym == SDLK_RETURN ||
+                 event->key.keysym.sym == SDLK_KP_ENTER) {
+            if (gui->focused_action >= 0)
+                m003_gui_apply(gui, gui->focused_action);
+        }
     }
 
     if (event->type != SDL_MOUSEBUTTONDOWN ||
@@ -370,4 +401,52 @@ static void m003_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
             : (SDL_Rect){345, 790, 220, 43};
         m003_focus_rect(renderer, focus);
     }
+
+    /* REPLAY-01E: M003 final result */
+    if (s->finished) {
+        SDL_Color gold = {255, 220, 80, 255};
+        SDL_Color result_text = {235, 241, 250, 255};
+        SDL_Color detail = {175, 202, 227, 255};
+        char result_line[256];
+
+        m003_rect(renderer, (SDL_Rect){120, 365, 1040, 300},
+                  (SDL_Color){21, 40, 60, 255});
+
+        m003_text(renderer, font, 155, 389, gold,
+                  s->victory ? "MISSIONE COMPLETATA" :
+                               "MISSIONE NON COMPLETATA");
+
+        snprintf(result_line, sizeof(result_line),
+                 "Turni: %u / %u", s->turn, CHRONO_MAX_TURNS);
+        m003_text(renderer, font, 155, 428, result_text, result_line);
+
+        snprintf(result_line, sizeof(result_line),
+                 "Persone: %s | Dimostrazione: %s",
+                 s->people_safe ? "AL SICURO" : "NON AL SICURO",
+                 s->demonstration_cancelled ? "CANCELLATA" :
+                 s->demonstration_secured ? "MESSA IN SICUREZZA" :
+                                             "NON RISOLTA");
+        m003_text(renderer, font, 155, 464, result_text, result_line);
+
+        snprintf(result_line, sizeof(result_line),
+                 "Testimonianza: %s | Verifica: %s",
+                 s->testimony_available ? "PRESENTE" : "ASSENTE",
+                 s->testimony_verified ? "COMPLETATA" : "MANCANTE");
+        m003_text(renderer, font, 155, 500, result_text, result_line);
+
+        snprintf(result_line, sizeof(result_line),
+                 "Archivio: %s | Provenienza: %s",
+                 s->testimony_archived ? "COMPLETATO" : "INCOMPLETO",
+                 s->provenance_validated ? "VALIDATA" : "NON VALIDATA");
+        m003_text(renderer, font, 155, 536, result_text, result_line);
+
+        m003_text(renderer, font, 155, 582, detail,
+                  s->victory
+                    ? "Sfida: salva le persone con una strategia piu' rapida."
+                    : "Riprova: proteggi le persone e conserva le prove.");
+
+        m003_text(renderer, font, 155, 625, detail,
+                  "R: rigioca | ESC: selezione missioni");
+    }
+
 }

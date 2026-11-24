@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(ChronoOops VERSION 1.0 LANGUAGES C)
+project(ChronoOops VERSION 1.3.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -78,6 +78,8 @@ endif()
 
 if(TARGET PkgConfig::CHRONO_SDL2 AND TARGET PkgConfig::CHRONO_SDL2_TTF)
     add_executable(chrono-oops-2d
+        replay_store.c
+        replay_progress.c
         graphics2d.c
         chrono.c
         mission002.c
@@ -97,6 +99,8 @@ endif()
 # The included GUI main is renamed by the test translation unit.
 if(TARGET chrono-oops-2d)
     add_executable(chrono-test-2d-001
+        replay_store.c
+        replay_progress.c
         test_graphics2d.c
         chrono.c
     )
@@ -227,3 +231,52 @@ set(CPACK_PACKAGE_FILE_NAME
 set(CPACK_GENERATOR "TGZ;ZIP")
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY ON)
 include(CPack)
+
+# REPLAY-02A: independent C11 progression register.
+add_executable(chrono-test-replay-progress
+    replay_progress.c
+    test_replay_progress.c
+)
+chrono_warnings(chrono-test-replay-progress)
+chrono_test_assertions(chrono-test-replay-progress)
+add_test(
+    NAME chrono-replay-progress
+    COMMAND chrono-test-replay-progress
+)
+
+# REPLAY-02B: exercise GUI replay helpers without opening a window.
+if(TARGET chrono-oops-2d)
+    add_executable(chrono-test-replay-gui-hooks
+        replay_store.c
+        test_replay_gui_hooks.c
+        replay_progress.c
+        chrono.c
+        mission002.c
+        mission003.c
+        mission004.c
+        mission005.c
+    )
+    target_link_libraries(chrono-test-replay-gui-hooks PRIVATE
+        PkgConfig::CHRONO_SDL2
+        PkgConfig::CHRONO_SDL2_TTF
+    )
+    chrono_warnings(chrono-test-replay-gui-hooks)
+    chrono_test_assertions(chrono-test-replay-gui-hooks)
+    add_test(
+        NAME chrono-replay-gui-hooks
+        COMMAND chrono-test-replay-gui-hooks
+    )
+endif()
+
+# REPLAY-02C: portable, atomic local progress persistence.
+add_executable(chrono-test-replay-store
+    replay_progress.c
+    replay_store.c
+    test_replay_store.c
+)
+chrono_warnings(chrono-test-replay-store)
+chrono_test_assertions(chrono-test-replay-store)
+add_test(
+    NAME chrono-replay-store
+    COMMAND chrono-test-replay-store
+)

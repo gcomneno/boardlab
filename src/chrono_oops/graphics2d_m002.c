@@ -372,4 +372,49 @@ static void m002_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
             : (SDL_Rect){345, 790, 220, 43};
         m002_focus_rect(renderer, focus);
     }
+
+    /* REPLAY-01D: M002 final result */
+    if (s->finished) {
+        SDL_Color gold = {255, 220, 80, 255};
+        SDL_Color white_result = {235, 241, 250, 255};
+        SDL_Color detail = {175, 202, 227, 255};
+
+        m002_rect(renderer, (SDL_Rect){120, 365, 1040, 300},
+                  (SDL_Color){21, 40, 60, 255});
+
+        m002_text(renderer, font, 155, 389, gold,
+                  s->victory ? "MISSIONE COMPLETATA" :
+                               "MISSIONE NON COMPLETATA");
+
+        snprintf(line, sizeof(line), "Turni: %u / %u",
+                 s->turn, CHRONO_MAX_TURNS);
+        m002_text(renderer, font, 155, 428, white_result, line);
+
+        snprintf(line, sizeof(line),
+                 "Cronofono: %s | Modulo: %s",
+                 s->cronophone_active ? "ATTIVO" : "INATTIVO",
+                 s->module_installed ? "INSTALLATO" : "NON INSTALLATO");
+        m002_text(renderer, font, 155, 464, white_result, line);
+
+        snprintf(line, sizeof(line),
+                 "Debito causale: %s | Origine storica: %s",
+                 s->debt_open ? "APERTO" : "ESTINTO",
+                 s->historical_origin_exists ? "PRESENTE" : "ASSENTE");
+        m002_text(renderer, font, 155, 500, white_result, line);
+
+        snprintf(line, sizeof(line),
+                 "Documentazione: %s | Stabilita': %s",
+                 s->documentation_verified ? "VERIFICATA" : "NON VERIFICATA",
+                 s->stability_confirmed ? "CONFERMATA" : "NON CONFERMATA");
+        m002_text(renderer, font, 155, 536, white_result, line);
+
+        m002_text(renderer, font, 155, 582, detail,
+                  s->victory
+                    ? "Sfida: prova a completare la missione in meno turni."
+                    : "Riprova: risolvi il debito senza creare paradossi.");
+
+        m002_text(renderer, font, 155, 625, detail,
+                  "R: rigioca | ESC: selezione missioni");
+    }
+
 }

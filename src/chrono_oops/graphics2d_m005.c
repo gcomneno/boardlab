@@ -713,4 +713,57 @@ static void m005_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
             : (SDL_Rect){345, 790, 220, 43};
         m005_focus_rect(renderer, focus);
     }
+
+    /* REPLAY-01C: M005 final result */
+    if (s->finished) {
+        SDL_Color gold = {255, 220, 80, 255};
+        SDL_Color white_result = {235, 241, 250, 255};
+        SDL_Color detail = {175, 202, 227, 255};
+
+        m005_rect(renderer, (SDL_Rect){120, 365, 1040, 305},
+                  (SDL_Color){21, 40, 60, 255});
+
+        m005_text(renderer, font, 155, 387, gold,
+                  s->victory ? "CAMPAGNA COMPLETATA" :
+                               "MISSIONE NON COMPLETATA");
+
+        snprintf(line, sizeof(line), "Turni: %u / %u",
+                 s->turn, CHRONO_MAX_TURNS);
+        m005_text(renderer, font, 155, 424, white_result, line);
+
+        const char *strategy =
+            s->superficial_correction && s->insufficiency_recognized
+                ? "Recupero dopo rettifica superficiale" :
+            s->superficial_correction
+                ? "Rettifica superficiale non risolta" :
+                "Ricostruzione senza rettifica superficiale";
+
+        snprintf(line, sizeof(line), "Percorso: %s", strategy);
+        m005_text(renderer, font, 155, 459, white_result, line);
+
+        snprintf(line, sizeof(line),
+                 "Prova indipendente: %s | Ordine ricostruito: %s",
+                 s->independent_evidence_available ? "SI" : "NO",
+                 s->real_order_reconstructed ? "SI" : "NO");
+        m005_text(renderer, font, 155, 494, white_result, line);
+
+        snprintf(line, sizeof(line),
+                 "Fonte certificata: %s | Provenienza: %s",
+                 s->original_source_certified ? "SI" : "NO",
+                 s->historical_provenance_recorded ? "SI" : "NO");
+        m005_text(renderer, font, 155, 529, white_result, line);
+
+        snprintf(line, sizeof(line), "Cronologia validata: %s",
+                 s->chronology_validated ? "SI" : "NO");
+        m005_text(renderer, font, 155, 564, white_result, line);
+
+        m005_text(renderer, font, 155, 602, detail,
+                  s->victory
+                    ? "Sfida: completa anche l'altro percorso."
+                    : "Riprova: correggere gli orari non dimostra la causalita'.");
+
+        m005_text(renderer, font, 155, 638, detail,
+                  "R: rigioca | ESC: selezione missioni");
+    }
+
 }

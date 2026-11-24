@@ -413,4 +413,49 @@ static void m004_gui_draw(SDL_Renderer *renderer, TTF_Font *font,
             : (SDL_Rect){345, 790, 220, 43};
         m004_focus_rect(renderer, focus);
     }
+
+    /* REPLAY-01B: M004 final result */
+    if (s->finished) {
+        SDL_Color gold = {255, 220, 80, 255};
+        SDL_Color panel_text = {235, 241, 250, 255};
+        SDL_Color detail = {175, 202, 227, 255};
+
+        m004_rect(renderer, (SDL_Rect){120, 367, 1040, 300},
+                  (SDL_Color){21, 40, 60, 255});
+
+        m004_text(renderer, font, 155, 389, gold,
+                  s->victory ? "MISSIONE COMPLETATA" :
+                               "MISSIONE NON COMPLETATA");
+
+        snprintf(line, sizeof(line), "Turni: %u / %u",
+                 s->turn, CHRONO_MAX_TURNS);
+        m004_text(renderer, font, 155, 429, panel_text, line);
+
+        snprintf(line, sizeof(line),
+                 "Configurazione finale: %s",
+                 m004_config_name(s->propagated_configuration));
+        m004_text(renderer, font, 155, 466, panel_text, line);
+
+        snprintf(line, sizeof(line),
+                 "Faro: %s | Registro: %s",
+                 s->beacon_verified ? "VERIFICATO" : "NON VERIFICATO",
+                 s->register_verified ? "VERIFICATO" : "NON VERIFICATO");
+        m004_text(renderer, font, 155, 501, panel_text, line);
+
+        snprintf(line, sizeof(line),
+                 "Certificazione: %s | Origine comune: %s | Coerenza: %s",
+                 m004_yes_no(s->configuration_certified),
+                 m004_yes_no(s->common_origin_recorded),
+                 m004_yes_no(s->coherence_validated));
+        m004_text(renderer, font, 155, 536, panel_text, line);
+
+        m004_text(renderer, font, 155, 578, detail,
+                  s->victory
+                    ? "Sfida successiva: completa la missione in meno turni."
+                    : "Riprova: entrambi gli effetti richiedono una causa comune.");
+
+        m004_text(renderer, font, 155, 626, detail,
+                  "R: rigioca | ESC: selezione missioni");
+    }
+
 }
