@@ -10,6 +10,7 @@ test("single-player release-critical browser smoke", async ({ page }) => {
 
   await page.goto(GAME_URL);
 
+  await page.locator("#match-disclosure > summary").click();
   await expect(page.locator("#die")).toBeVisible();
   await expect(page.locator("#pitch-logo-0")).toBeAttached();
   await expect(page.locator("#pitch-logo-1")).toBeAttached();
@@ -39,6 +40,7 @@ test("single-player release-critical browser smoke", async ({ page }) => {
 
   await page.locator("#team-0").selectOption(team0);
   await page.locator("#team-1").selectOption(team1);
+  await page.locator(".configuration-panel > details > summary").click();
   await page.locator("#hands").fill("1");
 
   await page.locator("#new").click();
@@ -96,6 +98,7 @@ test("single-player rejects catalogue team versus local placeholder", async ({ p
 test("random rolls choose a bounded per-match value while fixed mode stays exact", async ({ page }) => {
   await page.goto(GAME_URL);
 
+  await page.locator(".configuration-panel > details > summary").click();
   await page.locator("#hands").fill("6");
 
   await page.locator("#random-hands").uncheck();

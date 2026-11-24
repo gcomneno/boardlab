@@ -54,11 +54,13 @@
         "docs/architecture/adr/0001-python-toolchain.md",
         "docs/architecture/adr/0002-android-parity.md",
         "docs/games/dado-goal/browser-session-recovery.md",
+        "docs/games/dado-goal/cup-shootout-contract.md",
         "docs/games/dado-goal/extended-event-statistics-contract.md",
         "docs/games/dado-goal/extended-rules-v1.md",
         "docs/games/dado-goal/global-save-cup-contract.md",
         "docs/games/dado-goal/gui-parity-contract.md",
         "docs/games/dado-goal/issue-29-team-management-contract.md",
+        "docs/games/dado-goal/m034-v2-local-road-test.md",
         "docs/games/dado-goal/multiplayer-durable-authority.md",
         "docs/games/dado-goal/multiplayer-http-api.md",
         "docs/games/dado-goal/multiplayer-lifecycle-v4.md",
@@ -81,7 +83,8 @@
         "src/boardlab/cli/README.md",
         "src/boardlab/engine/README.md",
         "src/boardlab/games/README.md",
-        "tests/README.md"
+        "tests/README.md",
+        "web/dado-goal/docs/design/m034-v4-dice-contract.md"
     ],
     "excluded_documents": [
         "CHANGELOG.md",
