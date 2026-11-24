@@ -260,6 +260,7 @@ if(TARGET chrono-oops-2d)
         PkgConfig::CHRONO_SDL2
         PkgConfig::CHRONO_SDL2_TTF
     )
+    target_compile_definitions(chrono-test-replay-gui-hooks PRIVATE SDL_MAIN_HANDLED)
     chrono_warnings(chrono-test-replay-gui-hooks)
     chrono_test_assertions(chrono-test-replay-gui-hooks)
     add_test(
