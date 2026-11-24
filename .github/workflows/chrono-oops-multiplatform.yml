@@ -107,15 +107,15 @@ jobs:
         shell: bash
         run: |
           test -x build/chrono-oops/chrono-oops-2d
-          ctest --test-dir build/chrono-oops -N | grep -Eq 'Total Tests: 14'
+          ctest --test-dir build/chrono-oops -N | grep -Eq 'Total Tests: 18'
 
-      - name: Require graphical build and all 14 tests (Windows)
+      - name: Require graphical build and all 18 tests (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
           test -f build/chrono-oops/chrono-oops.exe
           test -f build/chrono-oops/chrono-oops-2d.exe
-          ctest --test-dir build/chrono-oops -N | grep -Eq 'Total Tests: 14'
+          ctest --test-dir build/chrono-oops -N | grep -Eq 'Total Tests: 18'
 
       - name: Collect Windows runtime DLLs
         if: runner.os == 'Windows'
