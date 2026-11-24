@@ -2,6 +2,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#endif
 
 #include "replay_progress.h"
 #include "chrono.h"
@@ -961,7 +964,11 @@ static void draw_mission_menu(SDL_Renderer *renderer, TTF_Font *font)
 static bool replay_ensure_directory(const char *path)
 {
     struct stat info;
+#ifdef _WIN32
+    if (_mkdir(path) != 0 && errno != EEXIST)
+#else
     if (mkdir(path, 0700) != 0 && errno != EEXIST)
+#endif
         return false;
     return stat(path, &info) == 0 && S_ISDIR(info.st_mode);
 }
@@ -970,9 +977,18 @@ static bool replay_prepare_save_path(char *path, size_t capacity)
 {
     char base[4096];
     char directory[4096];
+    int count;
+
+#ifdef _WIN32
+    const char *local_app_data = getenv("LOCALAPPDATA");
+    if (local_app_data == NULL || *local_app_data == '\0')
+        return false;
+    count = snprintf(base, sizeof(base), "%s", local_app_data);
+    if (count < 0 || (size_t)count >= sizeof(base))
+        return false;
+#else
     const char *xdg = getenv("XDG_DATA_HOME");
     const char *home = getenv("HOME");
-    int count;
 
     if (xdg != NULL && *xdg == '/') {
         count = snprintf(base, sizeof(base), "%s", xdg);
@@ -994,6 +1010,7 @@ static bool replay_prepare_save_path(char *path, size_t capacity)
             return false;
     }
 
+#endif
     if (!replay_ensure_directory(base))
         return false;
 
