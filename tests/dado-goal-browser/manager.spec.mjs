@@ -137,6 +137,12 @@ test("Manager launches its next canonical tournament fixture", async ({ page }) 
   await participants.selectOption(selected);
   await page.locator("#tournament-create").click();
 
+  await expect.poll(async () =>
+    page.evaluate(() =>
+      JSON.parse(localStorage.getItem("dado-goal.tournament.v1"))
+    )
+  ).not.toBeNull();
+
   const tournament = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("dado-goal.tournament.v1"))
   );
@@ -605,6 +611,12 @@ test("simulated tournament fixture recovers after tournament persistence failure
 
   await participants.selectOption(selected);
   await page.locator("#tournament-create").click();
+
+  await expect.poll(async () =>
+    page.evaluate(() =>
+      JSON.parse(localStorage.getItem("dado-goal.tournament.v1"))
+    )
+  ).not.toBeNull();
 
   const tournament = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("dado-goal.tournament.v1"))
