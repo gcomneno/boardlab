@@ -281,3 +281,42 @@ add_test(
     NAME chrono-replay-store
     COMMAND chrono-test-replay-store
 )
+
+# ChronoOops 3D P0: renderer-independent C11 adapter contracts.
+add_executable(chrono-test-3d-presentation
+    chrono.c
+    presentation3d.c
+    test_presentation3d.c
+)
+add_executable(chrono-test-3d-effects
+    effects3d.c
+    test_effects3d.c
+)
+add_executable(chrono-test-3d-input
+    chrono.c
+    input3d.c
+    test_input3d.c
+)
+
+foreach(adapter IN ITEMS presentation effects input)
+    chrono_warnings(chrono-test-3d-${adapter})
+    chrono_test_assertions(chrono-test-3d-${adapter})
+    add_test(
+        NAME chrono-3d-${adapter}
+        COMMAND chrono-test-3d-${adapter}
+    )
+endforeach()
+
+# ChronoOops 3D P0: REPLAY adapter contract.
+add_executable(chrono-test-3d-replay
+    replay_progress.c
+    replay_store.c
+    replay3d.c
+    test_replay3d.c
+)
+chrono_warnings(chrono-test-3d-replay)
+chrono_test_assertions(chrono-test-3d-replay)
+add_test(
+    NAME chrono-3d-replay
+    COMMAND chrono-test-3d-replay
+)
