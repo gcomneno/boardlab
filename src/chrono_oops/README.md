@@ -68,6 +68,20 @@ be available; `CHRONO_FONT_PATH` can specify a custom font file.
 The MIT license is included in the distribution. macOS binaries are
 not automatically signed or notarized.
 
+### Version 1.3.0 — Replay and action feedback
+
+The graphical campaign adds keyboard/mouse feedback, a completed-run
+overlay, and in-memory replay tracking with persistent local progress.
+Mission 001 distinguishes available, completed, blocked, and
+other-player actions using colors and right-aligned icons.
+
+Completed attempts and victories are stored under
+`$XDG_DATA_HOME/chrono-oops/progress.v1` when XDG_DATA_HOME is set;
+otherwise the default is
+`$HOME/.local/share/chrono-oops/progress.v1`.
+Preserve this file when upgrading.
+
+
 
 ## CLI campaign — Missions 001–005
 
@@ -378,7 +392,7 @@ Implemented and exercised:
 
 Not implemented in this prototype:
 
-- Graphical interface or complete RPG systems.
+- Complete RPG systems.
 - Network multiplayer.
 - AI-controlled cooperative companion.
 - General inventory or geographical grid.

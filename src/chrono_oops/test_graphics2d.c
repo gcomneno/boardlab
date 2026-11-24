@@ -340,10 +340,175 @@ static void test_m001_focus_and_availability(void)
     puts("M001_FOCUS_AVAILABILITY_GATE=PASS");
 }
 
+static void test_m001_mouse_feedback(void)
+{
+    ChronoState state;
+    char message[220] = "";
+    bool running = true;
+
+    chrono_init(&state);
+    m001_mouse_feedback_action = -1;
+    m001_mouse_feedback_accepted = false;
+
+    SDL_Rect valid = action_rect(1);
+    send_click(&state, message, &running,
+               valid.x + valid.w / 2,
+               valid.y + valid.h / 2);
+
+    assert(m001_mouse_feedback_action == 1);
+    assert(m001_mouse_feedback_accepted);
+    assert(m001_feedback_visible());
+    assert(strstr(message, "Azione riuscita") != NULL);
+
+    /* A completed pulse must not leave a permanent border. */
+    m001_mouse_feedback_until = SDL_GetTicks() - 1u;
+    assert(!m001_feedback_visible());
+
+    SDL_Rect invalid = action_rect(20);
+    send_click(&state, message, &running,
+               invalid.x + invalid.w / 2,
+               invalid.y + invalid.h / 2);
+
+    assert(m001_mouse_feedback_action == 20);
+    assert(!m001_mouse_feedback_accepted);
+    assert(m001_feedback_visible());
+
+    /* Mouse hover is independent from the result pulse. */
+    SDL_Rect hovered = action_rect(2);
+    SDL_Event motion = {0};
+    motion.type = SDL_MOUSEMOTION;
+    motion.motion.x = hovered.x + hovered.w / 2;
+    motion.motion.y = hovered.y + hovered.h / 2;
+    handle_event(&motion, &state, message, sizeof(message), &running);
+    assert(m001_focus.hovered_action == 2);
+
+    motion.motion.x = 0;
+    motion.motion.y = 0;
+    handle_event(&motion, &state, message, sizeof(message), &running);
+    assert(m001_focus.hovered_action == -1);
+
+    send_click(&state, message, &running, 50, 806);
+    assert(m001_mouse_feedback_action == -1);
+    assert(!m001_mouse_feedback_accepted);
+    assert(!m001_feedback_visible());
+
+    send_click(&state, message, &running, 365, 806);
+    assert(m001_mouse_feedback_action == -1);
+    assert(!m001_mouse_feedback_accepted);
+    assert(state.turn == 1);
+    assert(running);
+
+    SDL_Event keyboard = {0};
+    keyboard.type = SDL_KEYDOWN;
+    keyboard.key.keysym.sym = SDLK_DOWN;
+    handle_event(&keyboard, &state, message, sizeof(message), &running);
+
+    assert(m001_focus.focused_action >= 0);
+    assert(m001_mouse_feedback_action == -1);
+
+    puts("UX02_M001_MOUSE_FEEDBACK_GATE=PASS");
+}
+
+
+static void test_m001_action_states(void)
+{
+    ChronoState state;
+    chrono_init(&state);
+
+    unsigned original_pa = state.action_points;
+
+    assert(m001_action_status(
+        &state, CHRONO_ACTION_MOVE_ARCHIVE
+    ) == M001_ACTION_AVAILABLE);
+
+    assert(m001_action_status(
+        &state, CHRONO_ACTION_READ_PLANS
+    ) == M001_ACTION_BLOCKED);
+
+    assert(m001_action_status(
+        &state, CHRONO_ACTION_INSPECT_RUINS
+    ) == M001_ACTION_OTHER_PLAYER);
+
+    assert(m001_action_status(
+        &state, CHRONO_ACTION_WAIT
+    ) == M001_ACTION_AVAILABLE);
+
+    assert(strcmp(m001_action_hint(
+        &state, CHRONO_ACTION_READ_PLANS,
+        M001_ACTION_BLOCKED
+    ), "Devi prima raggiungere l'archivio.") == 0);
+
+    assert(state.action_points == original_pa);
+    assert(state.location_a == CHRONO_LOCATION_MUNICIPALITY);
+
+    assert(chrono_apply(
+        &state, CHRONO_ACTION_MOVE_ARCHIVE
+    ) == CHRONO_OK);
+
+    assert(m001_action_status(
+        &state, CHRONO_ACTION_MOVE_ARCHIVE
+    ) == M001_ACTION_DONE);
+
+    assert(m001_action_status(
+        &state, CHRONO_ACTION_READ_PLANS
+    ) == M001_ACTION_AVAILABLE);
+
+    assert(chrono_apply(
+        &state, CHRONO_ACTION_READ_PLANS
+    ) == CHRONO_OK);
+
+    assert(m001_action_status(
+        &state, CHRONO_ACTION_READ_PLANS
+    ) == M001_ACTION_DONE);
+
+    assert(state.action_points == 0);
+    assert(m001_action_status(
+        &state, CHRONO_ACTION_WAIT
+    ) == M001_ACTION_BLOCKED);
+
+    puts("UX03_ACTION_STATES_GATE=PASS");
+}
+
+
+static void test_bottom_button_hover(void)
+{
+    ChronoState state;
+    char message[220] = "";
+    bool running = true;
+    SDL_Event event = {0};
+
+    chrono_init(&state);
+    m001_reset_mouse_feedback();
+
+    event.type = SDL_MOUSEMOTION;
+    event.motion.x = 100;
+    event.motion.y = 806;
+    handle_event(&event, &state, message, sizeof(message), &running);
+    assert(m001_hovered_control == 0);
+
+    event.motion.x = 400;
+    handle_event(&event, &state, message, sizeof(message), &running);
+    assert(m001_hovered_control == 1);
+
+    event.motion.x = 900;
+    event.motion.y = 700;
+    handle_event(&event, &state, message, sizeof(message), &running);
+    assert(m001_hovered_control == -1);
+
+    m001_reset_mouse_feedback();
+    assert(m001_hovered_control == -1);
+    assert(running);
+
+    puts("UX03_BOTTOM_BUTTON_HOVER_GATE=PASS");
+}
+
 int main(void)
 {
     test_m001_focus_and_availability();
     test_mission_menu_hitboxes();
+    test_bottom_button_hover();
+    test_m001_action_states();
+    test_m001_mouse_feedback();
     test_action_player_highlighting();
     test_bridge();
     test_duck();
