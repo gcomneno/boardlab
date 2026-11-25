@@ -1,3 +1,6 @@
+#if defined(__APPLE__)
+#define _DARWIN_C_SOURCE 1
+#endif
 #define _POSIX_C_SOURCE 200809L
 #include "hall_store3d.h"
 
@@ -9,12 +12,30 @@
 
 int main(void)
 {
+#ifdef _WIN32
+    const char *temp_root = getenv("TEMP");
+    if (temp_root == NULL || *temp_root == '\0')
+        temp_root = getenv("TMP");
+    assert(temp_root != NULL && *temp_root != '\0');
+
+    char directory[4096];
+    int temp_length = snprintf(
+        directory, sizeof(directory),
+        "%s/chrono-hall-test-XXXXXX", temp_root
+    );
+    assert(temp_length > 0 &&
+           (size_t)temp_length < sizeof(directory));
+#else
     char directory[] = "/tmp/chrono-hall-test-XXXXXX";
+#endif
     assert(mkdtemp(directory) != NULL);
 
-    char path[256];
-    assert(snprintf(path, sizeof(path), "%s/hall.dat",
-                    directory) > 0);
+    char path[4096];
+    int path_length = snprintf(
+        path, sizeof(path), "%s/hall.dat", directory
+    );
+    assert(path_length > 0 &&
+           (size_t)path_length < sizeof(path));
 
     ChronoHall hall;
     ChronoHall restored;
