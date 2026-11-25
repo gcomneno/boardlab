@@ -320,3 +320,51 @@ add_test(
     NAME chrono-3d-replay
     COMMAND chrono-test-3d-replay
 )
+
+# Optional native 3D frontend; never required by CLI, SDL2 or C11 tests.
+option(CHRONO_ENABLE_3D "Build ChronoOops raylib 3D frontend" OFF)
+
+if(CHRONO_ENABLE_3D)
+    find_package(raylib 5.5 QUIET)
+
+    if(NOT TARGET raylib)
+        include(FetchContent)
+        set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+        set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+
+        FetchContent_Declare(chrono_raylib
+            GIT_REPOSITORY https://github.com/raysan5/raylib.git
+            GIT_TAG 5.5
+            GIT_SHALLOW TRUE
+        )
+        FetchContent_MakeAvailable(chrono_raylib)
+    endif()
+
+    add_executable(chrono-oops-3d
+        graphics3d.c
+        chrono.c
+        presentation3d.c
+    )
+    target_link_libraries(chrono-oops-3d PRIVATE raylib)
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/assets/3d")
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/3d/municipality_1985.gltf"
+        "${CMAKE_CURRENT_BINARY_DIR}/assets/3d/municipality_1985.gltf"
+        COPYONLY
+    )
+    foreach(asset IN ITEMS archive_1985 tower_2025)
+        configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets/3d/${asset}.gltf"
+            "${CMAKE_CURRENT_BINARY_DIR}/assets/3d/${asset}.gltf"
+            COPYONLY
+        )
+    endforeach()
+    foreach(asset IN ITEMS clerk_1985 explorer_2025)
+        configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets/3d/${asset}.gltf"
+            "${CMAKE_CURRENT_BINARY_DIR}/assets/3d/${asset}.gltf"
+            COPYONLY
+        )
+    endforeach()
+    chrono_warnings(chrono-oops-3d)
+endif()
