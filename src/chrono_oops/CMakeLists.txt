@@ -307,6 +307,57 @@ foreach(adapter IN ITEMS presentation effects input)
     )
 endforeach()
 
+# P2: menu and input-adapter functional qualification.
+add_executable(chrono-test-3d-qualification
+    chrono.c
+    input3d.c
+    action_menu3d.c
+    test_qualification3d.c
+)
+chrono_warnings(chrono-test-3d-qualification)
+chrono_test_assertions(chrono-test-3d-qualification)
+add_test(
+    NAME chrono-3d-qualification
+    COMMAND chrono-test-3d-qualification
+)
+
+# Pure C11 score qualification.
+add_executable(chrono-test-3d-score
+    score3d.c
+    test_score3d.c
+)
+chrono_warnings(chrono-test-3d-score)
+chrono_test_assertions(chrono-test-3d-score)
+add_test(
+    NAME chrono-3d-score
+    COMMAND chrono-test-3d-score
+)
+
+# Arcade Hall of Fame: pure C11 ranking qualification.
+add_executable(chrono-test-3d-hall
+    hall3d.c
+    test_hall3d.c
+)
+chrono_warnings(chrono-test-3d-hall)
+chrono_test_assertions(chrono-test-3d-hall)
+add_test(
+    NAME chrono-3d-hall
+    COMMAND chrono-test-3d-hall
+)
+
+# Arcade Hall of Fame: persistent storage qualification.
+add_executable(chrono-test-3d-hall-store
+    hall3d.c
+    hall_store3d.c
+    test_hall_store3d.c
+)
+chrono_warnings(chrono-test-3d-hall-store)
+chrono_test_assertions(chrono-test-3d-hall-store)
+add_test(
+    NAME chrono-3d-hall-store
+    COMMAND chrono-test-3d-hall-store
+)
+
 # ChronoOops 3D P0: REPLAY adapter contract.
 add_executable(chrono-test-3d-replay
     replay_progress.c
@@ -342,8 +393,15 @@ if(CHRONO_ENABLE_3D)
 
     add_executable(chrono-oops-3d
         graphics3d.c
+        score3d.c
+        hall3d.c
+        hall_store3d.c
+        hall_runtime3d.c
         chrono.c
         presentation3d.c
+        input3d.c
+        action_menu3d.c
+        effects3d.c
     )
     target_link_libraries(chrono-oops-3d PRIVATE raylib)
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/assets/3d")
@@ -352,7 +410,7 @@ if(CHRONO_ENABLE_3D)
         "${CMAKE_CURRENT_BINARY_DIR}/assets/3d/municipality_1985.gltf"
         COPYONLY
     )
-    foreach(asset IN ITEMS archive_1985 tower_2025)
+    foreach(asset IN ITEMS archive_1985 tower_2025 tower_hydraulic_2025)
         configure_file(
             "${CMAKE_CURRENT_SOURCE_DIR}/assets/3d/${asset}.gltf"
             "${CMAKE_CURRENT_BINARY_DIR}/assets/3d/${asset}.gltf"

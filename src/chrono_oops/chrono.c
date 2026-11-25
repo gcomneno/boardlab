@@ -50,6 +50,28 @@ ChronoResult chrono_apply(ChronoState *state, ChronoAction action)
     case CHRONO_ACTION_WAIT:
         break;
 
+    case CHRONO_ACTION_QUESTION_PIGEON:
+    case CHRONO_ACTION_THROW_STONE:
+        if (next.active_player != CHRONO_PLAYER_B) {
+            return CHRONO_WRONG_PLAYER;
+        }
+        break;
+
+    case CHRONO_ACTION_CHECK_HOROSCOPE:
+        if (next.active_player != CHRONO_PLAYER_A) {
+            return CHRONO_WRONG_PLAYER;
+        }
+        break;
+
+    case CHRONO_ACTION_KNOCK_TOWER:
+        if (next.active_player != CHRONO_PLAYER_B) {
+            return CHRONO_WRONG_PLAYER;
+        }
+        if (next.location_b != CHRONO_LOCATION_TOWER) {
+            return CHRONO_PREREQUISITE_MISSING;
+        }
+        break;
+
     case CHRONO_ACTION_MOVE_ARCHIVE:
         if (next.active_player != CHRONO_PLAYER_A) {
             return CHRONO_WRONG_PLAYER;
