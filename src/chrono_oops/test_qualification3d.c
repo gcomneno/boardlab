@@ -18,11 +18,18 @@ static void catalog_qualification(void)
     }
 
     assert(CHRONO_3D_ACTION_COUNT == 26);
-    const Chrono3DActionEntry *catalog = chrono_3d_actions();
-    assert(catalog[22].id == CHRONO_ACTION_QUESTION_PIGEON);
-    assert(catalog[23].id == CHRONO_ACTION_CHECK_HOROSCOPE);
-    assert(catalog[24].id == CHRONO_ACTION_THROW_STONE);
-    assert(catalog[25].id == CHRONO_ACTION_KNOCK_TOWER);
+    /* The catalog must be complete regardless of presentation order. */
+    for (int expected = 0; expected < CHRONO_3D_ACTION_COUNT;
+         ++expected) {
+        bool found = false;
+        for (int i = 0; i < CHRONO_3D_ACTION_COUNT; ++i) {
+            if (entries[i].id == (ChronoAction)expected) {
+                found = true;
+                break;
+            }
+        }
+        assert(found);
+    }
     puts("CATALOG_26_GATE=PASS");
 }
 
@@ -85,6 +92,14 @@ static void bridge_route(void)
 
     act(&s, CHRONO_ACTION_SELECT_BRIDGE);
     act(&s, CHRONO_ACTION_APPROVE_BRIDGE);
+    {
+        /* Isolate the temporal prerequisite from the AP limit. */
+        ChronoState premature = s;
+        premature.action_points = 1;
+        assert(chrono_apply(&premature, CHRONO_ACTION_VERIFY_PLAN)
+               == CHRONO_PREREQUISITE_MISSING);
+        assert(!premature.project_verified);
+    }
     assert(!s.world.bridge_exists);
 
     ChronoTrace trace = end_turn(&s, 3);
@@ -97,7 +112,13 @@ static void bridge_route(void)
     act(&s, CHRONO_ACTION_REACH_TOWER);
     end_turn(&s, 4);
 
+    {
+        ChronoState premature = s;
+        premature.world.capsule_recovered = true;
+        assert(!chrono_is_victory(&premature));
+    }
     act(&s, CHRONO_ACTION_VERIFY_PLAN);
+    assert(s.project_verified);
     end_turn(&s, 5);
 
     act(&s, CHRONO_ACTION_ENTER_TOWER);
@@ -137,6 +158,8 @@ static void duck_route(void)
     end_turn(&s, 4);
     assert(s.world.duck_prepared);
 
+    assert(chrono_apply(&s, CHRONO_ACTION_VERIFY_INTERVENTION)
+           == CHRONO_PREREQUISITE_MISSING);
     act(&s, CHRONO_ACTION_READ_MANUAL);
     act(&s, CHRONO_ACTION_CALIBRATE_DUCK);
     assert(s.calibration_pending);
@@ -153,7 +176,13 @@ static void duck_route(void)
     end_turn(&s, 6);
     assert(s.world.tide_register_acquired);
 
+    {
+        ChronoState premature = s;
+        premature.world.capsule_recovered = true;
+        assert(!chrono_is_victory(&premature));
+    }
     act(&s, CHRONO_ACTION_VERIFY_INTERVENTION);
+    assert(s.intervention_verified);
     end_turn(&s, 7);
 
     act(&s, CHRONO_ACTION_ENTER_TOWER);

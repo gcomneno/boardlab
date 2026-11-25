@@ -20,9 +20,21 @@ void chrono_init(ChronoState *state)
 
 bool chrono_is_victory(const ChronoState *state)
 {
-    return state != NULL &&
-           state->world.capsule_recovered &&
-           state->turn <= CHRONO_MAX_TURNS;
+    if (state == NULL ||
+        !state->world.capsule_recovered ||
+        state->turn > CHRONO_MAX_TURNS)
+        return false;
+
+    if (state->selected_plan == CHRONO_PLAN_BRIDGE)
+        return state->bridge_crossed &&
+               state->project_verified;
+
+    if (state->selected_plan == CHRONO_PLAN_DUCK)
+        return state->river_crossed &&
+               state->world.tide_register_acquired &&
+               state->intervention_verified;
+
+    return false;
 }
 
 ChronoResult chrono_apply(ChronoState *state, ChronoAction action)
@@ -203,7 +215,8 @@ ChronoResult chrono_apply(ChronoState *state, ChronoAction action)
             return CHRONO_WRONG_PLAYER;
         }
         if (!next.plan_approved ||
-            next.selected_plan != CHRONO_PLAN_BRIDGE) {
+            next.selected_plan != CHRONO_PLAN_BRIDGE ||
+            !next.bridge_crossed) {
             return CHRONO_PREREQUISITE_MISSING;
         }
         next.project_verified = true;
@@ -288,7 +301,9 @@ ChronoResult chrono_apply(ChronoState *state, ChronoAction action)
         }
         if (!next.plan_approved ||
             next.selected_plan != CHRONO_PLAN_DUCK ||
-            !next.world.duck_calibrated) {
+            !next.world.duck_calibrated ||
+            !next.river_crossed ||
+            !next.world.tide_register_acquired) {
             return CHRONO_PREREQUISITE_MISSING;
         }
         next.intervention_verified = true;

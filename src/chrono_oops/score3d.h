@@ -7,6 +7,6 @@
 /* Pure scoring calculation, independent of rendering and storage. */
 unsigned chrono_score3d(bool victory, bool hard_mode,
                         ChronoPlan plan, unsigned turns,
-                        unsigned decoys);
+                        unsigned decoys, bool tide_register_acquired);
 
 #endif

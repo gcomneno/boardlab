@@ -2,7 +2,7 @@
 
 unsigned chrono_score3d(bool victory, bool hard_mode,
                         ChronoPlan plan, unsigned turns,
-                        unsigned decoys)
+                        unsigned decoys, bool tide_register_acquired)
 {
     if (!victory || turns == 0 || turns > 8)
         return 0;
@@ -16,6 +16,12 @@ unsigned chrono_score3d(bool victory, bool hard_mode,
         return 0;
 
     unsigned score = 1000u + (hard_mode ? 300u : 0u);
+
+    /* Reward bridge efficiency or documented duck exploration. */
+    if (plan == CHRONO_PLAN_BRIDGE)
+        score += 200u;
+    else if (tide_register_acquired)
+        score += 250u;
 
     if (turns < reference)
         score += (reference - turns) * 100u;

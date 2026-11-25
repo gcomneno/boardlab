@@ -530,9 +530,31 @@ static void diorama_2025(
          * The 1985 experimental duck survives as a commemorative
          * machine on the 2025 lawn. Its world-state remains C11-owned.
          */
-        const float dx = x - 2.5f;
+        /*
+         * The duck itself navigates during CROSS_RIVER.
+         * After arrival it remains docked on the eastern bank.
+         */
+        float dx = x - 2.5f;
         const float dz = -0.65f;
         const bool running = scene->world.duck_running;
+        if (running &&
+            scene->location_b >= CHRONO_LOCATION_EAST_BANK) {
+            dx = 10.5f;
+            if (action == CHRONO_ACTION_CROSS_RIVER &&
+                motion_progress >= 0.0f) {
+                /* Same normalized timeline used by the passenger. */
+                const float walk = fminf(fmaxf(
+                    (motion_progress - 0.12f) / 0.76f,
+                    0.0f), 1.0f);
+                const float eased =
+                    walk * walk * (3.0f - 2.0f * walk);
+                float sail = fminf(fmaxf(
+                    (eased - 0.22f) / 0.53f,
+                    0.0f), 1.0f);
+                sail = sail * sail * (3.0f - 2.0f * sail);
+                dx = 5.5f + 5.0f * sail;
+            }
+        }
         const Color plumage = running
             ? (Color){255, 229, 88, 255}
             : (Color){232, 184, 76, 255};
@@ -627,15 +649,29 @@ static void diorama_2025(
         );
     }
 
-    /* Player B remains positioned by authoritative C11 state. */
-    const float player_x =
-        (scene->location_b == CHRONO_LOCATION_BRIDGE ||
-         scene->location_b >= CHRONO_LOCATION_EAST_BANK)
-            ? x + 3.0f : x - 3.5f;
+    /* Canonical 2025 locations, aligned with the physical bridge. */
+    const Vector3 west_bank = {4.5f, 0.0f, 2.6f};
+    const Vector3 bridge_center = {8.0f, 0.72f, -0.65f};
+    const Vector3 east_bank = {11.0f, 0.0f, 2.6f};
+    const Vector3 tower_approach = {11.75f, 0.0f, -0.35f};
+    const Vector3 tower_interior = {11.55f, 0.0f, -1.20f};
 
-    float explorer_x = player_x;
-    float explorer_z = scene->location_b == CHRONO_LOCATION_TOWER
-        ? -0.35f : 2.6f;
+    Vector3 player_position = west_bank;
+    if (scene->location_b == CHRONO_LOCATION_BRIDGE) {
+        player_position = bridge_center;
+    } else if (scene->location_b == CHRONO_LOCATION_TOWER) {
+        player_position = scene->tower_entered
+            ? tower_interior : tower_approach;
+    } else if (scene->location_b >= CHRONO_LOCATION_EAST_BANK) {
+        player_position = east_bank;
+    }
+
+    const float player_x = player_position.x;
+    float explorer_x = player_position.x;
+    float explorer_z = player_position.z;
+    float explorer_height =
+        scene->location_b == CHRONO_LOCATION_BRIDGE
+            ? bridge_center.y : 0.0f;
     float explorer_pitch = 0.0f;
     float explorer_yaw = 0.0f;
     float explorer_bob = 0.0f;
@@ -645,35 +681,65 @@ static void diorama_2025(
         if (action == CHRONO_ACTION_CROSS_BRIDGE ||
             action == CHRONO_ACTION_CROSS_RIVER ||
             action == CHRONO_ACTION_REACH_TOWER) {
-            const float start_x =
-                (previous_location == CHRONO_LOCATION_BRIDGE ||
-                 previous_location >= CHRONO_LOCATION_EAST_BANK)
-                    ? 11.0f : 4.5f;
-            const float start_z =
-                previous_location == CHRONO_LOCATION_TOWER
-                    ? -0.35f : 2.6f;
-            const float finish_x =
-                scene->location_b == CHRONO_LOCATION_TOWER
-                    ? 11.75f : player_x;
-            const float finish_z =
-                scene->location_b == CHRONO_LOCATION_TOWER
-                    ? -0.35f : 2.6f;
-
             const float walk = fminf(
                 fmaxf((t - 0.12f) / 0.76f, 0.0f), 1.0f
             );
             const float eased = walk * walk * (3.0f - 2.0f * walk);
-            explorer_x = start_x +
-                (finish_x - start_x) * eased;
-            explorer_z = start_z +
-                (finish_z - start_z) * eased;
 
-            if (action == CHRONO_ACTION_CROSS_BRIDGE ||
-                action == CHRONO_ACTION_CROSS_RIVER) {
-                /* Follow the crossing line rather than the river surface. */
-                explorer_z -=
-                    (action == CHRONO_ACTION_CROSS_BRIDGE
-                        ? 3.25f : 1.40f) * sinf(walk * PI);
+            if (action == CHRONO_ACTION_CROSS_BRIDGE) {
+                /* Approach the western bridge entrance before crossing. */
+                const float approach = fminf(eased / 0.38f, 1.0f);
+                const float crossing = fmaxf(
+                    (eased - 0.38f) / 0.62f, 0.0f
+                );
+                explorer_x = west_bank.x +
+                    (5.45f - west_bank.x) * approach +
+                    (bridge_center.x - 5.45f) * crossing;
+                explorer_z = west_bank.z +
+                    (bridge_center.z - west_bank.z) * approach;
+                explorer_height = bridge_center.y * crossing;
+            } else if (action == CHRONO_ACTION_REACH_TOWER) {
+                /* Finish crossing the deck, then approach the tower. */
+                const float crossing = fminf(eased / 0.72f, 1.0f);
+                const float approach = fmaxf(
+                    (eased - 0.72f) / 0.28f, 0.0f
+                );
+                explorer_x = bridge_center.x +
+                    (10.55f - bridge_center.x) * crossing +
+                    (tower_approach.x - 10.55f) * approach;
+                explorer_z = bridge_center.z +
+                    (tower_approach.z - bridge_center.z) * approach;
+                explorer_height =
+                    bridge_center.y * (1.0f - approach);
+            } else {
+                /* Board, ride the duck across, then disembark. */
+                float board = fminf(eased / 0.22f, 1.0f);
+                float sail = (eased - 0.22f) / 0.53f;
+                float disembark = (eased - 0.75f) / 0.25f;
+
+                board = fminf(fmaxf(board, 0.0f), 1.0f);
+                sail = fminf(fmaxf(sail, 0.0f), 1.0f);
+                disembark =
+                    fminf(fmaxf(disembark, 0.0f), 1.0f);
+
+                sail = sail * sail * (3.0f - 2.0f * sail);
+                disembark = disembark * disembark *
+                    (3.0f - 2.0f * disembark);
+
+                const float duck_x = 5.5f + 5.0f * sail;
+                const float duck_z = -0.65f;
+
+                explorer_x = west_bank.x +
+                    (duck_x - west_bank.x) * board;
+                explorer_z = west_bank.z +
+                    (duck_z - west_bank.z) * board;
+                explorer_height = 1.05f * board;
+
+                explorer_x +=
+                    (east_bank.x - explorer_x) * disembark;
+                explorer_z +=
+                    (east_bank.z - explorer_z) * disembark;
+                explorer_height *= 1.0f - disembark;
             }
 
             const float facing = fminf(t / 0.12f, 1.0f);
@@ -702,13 +768,26 @@ static void diorama_2025(
                 fabsf(sinf(t * 16.0f * PI)) *
                 (1.0f - proximity);
         } else if (action == CHRONO_ACTION_ENTER_TOWER) {
-            /* Approach the tower doorway and operate the door. */
-            const float approach = fminf(
-                fmaxf((t - 0.12f) / 0.55f, 0.0f), 1.0f
+            /* Approach the door, then enter the tower. */
+            const Vector3 start =
+                previous_location == CHRONO_LOCATION_EAST_BANK
+                    ? east_bank : tower_approach;
+            float approach = fminf(
+                fmaxf(t / 0.50f, 0.0f), 1.0f
             );
-            const float eased = approach * approach *
+            float enter = fminf(
+                fmaxf((t - 0.50f) / 0.50f, 0.0f), 1.0f
+            );
+            approach = approach * approach *
                 (3.0f - 2.0f * approach);
-            explorer_z = -0.35f - 0.85f * eased;
+            enter = enter * enter *
+                (3.0f - 2.0f * enter);
+            explorer_x = start.x +
+                (tower_approach.x - start.x) * approach +
+                (tower_interior.x - tower_approach.x) * enter;
+            explorer_z = start.z +
+                (tower_approach.z - start.z) * approach +
+                (tower_interior.z - tower_approach.z) * enter;
             explorer_yaw = -35.0f * sinf(t * PI);
         }
     }
@@ -753,7 +832,9 @@ static void diorama_2025(
     const bool turning = fabsf(explorer_yaw) > 0.01f;
     DrawModelEx(
         *explorer,
-        (Vector3){explorer_x, explorer_bob, explorer_z},
+        (Vector3){
+            explorer_x, explorer_height + explorer_bob, explorer_z
+        },
         turning
             ? (Vector3){0.0f, 1.0f, 0.0f}
             : (Vector3){1.0f, 0.0f, 0.0f},
@@ -899,7 +980,7 @@ static void draw_2025_action_props(
         const Vector3 meter = {6.34f, 1.20f, measurement_z};
         const Vector3 target = {
             river_center + river_half_width + 0.20f,
-            0.20f,
+            meter.y,
             measurement_z
         };
         const bool measuring = t >= 0.40f && t <= 0.67f;
@@ -950,85 +1031,158 @@ static void draw_2025_action_props(
     case CHRONO_ACTION_INSPECT_DUCK:
     case CHRONO_ACTION_PREPARE_DUCK: {
         if (!scene->world.duck_exists) break;
-        const float x = 5.5f;
+
+        /* Side-mounted service bay on the near pontoon support. */
+        const float dx = 5.5f;
+        const float dz = -0.65f;
+        const float side_z = dz + 0.75f;
+        const float progress = fminf(fmaxf(
+            (t - 0.18f) / 0.62f, 0.0f), 1.0f);
+        const float ease = progress * progress *
+                           (3.0f - 2.0f * progress);
+        const Color housing = {55, 70, 78, 255};
+        const Color latch = {174, 183, 186, 255};
+        const Color locked = {216, 102, 65, 255};
+        const Color unlocked = {83, 217, 139, 255};
+
+        /* Service housing physically attached to the pedestal. */
+        DrawCubeV(
+            (Vector3){dx - 0.34f, 0.38f, side_z},
+            (Vector3){0.47f, 0.36f, 0.13f}, housing
+        );
+
         if (action == CHRONO_ACTION_INSPECT_DUCK) {
-            /* Floating, pulsing inspection eye above the duck. */
-            const float eye_y = 1.80f + 0.13f * pulse;
-            const float eye_z = -0.65f;
-            const float half_width = 0.46f;
-            const float half_height = 0.21f;
-            const Color eye_gold = {255, 218, 111, 255};
-            const Color pupil = {37, 49, 65, 255};
-
-            /* Two smooth almond-shaped contours in the X/Y plane. */
-            for (int i = 0; i < 16; ++i) {
-                const float a = PI * (float)i / 16.0f;
-                const float b = PI * (float)(i + 1) / 16.0f;
-                for (int side = -1; side <= 1; side += 2) {
-                    DrawLine3D(
-                        (Vector3){
-                            x + half_width * cosf(a),
-                            eye_y + (float)side * half_height * sinf(a),
-                            eye_z
-                        },
-                        (Vector3){
-                            x + half_width * cosf(b),
-                            eye_y + (float)side * half_height * sinf(b),
-                            eye_z
-                        },
-                        eye_gold
-                    );
-                }
-            }
-
-            DrawSphere(
-                (Vector3){x, eye_y, eye_z},
-                0.16f, eye_gold
+            /* Open the hinged cover; reveal the safety-lock pin. */
+            const float opening = sinf(progress * PI);
+            DrawCubeV(
+                (Vector3){
+                    dx - 0.34f,
+                    0.38f + 0.26f * opening,
+                    side_z + 0.09f * opening
+                },
+                (Vector3){0.49f, 0.055f, 0.17f},
+                latch
             );
             DrawSphere(
-                (Vector3){x, eye_y, eye_z + 0.135f},
-                0.085f, pupil
+                (Vector3){
+                    dx - 0.34f, 0.40f,
+                    side_z + 0.085f
+                },
+                0.075f, locked
             );
-
-            /* A short luminous pointer anchors the icon to the duck. */
             DrawLine3D(
-                (Vector3){x, eye_y - 0.30f, eye_z},
-                (Vector3){x, eye_y - 0.49f, eye_z},
-                eye_gold
+                (Vector3){dx - 0.54f, 0.41f, side_z},
+                (Vector3){
+                    dx - 0.54f,
+                    0.41f + 0.26f * opening,
+                    side_z + 0.09f * opening
+                },
+                latch
             );
         } else {
-            /* Visible wrench turns the duck's preparation bolt. */
+            /* Release the lock using a captive side lever. */
+            const float handle_x = dx - 0.34f + 0.15f * ease;
             DrawCubeV(
-                (Vector3){x, 1.10f, -0.70f},
-                (Vector3){0.12f, 0.56f, 0.13f}, steel);
+                (Vector3){dx - 0.34f, 0.43f, side_z + 0.10f},
+                (Vector3){0.30f, 0.055f, 0.07f}, latch
+            );
             DrawCubeV(
-                (Vector3){x + 0.15f * sinf(t * 9.0f),
-                          1.39f, -0.70f},
-                (Vector3){0.37f, 0.10f, 0.13f}, gold);
+                (Vector3){handle_x, 0.47f, side_z + 0.15f},
+                (Vector3){0.11f, 0.13f, 0.09f}, gold
+            );
             DrawSphere(
-                (Vector3){x, 1.12f, -0.70f}, 0.15f, steel);
+                (Vector3){dx - 0.34f, 0.33f, side_z + 0.09f},
+                0.068f, progress > 0.72f ? unlocked : locked
+            );
+
+            /* Both pontoon retaining braces extend in place. */
+            for (int side = -1; side <= 1; side += 2) {
+                const float pontoon_z = dz + (float)side * 0.36f;
+                DrawCubeV(
+                    (Vector3){
+                        dx + 0.41f + 0.17f * ease,
+                        0.30f, pontoon_z
+                    },
+                    (Vector3){
+                        0.13f + 0.19f * ease,
+                        0.09f, 0.12f
+                    },
+                    latch
+                );
+            }
         }
         break;
     }
     case CHRONO_ACTION_START_DUCK: {
         if (!scene->world.duck_exists) break;
-        /* Starter lever moves; the water receives expanding ripples. */
-        const float lever = sinf(t * PI);
+
+        /* Starter is fixed to the duck's near-side service panel. */
+        const float dx = 5.5f;
+        const float dz = -0.65f;
+        const float panel_z = dz + 0.75f;
+        const float activation = fminf(fmaxf(
+            (t - 0.18f) / 0.24f, 0.0f), 1.0f);
+        const float spin = fminf(fmaxf(
+            (t - 0.40f) / 0.28f, 0.0f), 1.0f);
+        const float angle = t * (4.0f + spin * 42.0f);
+        const Color casing = {53, 67, 77, 255};
+        const Color indicator = spin > 0.20f
+            ? (Color){97, 241, 139, 255}
+            : (Color){178, 74, 57, 255};
+
         DrawCubeV(
-            (Vector3){5.0f, 0.78f + 0.34f * lever, 3.05f},
-            (Vector3){0.12f, 0.65f, 0.13f}, steel);
+            (Vector3){dx + 0.30f, 0.40f, panel_z},
+            (Vector3){0.36f, 0.29f, 0.12f}, casing
+        );
+
+        /* The captive starter handle is pushed down. */
+        DrawCubeV(
+            (Vector3){
+                dx + 0.23f,
+                0.62f - 0.13f * activation,
+                panel_z + 0.075f
+            },
+            (Vector3){0.09f, 0.21f, 0.08f}, steel
+        );
         DrawSphere(
-            (Vector3){5.0f, 1.12f + 0.34f * lever, 3.05f},
-            0.17f, RED);
-        for (int i = 0; i < 3; ++i) {
-            const float ring = t - (float)i * 0.20f;
-            if (ring > 0.0f && ring < 1.0f) {
-                DrawCircle3D(
-                    (Vector3){7.9f, 0.15f, 2.7f},
-                    0.40f + ring * 1.15f,
-                    (Vector3){1, 0, 0}, 90.0f,
-                    (Color){162, 223, 237, 255});
-            }
+            (Vector3){
+                dx + 0.23f,
+                0.73f - 0.13f * activation,
+                panel_z + 0.075f
+            },
+            0.10f, gold
+        );
+        DrawSphere(
+            (Vector3){dx + 0.40f, 0.45f, panel_z + 0.075f},
+            0.065f, indicator
+        );
+
+        /* Stern-mounted propeller accelerates after ignition. */
+        const Vector3 hub = {dx - 0.96f, 0.42f, dz};
+        DrawCylinderEx(
+            (Vector3){dx - 0.72f, 0.42f, dz},
+            hub, 0.075f, 0.075f, 10, casing
+        );
+        DrawSphere(hub, 0.095f, steel);
+        for (int blade = 0; blade < 3; ++blade) {
+            const float a = angle + (float)blade * 2.0f * PI / 3.0f;
+            DrawLine3D(
+                hub,
+                (Vector3){
+                    hub.x,
+                    hub.y + 0.29f * cosf(a),
+                    hub.z + 0.29f * sinf(a)
+                },
+                (Color){212, 225, 229, 255}
+            );
+            DrawSphere(
+                (Vector3){
+                    hub.x,
+                    hub.y + 0.29f * cosf(a),
+                    hub.z + 0.29f * sinf(a)
+                },
+                0.055f, steel
+            );
         }
         break;
     }
@@ -1283,9 +1437,11 @@ int main(int argc, char **argv)
         if (state.finished && !result_processed) {
             result_processed = true;
             unsigned final_score = chrono_score3d(
-                state.victory, hard_mode, state.selected_plan,
-                state.turn, decoys_used
-            );
+                        state.victory, hard_mode,
+                        state.selected_plan, state.turn,
+                        decoys_used,
+                        state.world.tide_register_acquired
+                    );
             initials_pending = !screenshot_mode &&
                 chrono_hall_session_qualifies(
                     &hall_session, hard_mode,
@@ -1313,9 +1469,11 @@ int main(int argc, char **argv)
             }
             if (IsKeyPressed(KEY_ENTER) && initials_length == 3) {
                 unsigned score = chrono_score3d(
-                    state.victory, hard_mode, state.selected_plan,
-                    state.turn, decoys_used
-                );
+                        state.victory, hard_mode,
+                        state.selected_plan, state.turn,
+                        decoys_used,
+                        state.world.tide_register_acquired
+                    );
                 chrono_hall_session_record(
                     &hall_session, hard_mode, state.selected_plan,
                     arcade_initials, score
@@ -1446,6 +1604,12 @@ int main(int argc, char **argv)
                     action == CHRONO_ACTION_KNOCK_TOWER;
                 Chrono3DActionStatus status =
                     chrono_3d_action_status(&state, action);
+                TraceLog(
+                    LOG_INFO,
+                    "P2_ACTION_SELECT turn=%u ap=%u action=%d status=%d",
+                    state.turn, state.action_points,
+                    (int)action, (int)status
+                );
 
                 if (status == CHRONO_3D_ACTION_AVAILABLE &&
                     !hard_mode && is_decoy) {
@@ -1461,6 +1625,16 @@ int main(int argc, char **argv)
                 } else if (status == CHRONO_3D_ACTION_AVAILABLE) {
                     previous_location_b = state.location_b;
                     input_result = chrono_3d_apply(&state, action);
+                    TraceLog(
+                        LOG_INFO,
+                        "P2_ACTION_APPLY turn=%u action=%d result=%d "
+                        "ap_after=%u location_b=%d duck_running=%d "
+                        "river_crossed=%d",
+                        state.turn, (int)action, (int)input_result,
+                        state.action_points, (int)state.location_b,
+                        state.world.duck_running ? 1 : 0,
+                        state.river_crossed ? 1 : 0
+                    );
                     if (input_result == CHRONO_OK) {
                         if (is_decoy)
                             decoys_used++;
@@ -1908,7 +2082,8 @@ int main(int argc, char **argv)
                     chrono_score3d(
                         state.victory, hard_mode,
                         state.selected_plan, state.turn,
-                        decoys_used
+                        decoys_used,
+                        state.world.tide_register_acquired
                     )
                 ),
                 (Vector2){225.0f, 394.0f},

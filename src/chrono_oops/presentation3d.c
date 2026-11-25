@@ -16,6 +16,7 @@ bool chrono_3d_scene_from_state(
     next.active_player = state->active_player;
     next.location_a = state->location_a;
     next.location_b = state->location_b;
+    next.tower_entered = state->tower_entered;
     next.selected_plan = state->selected_plan;
     next.world = state->world;
     next.finished = state->finished;
