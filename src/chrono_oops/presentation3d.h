@@ -13,6 +13,7 @@ typedef struct {
     ChronoPlayer active_player;
     ChronoLocation location_a;
     ChronoLocation location_b;
+    bool tower_entered;
     ChronoPlan selected_plan;
     ChronoWorld world;
     bool finished;
