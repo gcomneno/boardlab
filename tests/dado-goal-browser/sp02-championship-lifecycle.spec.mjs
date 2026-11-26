@@ -82,6 +82,9 @@ test("7F stale abandonment cannot erase a replacement championship", async ({
   await page.goto(GAME_URL);
   await createChampionship(page);
 
+  await expect.poll(() => persistedChampionship(page))
+    .not.toBeNull();
+
   const original = await persistedChampionship(page);
   expect(original).not.toBeNull();
 
