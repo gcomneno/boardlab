@@ -39,22 +39,48 @@ static void village_tree(float x, float z, float scale)
 
 static void village_lamp(float x, float z)
 {
-    DrawCylinder(
-        (Vector3){x, 0.9f, z},
-        0.055f, 0.055f, 1.8f, 8,
-        (Color){58, 60, 67, 255}
-    );
-    DrawSphere(
-        (Vector3){x, 1.92f, z},
-        0.20f, (Color){255, 224, 149, 255}
-    );
+    const Color iron = {48, 55, 59, 255};
+    const Color brass = {165, 133, 76, 255};
+    const Color glass = {255, 218, 143, 255};
+
+    DrawCylinder((Vector3){x, 0.10f, z},
+                 0.15f, 0.11f, 0.20f, 8, iron);
+    DrawCylinder((Vector3){x, 0.96f, z},
+                 0.075f, 0.045f, 1.72f, 8, iron);
+    DrawCylinder((Vector3){x, 1.84f, z},
+                 0.16f, 0.16f, 0.06f, 8, brass);
+    DrawCylinder((Vector3){x, 2.02f, z},
+                 0.13f, 0.13f, 0.30f, 6, glass);
+    DrawCylinder((Vector3){x, 2.19f, z},
+                 0.18f, 0.04f, 0.12f, 8, iron);
+    DrawSphere((Vector3){x, 2.27f, z}, 0.045f, brass);
 }
 
+static void draw_building_label(
+    Camera3D camera, Vector3 anchor, const char *name
+)
+{
+    const Vector2 pos = GetWorldToScreen(anchor, camera);
+    const int font_size = 17;
+    const int text_width = MeasureText(name, font_size);
+    const int width = text_width + 18;
+    const int left = (int)pos.x - width / 2;
+    const int top = (int)pos.y - 28;
 
+    DrawRectangle(
+        left, top, width, 26,
+        (Color){27, 40, 54, 225}
+    );
+    DrawText(
+        name, left + 9, top + 4, font_size,
+        (Color){246, 236, 204, 255}
+    );
+}
 
 static void diorama_1985(
     const Model *municipality, const Model *archive,
     const Model *clerk,
+    const Model *kenney_oak, const Model *kenney_bush,
     float character_x, float character_bob,
     float character_yaw
 )
@@ -103,9 +129,33 @@ static void diorama_1985(
     );
 
     /* Street furniture, greenery and a central planter. */
-    village_tree(x - 5.0f, 3.45f, 1.05f);
-    village_tree(x + 5.0f, 3.40f, 0.90f);
-    village_tree(x + 5.2f, -3.3f, 0.85f);
+    /* Kenney CC0 oak, with procedural fallback. */
+    if (kenney_oak->meshCount > 0) {
+        DrawModel(
+            *kenney_oak,
+            (Vector3){x - 5.0f, 0.05f, 3.45f},
+            2.1f, WHITE
+        );
+    } else {
+        village_tree(x - 5.0f, 3.45f, 1.05f);
+    }
+
+    /* Optional Kenney CC0 bush near the oak. */
+    if (kenney_bush->meshCount > 0) {
+        DrawModel(
+            *kenney_bush,
+            (Vector3){x - 4.25f, 0.05f, 3.25f},
+            1.2f, WHITE
+        );
+    }
+
+    if (kenney_oak->meshCount > 0) {
+        DrawModel(*kenney_oak, (Vector3){x + 5.0f, 0.05f, 3.40f}, 1.8f, WHITE);
+        DrawModel(*kenney_oak, (Vector3){x + 5.2f, 0.05f, -3.3f}, 1.7f, WHITE);
+    } else {
+        village_tree(x + 5.0f, 3.40f, 0.90f);
+        village_tree(x + 5.2f, -3.3f, 0.85f);
+    }
     village_lamp(x - 4.35f, 0.9f);
     village_lamp(x + 4.45f, 0.9f);
 
@@ -119,10 +169,13 @@ static void diorama_1985(
         (Vector3){1.55f, 0.08f, 0.90f},
         (Color){73, 119, 73, 255}
     );
-    DrawSphere(
-        (Vector3){x, 0.52f, 2.25f},
-        0.27f, (Color){91, 151, 87, 255}
-    );
+    if (kenney_bush->meshCount > 0) {
+        DrawModel(*kenney_bush,
+                  (Vector3){x, 0.39f, 2.25f}, 1.35f, WHITE);
+    } else {
+        DrawSphere((Vector3){x, 0.52f, 2.25f},
+                   0.27f, (Color){91, 151, 87, 255});
+    }
 
     /* Animated display position; destination remains C11-authoritative. */
     DrawModelEx(
@@ -316,6 +369,13 @@ static void draw_1985_action_props(
     }
 
     case CHRONO_ACTION_CALIBRATE_DUCK: {
+        /* Visible calibration instrument beside the 1985 character. */
+        const float z = 1.35f;
+        DrawSphereWires(
+            (Vector3){x, 1.75f, z},
+            0.62f + 0.10f * presence,
+            10, 16, (Color){255, 215, 75, 255}
+        );
         /* Turn a calibration dial while the indicator sweeps. */
         DrawCubeV(
             (Vector3){x, 1.33f, z},
@@ -401,8 +461,10 @@ static void diorama_2025(
         const Vector3 d = {x + s1 + w1, 0.085f, z1};
 
         const Color water = (i % 3 == 0)
-            ? (Color){62, 151, 190, 255}
-            : (Color){72, 162, 195, 255};
+            ? (Color){44, 116, 156, 255}
+            : (i % 3 == 1)
+                ? (Color){57, 140, 169, 255}
+                : (Color){68, 151, 176, 255};
 
         DrawTriangle3D(a, c, b, water);
         DrawTriangle3D(b, c, d, water);
@@ -420,15 +482,18 @@ static void diorama_2025(
         DrawTriangle3D(br, d, dr, shore);
     }
 
-    /* Subtle surface highlights. */
-    for (int i = 0; i < 9; ++i) {
-        const float z = -3.9f + (float)i * 0.95f;
+    /* Animated, staggered water reflections. */
+    const float water_time = (float)GetTime();
+    for (int i = 0; i < 18; ++i) {
+        const float z = -4.5f + (float)i * 0.52f;
         const float center = x + sinf(z * 0.72f) * 0.24f;
-
+        const float drift = 0.12f * sinf(water_time * 1.4f + i);
+        const float start = center - 0.72f + drift;
+        const float length = 0.32f + 0.18f * sinf(i * 2.1f);
         DrawLine3D(
-            (Vector3){center - 0.55f, 0.103f, z},
-            (Vector3){center + 0.15f, 0.103f, z},
-            (Color){151, 212, 218, 255}
+            (Vector3){start, 0.105f, z},
+            (Vector3){start + length, 0.105f, z},
+            (Color){164, 214, 218, 255}
         );
     }
 
@@ -697,7 +762,8 @@ static void diorama_2025(
                     (bridge_center.x - 5.45f) * crossing;
                 explorer_z = west_bank.z +
                     (bridge_center.z - west_bank.z) * approach;
-                explorer_height = bridge_center.y * crossing;
+                /* Climb onto the deck during approach, not underneath it. */
+                explorer_height = bridge_center.y * approach;
             } else if (action == CHRONO_ACTION_REACH_TOWER) {
                 /* Finish crossing the deck, then approach the tower. */
                 const float crossing = fminf(eased / 0.72f, 1.0f);
@@ -958,6 +1024,12 @@ static void draw_2025_action_props(
     case CHRONO_ACTION_IDENTIFY_DEFECT: {
         /* Defective stone: magnifier and highlighted crack. */
         const Vector3 center = {5.9f, 0.48f, -0.65f};
+        const Vector3 observer = {4.5f, 1.65f, 2.6f};
+        DrawSphereWires(
+            observer, 0.43f + 0.16f * pulse,
+            10, 16, gold
+        );
+        DrawLine3D(observer, center, gold);
         DrawLine3D(center,
             (Vector3){6.20f, 0.67f, -0.91f}, RED);
         DrawLine3D(
@@ -1233,9 +1305,11 @@ static const char *diorama_vertex_shader =
     "in vec4 vertexColor;\n"
     "uniform mat4 mvp;\n"
     "out vec3 fragNormal;\n"
+    "out vec2 fragUV;\n"
     "out vec4 fragColor;\n"
     "void main() {\n"
     "    fragNormal = vertexNormal;\n"
+    "    fragUV = vertexTexCoord;\n"
     "    fragColor = vertexColor;\n"
     "    gl_Position = mvp * vec4(vertexPosition, 1.0);\n"
     "}\n";
@@ -1244,14 +1318,25 @@ static const char *diorama_fragment_shader =
     "#version 330\n"
     "in vec3 fragNormal;\n"
     "in vec4 fragColor;\n"
+    "in vec2 fragUV;\n"
+    "uniform vec4 colDiffuse;\n"
+    "uniform sampler2D texture0;\n"
     "out vec4 finalColor;\n"
     "void main() {\n"
     "    vec3 normal = normalize(fragNormal);\n"
     "    vec3 sun = normalize(vec3(-0.55, 0.88, 0.48));\n"
     "    float diffuse = max(dot(normal, sun), 0.0);\n"
-    "    float illumination = 0.56 + 0.44 * diffuse;\n"
-    "    finalColor = vec4(fragColor.rgb * illumination, fragColor.a);\n"
+    "    float illumination = 0.50 + 0.50 * diffuse;\n"
+    "    vec3 sunlight = mix(vec3(0.92, 0.95, 1.0), vec3(1.0, 0.98, 0.92), diffuse);\n"
+    "    vec4 albedo = fragColor * colDiffuse * texture(texture0, fragUV);\n"
+    "    finalColor = vec4(albedo.rgb * illumination * sunlight, albedo.a);\n"
     "}\n";
+
+static void apply_diorama_lighting(Model *model, Shader shader)
+{
+    for (int i = 0; i < model->materialCount; ++i)
+        model->materials[i].shader = shader;
+}
 
 int main(int argc, char **argv)
 {
@@ -1342,6 +1427,35 @@ int main(int argc, char **argv)
         if (lighting_ready) UnloadShader(lighting);
         CloseWindow();
         return 1;
+    }
+
+    /* Optional third-party CC0 scenery. Missing assets are nonfatal. */
+    Model kenney_oak = LoadModel(TextFormat(
+        "%sassets/3d/kenney-nature-kit/tree_oak.gltf",
+        GetApplicationDirectory()
+    ));
+    if (kenney_oak.meshCount == 0) {
+        TraceLog(LOG_WARNING, "Optional Kenney oak unavailable");
+    }
+
+    Model kenney_bush = LoadModel(TextFormat(
+        "%sassets/3d/kenney-nature-kit/plant_bushDetailed.gltf",
+        GetApplicationDirectory()
+    ));
+    if (kenney_bush.meshCount == 0) {
+        TraceLog(LOG_WARNING, "Optional Kenney bush unavailable");
+    }
+
+    if (lighting_ready) {
+        apply_diorama_lighting(&municipality, lighting);
+        apply_diorama_lighting(&archive, lighting);
+        apply_diorama_lighting(&tower, lighting);
+        apply_diorama_lighting(&clerk, lighting);
+        apply_diorama_lighting(&explorer, lighting);
+        if (kenney_oak.meshCount > 0)
+            apply_diorama_lighting(&kenney_oak, lighting);
+        if (kenney_bush.meshCount > 0)
+            apply_diorama_lighting(&kenney_bush, lighting);
     }
 
     const char *font_dir = GetApplicationDirectory();
@@ -1643,6 +1757,24 @@ int main(int argc, char **argv)
                         character_elapsed = 0.0f;
                     }
                     submitted = true;
+                } else if (hard_mode &&
+                           status == CHRONO_3D_ACTION_DONE) {
+                    /*
+                     * A repeated, still-executable action costs one AP.
+                     * Preserve all world and causal state unchanged.
+                     */
+                    ChronoState probe = state;
+                    if (chrono_apply(&probe, action) == CHRONO_OK) {
+                        state.action_points = probe.action_points;
+                        feedback = english
+                            ? "No new effect: one Action point spent"
+                            : "Nessun nuovo effetto: un Punto Azione speso";
+                        menu_open = false;
+                    } else {
+                        feedback = english
+                            ? "Action not possible here"
+                            : "Azione impossibile da questa posizione";
+                    }
                 } else {
                     feedback = hard_mode
                         ? (english ? "Nothing happens" : "Non succede nulla")
@@ -1780,6 +1912,7 @@ int main(int argc, char **argv)
 
         diorama_1985(
             &municipality, &archive, &clerk,
+            &kenney_oak, &kenney_bush,
             clerk_x, clerk_bob, clerk_yaw
         );
         const float bridge_progress =
@@ -1848,6 +1981,20 @@ int main(int argc, char **argv)
         }
 
         EndMode3D();
+
+        /* Screen-space labels anchored above the actual buildings. */
+        draw_building_label(
+            camera, (Vector3){-10.5f, 4.25f, -1.4f},
+            english ? "TOWN HALL" : "MUNICIPIO"
+        );
+        draw_building_label(
+            camera, (Vector3){-5.5f, 3.10f, -1.4f},
+            english ? "ARCHIVE" : "ARCHIVIO"
+        );
+        draw_building_label(
+            camera, (Vector3){11.0f, 6.15f, -0.4f},
+            english ? "TOWER" : "TORRE"
+        );
 
         if (character_animating &&
             character_action == CHRONO_ACTION_WAIT) {
@@ -2270,6 +2417,8 @@ int main(int argc, char **argv)
 
     if (heading_owned) UnloadFont(heading);
     if (regular_owned) UnloadFont(regular);
+    if (kenney_bush.meshCount > 0) UnloadModel(kenney_bush);
+    if (kenney_oak.meshCount > 0) UnloadModel(kenney_oak);
     UnloadModel(explorer);
     UnloadModel(clerk);
     UnloadModel(tower);
