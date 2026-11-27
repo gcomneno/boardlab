@@ -424,5 +424,13 @@ if(CHRONO_ENABLE_3D)
             COPYONLY
         )
     endforeach()
+    # Optional Kenney Nature Kit 2.1 scenery (CC0).
+    foreach(asset IN ITEMS tree_oak plant_bushDetailed)
+        configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/assets/3d/kenney-nature-kit/${asset}.gltf"
+            "${CMAKE_CURRENT_BINARY_DIR}/assets/3d/kenney-nature-kit/${asset}.gltf"
+            COPYONLY
+        )
+    endforeach()
     chrono_warnings(chrono-oops-3d)
 endif()
